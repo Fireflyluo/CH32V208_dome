@@ -1,0 +1,103 @@
+version: "4.1"
+name: eide
+type: RISC-V
+deviceName: null
+packDir: null
+srcDirs:
+  - User
+  - sdk
+  - bsp
+  - Public
+  - sensor
+  - APP
+virtualFolder:
+  name: <virtual_root>
+  files: []
+  folders: []
+dependenceList: []
+outDir: build
+miscInfo:
+  uid: a9cf27018028905008ed64a41c0280f9
+targets:
+  Debug:
+    cppPreprocessAttrs:
+      defineList:
+        - CH32V20x_D8W
+      incList:
+        - User
+        - bsp/USBLIB/USB-Driver/inc
+        - bsp/UART
+        - bsp/USBLIB/CONFIG
+        - sdk/Core
+        - sdk/Debug
+        - sdk/Peripheral/inc
+        - Public
+        - bsp
+        - sdk/HAL/include
+        - sdk/LIB
+        - sensor/sc7a20htr
+        - sensor/sht40
+      libList:
+        - sdk/LIB
+    excludeList:
+      - Startup/startup_ch32v20x_D8.S
+      - Startup/startup_ch32v20x_D6.S
+      - sdk/Startup/startup_ch32v20x_D8.S
+      - sdk/Startup/startup_ch32v20x_D6.S
+      - sdk/Ld
+    toolchain: RISCV_GCC
+    toolchainConfigMap:
+      RISCV_GCC:
+        linkerScriptPath: ""
+        options:
+          version: 2
+          afterBuildTasks: []
+          asm-compiler:
+            ASM_FLAGS: -x assembler-with-cpp
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            CXX_FLAGS: -fabi-version=0
+            language-c: gnu11
+            language-cpp: gnu++17
+            one-elf-section-per-data: true
+            one-elf-section-per-function: true
+            optimization: level-0
+            signed-char: true
+            warnings: all-warnings
+          global:
+            abi: ilp32
+            arch: rv32imac_xw
+            code-model: medlow
+            misc-control: -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fdata-sections -fno-common -fsingle-precision-constant -Wunused -Wuninitialized
+            output-debug-info: enable
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            $toolName: auto
+            LD_FLAGS: -nostartfiles -Xlinker -T "sdk/HAL/Link.ld" -Wl,-Map,CH32V208GBU.map --specs=nano.specs --specs=nosys.specs
+            LIB_FLAGS: -lwchble
+            output-format: elf
+            remove-unused-input-sections: true
+    uploadConfigMap:
+      JLink:
+        baseAddr: ""
+        bin: ""
+        cpuInfo:
+          cpuName: "null"
+          vendor: "null"
+        otherCmds: ""
+        proType: 1
+        speed: 8000
+      OpenOCD:
+        baseAddr: "0x08000000"
+        bin: ""
+        interface: ${workspaceFolder}/tools/wch-interface
+        target: ""
+      pyOCD:
+        baseAddr: "0x08000000"
+        bin: ""
+        config: .eide/debug.pyocd.yaml
+        otherCmds: ""
+        speed: 4M
+        targetName: cortex_m
+    uploader: OpenOCD
