@@ -25,7 +25,7 @@
 ## 开发环境
 
 
-- **IDE/编译器**: MR2/vscode eide
+- **IDE/编译器**: MR2/vscode eide/cmake/xmake
 - **编程语言**: C/CPP
 - **调试工具**: wch-link
 - **依赖库**: 标准库
