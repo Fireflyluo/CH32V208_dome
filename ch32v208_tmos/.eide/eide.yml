@@ -6,7 +6,9 @@ packDir: null
 srcDirs:
   - APP
   - Profile
-  - SDK
+  - sdk
+  - task
+  - bsp
 virtualFolder:
   name: <virtual_root>
   files: []
@@ -20,7 +22,7 @@ targets:
     cppPreprocessAttrs:
       defineList:
         - CH32V20x_D8W
-        - CLK_OSC32K=0
+        - CLK_OSC32K=1
       incList:
         - APP/include
         - sdk/HAL/include
@@ -30,12 +32,17 @@ targets:
         - sdk/Debug
         - sdk/Peripheral/inc
         - sdk/Startup
+        - bsp/Include
+        - task/inc
       libList:
         - sdk/LIB
     excludeList:
       - SDK/Startup/startup_ch32v20x_D8.S
       - SDK/Startup/startup_ch32v20x_D6.S
       - SDK/Ld
+      - sdk/Ld
+      - sdk/Startup/startup_ch32v20x_D6.S
+      - sdk/Startup/startup_ch32v20x_D8.S
     toolchain: RISCV_GCC
     toolchainConfigMap:
       RISCV_GCC:

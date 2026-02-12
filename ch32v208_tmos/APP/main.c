@@ -14,8 +14,11 @@
 /* Header file contains */
 #include "CONFIG.h"
 #include "HAL.h"
+#include "drv_gpio.h"
 #include "gattprofile.h"
 #include "peripheral.h"
+
+#include "tmos_task.h"
 
 /*********************************************************************
  * GLOBAL TYPEDEFS
@@ -42,7 +45,7 @@ void Main_Circulation(void)
         TMOS_SystemProcess();
     }
 }
-
+#define LED_PIN GET_PIN(C, 9)
 /*********************************************************************
  * @fn      main
  *
@@ -60,6 +63,10 @@ int main(void)
     PRINT("%s\n", VER_LIB);
     WCHBLE_Init();
     HAL_Init();
+    gpio_init();
+    gpio_mode(LED_PIN, PIN_MODE_OUTPUT);
+    led_task_init();
+
     // GAPRole_PeripheralInit();
     // Peripheral_Init();
     Main_Circulation();

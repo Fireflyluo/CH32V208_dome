@@ -399,7 +399,7 @@ typedef struct
 /* General Purpose I/O */
 typedef struct
 {
-    __IO uint32_t CFGLR;
+    __IO uint32_t CFGLR;    
     __IO uint32_t CFGHR;
     __IO uint32_t INDR;
     __IO uint32_t OUTDR;

@@ -6,7 +6,7 @@
  * Description        : This file contains the headers of the interrupt handlers.
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -14,5 +14,6 @@
 #define __CH32V20x_IT_H
 
 #include "debug.h"
-
+#define GET_INT_SP()  asm("csrrw sp,mscratch,sp")
+#define FREE_INT_SP() asm("csrrw sp,mscratch,sp")
 #endif /* __CH32V20x_IT_H */

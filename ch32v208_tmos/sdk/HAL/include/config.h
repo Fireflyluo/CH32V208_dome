@@ -85,7 +85,7 @@
 #define HAL_KEY                             FALSE
 #endif
 #ifndef HAL_LED
-#define HAL_LED                             TRUE
+#define HAL_LED                             FALSE
 #endif
 #ifndef TEM_SAMPLE
 #define TEM_SAMPLE                          TRUE
