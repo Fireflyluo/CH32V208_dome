@@ -1,0 +1,52 @@
+{
+    find_program = {
+        ["cl.exe"] = [[C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\bin\HostX64\x64\cl.exe]],
+        nim = false,
+        ["E:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc"] = "e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe"
+    },
+    ["core.tools.gcc.has_cflags"] = {
+        ["e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe_"] = {
+            ["-pass-exit-codes"] = true,
+            ["-E"] = true,
+            ["-print-sysroot-headers-suffix"] = true,
+            ["-print-multi-directory"] = true,
+            ["-v"] = true,
+            ["-dumpversion"] = true,
+            ["-c"] = true,
+            ["-no-canonical-prefixes"] = true,
+            ["-print-multiarch"] = true,
+            ["-dumpmachine"] = true,
+            ["-dumpspecs"] = true,
+            ["--version"] = true,
+            ["-Xassembler"] = true,
+            ["-B"] = true,
+            ["-pie"] = true,
+            ["-shared"] = true,
+            ["-Xpreprocessor"] = true,
+            ["-pipe"] = true,
+            ["-S"] = true,
+            ["--target-help"] = true,
+            ["--param"] = true,
+            ["--help"] = true,
+            ["-save-temps"] = true,
+            ["-Xlinker"] = true,
+            ["-print-multi-lib"] = true,
+            ["-time"] = true,
+            ["-print-libgcc-file-name"] = true,
+            ["-print-search-dirs"] = true,
+            ["-print-multi-os-directory"] = true,
+            ["-print-sysroot"] = true,
+            ["-x"] = true,
+            ["-o"] = true
+        }
+    },
+    ["lib.detect.has_flags"] = {
+        ["windows_x64_e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe__cc_cxflags__-MMD -MF"] = true,
+        ["windows_x64_e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe__cc___-O0"] = true,
+        ["windows_x64_e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe__as_cxflags__-fdiagnostics-color=always"] = true,
+        ["windows_x64_e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe__as_cxflags__-MMD -MF"] = true,
+        ["windows_x64_e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe__cc_cxflags__-fdiagnostics-color=always"] = true,
+        ["windows_x64_e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe__cc_cxflags__-Wno-gnu-line-marker -Werror"] = true,
+        ["windows_x64_e:/app/mrs2/mounriver_studio2/resources/app/resources/win32/components/wch/toolchain/risc-v embedded gcc12/bin/riscv-wch-elf-gcc.exe__as___-O0"] = true
+    }
+}

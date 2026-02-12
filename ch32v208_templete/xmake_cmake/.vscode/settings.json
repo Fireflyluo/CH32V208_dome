@@ -1,0 +1,14 @@
+{
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "$(notebook-delete-cell) clean",
+            "task": "clean-all",
+            "tooltip": "Run CMake Build Task"
+        },
+        {
+            "label": "$(notebook-move-down)Download",
+            "task": "Flash",
+            "tooltip": "Run Flash Task"
+        },
+    ],
+}

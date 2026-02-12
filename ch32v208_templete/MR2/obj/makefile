@@ -35,6 +35,21 @@ endif
 ifneq ($(strip $(C_DEPS)),)
 -include $(C_DEPS)
 endif
+ifneq ($(strip $(C_UPPER_DEPS)),)
+-include $(C_UPPER_DEPS)
+endif
+ifneq ($(strip $(CC_DEPS)),)
+-include $(CC_DEPS)
+endif
+ifneq ($(strip $(C++_DEPS)),)
+-include $(C++_DEPS)
+endif
+ifneq ($(strip $(CXX_DEPS)),)
+-include $(CXX_DEPS)
+endif
+ifneq ($(strip $(CPP_DEPS)),)
+-include $(CPP_DEPS)
+endif
 endif
 
 -include ../makefile.defs
@@ -58,7 +73,7 @@ main-build: CH32V208GBU_Templete.elf secondary-outputs
 
 # Tool invocations
 CH32V208GBU_Templete.elf: $(OBJS) $(USER_OBJS_ESCAPE)
-	@	riscv-wch-elf-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T "d:/Desktop/ch32/0.CH32V208_demo/ch32v208_templete/MR2/HAL/Link.ld" -nostartfiles -Xlinker --gc-sections -L"d:/Desktop/ch32/0.CH32V208_demo/ch32v208_templete/MR2/LIB" -Xlinker --print-memory-usage -Wl,-Map,"CH32V208GBU_Templete.map" --specs=nano.specs --specs=nosys.specs -o "CH32V208GBU_Templete.elf" $(OBJS) $(LIBS)
+	@	riscv-wch-elf-g++ -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T "d:/Desktop/ch32/0.CH32V208_dome/ch32v208_templete/MR2/HAL/Link.ld" -nostartfiles -Xlinker --gc-sections -L"d:/Desktop/ch32/0.CH32V208_dome/ch32v208_templete/MR2/LIB" -Xlinker --print-memory-usage -Wl,-Map,"CH32V208GBU_Templete.map" --specs=nano.specs --specs=nosys.specs -o "CH32V208GBU_Templete.elf" $(OBJS) $(LIBS)
 CH32V208GBU_Templete.hex: CH32V208GBU_Templete.elf
 	@	riscv-wch-elf-objcopy -O ihex "CH32V208GBU_Templete.elf" "CH32V208GBU_Templete.hex"
 CH32V208GBU_Templete.lst: CH32V208GBU_Templete.elf

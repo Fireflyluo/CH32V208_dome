@@ -1,0 +1,54 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "clean-all",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/c",
+                "if exist build (rmdir /s /q build & echo Build directory cleaned) else (echo Build directory does not exist)"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        },
+        {
+            "label": "Flash",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/cmsis-dap.cfg",
+                "-f",
+                "target/py32f403.cfg",
+                "-c",
+                "init",
+                "-c",
+                "reset halt",
+                "-c",
+                "echo \"目标已暂停，开始烧录...\"",
+                "-c",
+                "program ./build/led.elf verify reset ",
+                "-c",
+                "echo \"烧录成功！程序已运行。\"",
+                "-c",
+                "exit"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        }
+    ]
+}

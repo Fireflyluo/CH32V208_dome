@@ -1,0 +1,3 @@
+D:/Desktop/ch32/0.CH32V208_dome/ch32v208_templete/xmake_cmake/build/CMakeFiles/CH32V208GBU_Templete.elf.dir
+D:/Desktop/ch32/0.CH32V208_dome/ch32v208_templete/xmake_cmake/build/CMakeFiles/edit_cache.dir
+D:/Desktop/ch32/0.CH32V208_dome/ch32v208_templete/xmake_cmake/build/CMakeFiles/rebuild_cache.dir

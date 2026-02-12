@@ -1,0 +1,6 @@
+tool: GCC
+fileName: 'ch32v208_templete.map'
+elfName: 'ch32v208_templete.elf'
+compilerName: 'xPack GNU RISC-V Embedded GCC i386'
+compilerFullName: 'riscv-wch-elf-gcc.exe (xPack GNU RISC-V Embedded GCC i386) 12.2.0'
+compilerPath: 'E:\APP\MRS2\MounRiver_Studio2\resources\app\resources\win32\components\WCH\Toolchain\RISC-V Embedded GCC12\bin\riscv-wch-elf-gcc.exe'

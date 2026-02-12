@@ -143,7 +143,9 @@
 							"${project}/sdk/Peripheral/inc",
 							"${project}/sdk/HAL/include",
 							"${project}/sdk/LIB",
-							"${project}/Profile/include"
+							"${project}/Profile/include",
+							"${project}/task/inc",
+							"${project}/bsp/Include"
 						],
 						"include_system_paths": [],
 						"include_files": []
