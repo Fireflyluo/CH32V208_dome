@@ -1,0 +1,11 @@
+{
+    options = {
+        arch = "riscv",
+        mode = "debug",
+        plat = "cross"
+    },
+    mtimes = {
+        ["xmake.lua"] = 1770859562
+    },
+    recheck = false
+}

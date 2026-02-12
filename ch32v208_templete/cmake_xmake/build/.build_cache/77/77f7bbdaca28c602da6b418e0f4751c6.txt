@@ -1,0 +1,9 @@
+{
+    errdata = "\27[01m\27[KHAL\\RTC.c:\27[m\27[K In function '\27[01m\27[KHAL_TimeInit\27[m\27[K':\
+\27[01m\27[KHAL\\RTC.c:57:14:\27[m\27[K \27[01;35m\27[Kwarning: \27[m\27[Kunused variable '\27[01m\27[Ktemp\27[m\27[K' [\27[01;35m\27[K-Wunused-variable\27[m\27[K]\
+   57 |     uint16_t \27[01;35m\27[Ktemp\27[m\27[K=0;\
+      |              \27[01;35m\27[K^~~~\27[m\27[K\
+At top level:\
+\27[01m\27[Kcc1.exe:\27[m\27[K \27[01;36m\27[Knote: \27[m\27[Kunrecognized command-line option '\27[01m\27[K-Wno-gnu-line-marker\27[m\27[K' may have been intended to silence earlier diagnostics\
+"
+}

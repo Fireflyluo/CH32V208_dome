@@ -1,0 +1,176 @@
+[
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-O0", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Startup\\startup_ch32v20x_D8W.S.o", "SDK\\Startup\\startup_ch32v20x_D8W.S"],
+  "file": "SDK\\Startup\\startup_ch32v20x_D8W.S"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-O0", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\LIB\\ble_task_scheduler.S.o", "LIB\\ble_task_scheduler.S"],
+  "file": "LIB\\ble_task_scheduler.S"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_adc.c.o", "SDK\\Peripheral\\src\\ch32v20x_adc.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_adc.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_bkp.c.o", "SDK\\Peripheral\\src\\ch32v20x_bkp.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_bkp.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_can.c.o", "SDK\\Peripheral\\src\\ch32v20x_can.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_can.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_crc.c.o", "SDK\\Peripheral\\src\\ch32v20x_crc.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_crc.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_dbgmcu.c.o", "SDK\\Peripheral\\src\\ch32v20x_dbgmcu.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_dbgmcu.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_dma.c.o", "SDK\\Peripheral\\src\\ch32v20x_dma.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_dma.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_exti.c.o", "SDK\\Peripheral\\src\\ch32v20x_exti.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_exti.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_flash.c.o", "SDK\\Peripheral\\src\\ch32v20x_flash.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_flash.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_gpio.c.o", "SDK\\Peripheral\\src\\ch32v20x_gpio.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_gpio.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_i2c.c.o", "SDK\\Peripheral\\src\\ch32v20x_i2c.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_i2c.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_iwdg.c.o", "SDK\\Peripheral\\src\\ch32v20x_iwdg.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_iwdg.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_misc.c.o", "SDK\\Peripheral\\src\\ch32v20x_misc.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_misc.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_opa.c.o", "SDK\\Peripheral\\src\\ch32v20x_opa.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_opa.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_pwr.c.o", "SDK\\Peripheral\\src\\ch32v20x_pwr.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_pwr.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_rcc.c.o", "SDK\\Peripheral\\src\\ch32v20x_rcc.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_rcc.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_rtc.c.o", "SDK\\Peripheral\\src\\ch32v20x_rtc.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_rtc.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_spi.c.o", "SDK\\Peripheral\\src\\ch32v20x_spi.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_spi.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_tim.c.o", "SDK\\Peripheral\\src\\ch32v20x_tim.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_tim.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_usart.c.o", "SDK\\Peripheral\\src\\ch32v20x_usart.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_usart.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Peripheral\\src\\ch32v20x_wwdg.c.o", "SDK\\Peripheral\\src\\ch32v20x_wwdg.c"],
+  "file": "SDK\\Peripheral\\src\\ch32v20x_wwdg.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Debug\\debug.c.o", "SDK\\Debug\\debug.c"],
+  "file": "SDK\\Debug\\debug.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\SDK\\Core\\core_riscv.c.o", "SDK\\Core\\core_riscv.c"],
+  "file": "SDK\\Core\\core_riscv.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\Profile\\devinfoservice.c.o", "Profile\\devinfoservice.c"],
+  "file": "Profile\\devinfoservice.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\Profile\\gattprofile.c.o", "Profile\\gattprofile.c"],
+  "file": "Profile\\gattprofile.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\HAL\\KEY.c.o", "HAL\\KEY.c"],
+  "file": "HAL\\KEY.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\HAL\\LED.c.o", "HAL\\LED.c"],
+  "file": "HAL\\LED.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\HAL\\MCU.c.o", "HAL\\MCU.c"],
+  "file": "HAL\\MCU.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\HAL\\RTC.c.o", "HAL\\RTC.c"],
+  "file": "HAL\\RTC.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\HAL\\SLEEP.c.o", "HAL\\SLEEP.c"],
+  "file": "HAL\\SLEEP.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\APP\\ch32v20x_it.c.o", "APP\\ch32v20x_it.c"],
+  "file": "APP\\ch32v20x_it.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\APP\\peripheral.c.o", "APP\\peripheral.c"],
+  "file": "APP\\peripheral.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\APP\\peripheral_main.c.o", "APP\\peripheral_main.c"],
+  "file": "APP\\peripheral_main.c"
+},
+{
+  "directory": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake",
+  "arguments": ["e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc.exe", "-c", "-ISDK\\Debug", "-ISDK\\Core", "-IAPP\\include", "-ISDK\\Peripheral\\inc", "-IHAL\\include", "-ILIB", "-IProfile\\include", "-ISDK\\Startup", "-DDEBUG=1", "-DCH32V20x_D8W", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmax-errors=20", "-Os", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-g", "-std=gnu17", "-O0", "-fmacro-prefix-map=d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_templete\\Cmake=..", "-o", "build\\.objs\\CH32V208GBU_Templete\\cross\\arm\\debug\\APP\\system_ch32v20x.c.o", "APP\\system_ch32v20x.c"],
+  "file": "APP\\system_ch32v20x.c"
+}]
