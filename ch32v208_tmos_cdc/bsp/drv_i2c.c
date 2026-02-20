@@ -1098,7 +1098,11 @@ static void CommTimeOut_CallBack(i2c_ErrCode_t errcode)
 
 // ==================== I2C 中断处理 ====================
 
-// 替换 I2C_EV_IRQHandler_Handler 为以下代码
+/**
+ * @brief I2C设备通信中断处理函数
+ * @param i2c I2C外设指针(I2C1, I2C2等)
+ * @param num I2C设备编号(I2C1, I2C2等)
+ */
 static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
 {
     i2c_async_ctx_t *ctx = &i2c_async_ctx[num];
@@ -1108,30 +1112,30 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
     {
         if (ctx->is_reg_write)
         {
-            // 第一阶段：写寄存器地址 → 发送设备地址（写模式）
+            // 发送设备地址（写模式）
             I2C_Send7bitAddress(i2c, ctx->dev_addr << 1, I2C_Direction_Transmitter);
         }
         else if (ctx->rx_len > 0)
         {
-            // 第二阶段：Repeated Start 后 → 发送设备地址（读模式）
+            // 发送设备地址（读模式）
             I2C_Send7bitAddress(i2c, ctx->dev_addr << 1, I2C_Direction_Receiver);
         }
         else
         {
-            // 普通写操作
+            
             I2C_Send7bitAddress(i2c, ctx->dev_addr << 1, I2C_Direction_Transmitter);
         }
     }
     // 2. 地址发送完成 (ADDR)
     else if (I2C_GetITStatus(i2c, I2C_IT_ADDR) != RESET)
     {
-        // ✅ 正确清除 ADDR 标志：先读 STAR1，再读 STAR2
+        // 清 ADDR 标志
         volatile uint16_t temp = i2c->STAR1;
         (void)temp;
         temp = i2c->STAR2;
         (void)temp;
 
-        // 如果是接收模式且只剩1字节，可提前禁用 ACK
+        // 如果是接收模式且只剩1字节，提前禁用 ACK
         if (ctx->rx_len == 1 && !ctx->is_reg_write)
         {
             I2C_AcknowledgeConfig(i2c, DISABLE);
@@ -1148,17 +1152,15 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
         else
         {
             // 所有 TX 数据已发送完毕
-            // I2C_ITConfig(i2c, I2C_IT_TXE, DISABLE);
-
             if (ctx->rx_len > 0 && ctx->is_reg_write)
             {
-                // 👉 寄存器读：已完成寄存器地址写入，现在发起 Repeated Start
+                // （寄存器读）寄存器地址写入完成，准备发送重复 START 进行读操作
                 ctx->is_reg_write = false;
                 I2C_GenerateSTART(i2c, ENABLE); // 触发 Repeated Start
             }
             else
             {
-                // 普通写操作完成
+                // 普通写操作
                 I2C_GenerateSTOP(i2c, ENABLE);
                 if (ctx->callback)
                 {
@@ -1180,7 +1182,7 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
             {
                 // 所有数据接收完毕
                 I2C_GenerateSTOP(i2c, ENABLE);
-                I2C_AcknowledgeConfig(i2c, ENABLE); // 恢复 ACK（良好习惯）
+                I2C_AcknowledgeConfig(i2c, ENABLE); // 恢复 ACK
                 if (ctx->callback)
                 {
                     ctx->callback(num, 0);
@@ -1193,14 +1195,14 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
             }
         }
     }
-    // 5. 字节传输完成 (BTF) —— 通常用于多字节写，但此处可简化处理
+    // 5. 字节传输完成 (BTF)
     else if (I2C_GetITStatus(i2c, I2C_IT_BTF) != RESET)
     {
         // BTF 清除：读 STAR1 + 读/写 DATAR
         volatile uint16_t temp = i2c->STAR1;
         (void)temp;
         // 如果是写操作且 DR 为空，可以写下一个字节
-        // 但在我们的设计中，数据由 TXE 处理，此处可留空或加保护
+
     }
 }
 
