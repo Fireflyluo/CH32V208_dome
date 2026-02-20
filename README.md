@@ -18,8 +18,19 @@
 
 ## 项目结构
 
-```
-
+```c
+├─bsp\ch32_drivers                     // ch32v208 板级驱动  
+│      ├─ drv_gpio.c
+│      ├─ drv_i2c.c
+│      ├─ drv_uart.c
+│      ├─ usb_cdc.c
+│      └─ ....
+├─CH32V208GBU_ble                       // ble 临时模板
+├─ch32v208_templete                     // 模板工程
+│      ├─ eide                          // eide工程
+│      ├─ MR2                           // MR2工程
+│      └─ xmmake_cmake                  // cmake/xmake 工程
+└─ch32v208_tmos_cdc                     // tmos cdc 模板
 ```
 
 ## 开发环境
@@ -36,7 +47,7 @@
 ## 已实现功能
 
 - [x] LED控制（GPIO）
-- [x] I2C通信示例
+- [x] I2C通信示例（轮询、异步中断模式）
 - [x] 串口通信示例
 
 
@@ -54,9 +65,11 @@
 ## 更新日志
 
 - **2026-2-10**: 初始版本提交
-  - 添加模板工程(eide、MR2)
+  - 添加模板工程(eide、MR2、xmake_cmake)
   - 修改工程结构和文档描述
-
+- **2026-2-20**: 优化模板工程
+  - 添加bsp包，优化硬件抽象层(增加gpio驱动、i2c驱动(轮询/中断)、uart驱动(轮询/中断)、usb_cdc驱动)
+  - 修改工程结构和文档描述
 
 ## 联系方式
 
