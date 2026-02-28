@@ -18,6 +18,10 @@ void I2C1_EV_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C1_ER_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C2_EV_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C2_ER_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+
+__attribute__((weak)) void i2c_master_tx_cplt_callback(i2c_num_t i2c_num);
+__attribute__((weak)) void i2c_master_rx_cplt_callback(i2c_num_t i2c_num);
+__attribute__((weak)) void i2c_error_callback(i2c_num_t i2c_num, i2c_ErrCode_t errcode);
 /* ========================== 内部常量定义 ========================== */
 
 #define I2C_TIMEOUT 0xFFFF     // 超时计数值
@@ -139,45 +143,43 @@ static void IIC_SWReset(void)
 
     // 配置 I2C1 引脚 (PB6=SCL, PB7=SDA)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_6 | GPIO_Pin_7;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; // 开漏输出
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_OD; // 开漏输出
     GPIO_Init(GPIOB, &GPIO_InitStructure);
-
 
     // 4. 生成 9 个时钟脉冲（强制从机释放 SDA）
     for (int i = 0; i < 9; i++)
     {
         // SCL 低
-        GPIO_ResetBits(GPIOB, GPIO_Pin_6 );
+        GPIO_ResetBits(GPIOB, GPIO_Pin_6);
         Delay_Us(5); // 至少 5us（对应 100kHz）
 
         // SCL 高
-        GPIO_SetBits(GPIOB, GPIO_Pin_6 );
+        GPIO_SetBits(GPIOB, GPIO_Pin_6);
         Delay_Us(5);
     }
 
     // 5. 生成 STOP 条件：SCL 高时，SDA 从低到高
     // 先确保 SDA 为低
-    GPIO_ResetBits(GPIOB, GPIO_Pin_7 );
+    GPIO_ResetBits(GPIOB, GPIO_Pin_7);
     Delay_Us(5);
     // SCL 拉高
-    GPIO_SetBits(GPIOB, GPIO_Pin_6 );
+    GPIO_SetBits(GPIOB, GPIO_Pin_6);
     Delay_Us(5);
     // SDA 拉高（STOP）
-    GPIO_SetBits(GPIOB, GPIO_Pin_7 );
+    GPIO_SetBits(GPIOB, GPIO_Pin_7);
     Delay_Us(10);
 
     // 6. 恢复 I2C 外设和 GPIO 复用功能
     // 重新初始化 I2C1
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_6 | GPIO_Pin_7;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     I2C_DeInit(I2C1);
     I2C_Cmd(I2C1, ENABLE);
-
 
     // 7. 重置通信状态标志
     Comm_Flag = C_READY;
@@ -189,11 +191,7 @@ static void IIC_SWReset(void)
 /**
  * @brief 复位时钟
  */
-static void IIC_RCCReset(void)
-{
-
-
-}
+static void IIC_RCCReset(void) {}
 #elif (COMM_RECOVER_MODE == SYSTEM_NVIC_RESET)
 // 系统NVIC复位模式
 SystemNVICReset();
@@ -679,8 +677,7 @@ int i2c_read_byte(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t *dat
 
 /* ========================== 非阻塞异步接口 ========================== */
 
-int i2c_write_async(i2c_num_t i2c_num, uint8_t dev_addr, const uint8_t *data, uint16_t len,
-                    i2c_async_callback_t callback)
+int i2c_write_async(i2c_num_t i2c_num, uint8_t dev_addr, const uint8_t *data, uint16_t len)
 {
     I2C_TypeDef *i2c              = get_i2c_periph(i2c_num);
     const i2c_hw_config_t *hw_cfg = &i2c_hw_config[i2c_num];
@@ -704,13 +701,13 @@ int i2c_write_async(i2c_num_t i2c_num, uint8_t dev_addr, const uint8_t *data, ui
     ctx->rx_len    = 0;
 
     ctx->is_reg_write = false;
-    ctx->callback     = callback;
+
 
     I2C_GenerateSTART(i2c, ENABLE);
     return 0;
 }
 
-int i2c_read_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t *data, uint16_t len, i2c_async_callback_t callback)
+int i2c_read_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t *data, uint16_t len)
 {
     I2C_TypeDef *i2c              = get_i2c_periph(i2c_num);
     const i2c_hw_config_t *hw_cfg = &i2c_hw_config[i2c_num];
@@ -734,15 +731,14 @@ int i2c_read_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t *data, uint16_t 
     ctx->tx_len    = 0;
 
     ctx->is_reg_write = false;
-    ctx->callback     = callback;
+
 
     I2C_GenerateSTART(i2c, ENABLE);
     return 0;
 }
 
 // 寄存器写（异步）
-int i2c_write_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, const uint8_t *data, uint16_t len,
-                             i2c_async_callback_t callback)
+int i2c_write_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, const uint8_t *data, uint16_t len)
 {
     I2C_TypeDef *i2c              = get_i2c_periph(i2c_num);
     const i2c_hw_config_t *hw_cfg = &i2c_hw_config[i2c_num];
@@ -771,15 +767,14 @@ int i2c_write_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, c
     ctx->rx_len    = 0;
 
     ctx->is_reg_write = false; // 标记第一阶段是寄存器地址
-    ctx->callback     = callback;
+
 
     I2C_GenerateSTART(i2c, ENABLE);
     return 0;
 }
 
 // 寄存器读（异步）
-int i2c_read_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t *data, uint16_t len,
-                            i2c_async_callback_t callback)
+int i2c_read_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t *data, uint16_t len)
 {
     I2C_TypeDef *i2c              = get_i2c_periph(i2c_num);
     const i2c_hw_config_t *hw_cfg = &i2c_hw_config[i2c_num];
@@ -806,25 +801,25 @@ int i2c_read_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, ui
     ctx->rx_len       = len; // 注意：这里设置 rx_len 为要读取的长度
     ctx->rx_buffer    = data;
     ctx->is_reg_write = true; // 第一阶段：写寄存器地址
-    ctx->callback     = callback;
+
 
     I2C_GenerateSTART(i2c, ENABLE);
     return 0;
 }
 
 // 单字节简化接口
-int i2c_write_byte_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t data, i2c_async_callback_t callback)
+int i2c_write_byte_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t data)
 {
     // 使用专用缓冲区避免并发冲突
     i2c_async_byte_buf[i2c_num][0] = reg;
     i2c_async_byte_buf[i2c_num][1] = data;
-    return i2c_write_async(i2c_num, dev_addr, i2c_async_byte_buf[i2c_num], 2, callback);
+    return i2c_write_async(i2c_num, dev_addr, i2c_async_byte_buf[i2c_num], 2);
 }
 
-int i2c_read_byte_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, i2c_async_callback_t callback)
+int i2c_read_byte_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg)
 {
     static uint8_t dummy;
-    return i2c_read_register_async(i2c_num, dev_addr, reg, &dummy, 1, callback);
+    return i2c_read_register_async(i2c_num, dev_addr, reg, &dummy, 1);
 }
 
 /***************************************** I2C工具函数 ***************************************** */
@@ -1086,7 +1081,7 @@ static void CommTimeOut_CallBack(i2c_ErrCode_t errcode)
 #if (COMM_RECOVER_MODE == MODULE_SELF_RESET)
     // 模块自复位模式
     // TODO: 实现具体的模块自复位逻辑
-//     IIC_SWReset();
+     IIC_SWReset();
 #elif (COMM_RECOVER_MODE == MODULE_RCC_RESET)
     // 模块时钟复位模式
     IIC_RCCReset();
@@ -1122,7 +1117,6 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
         }
         else
         {
-            
             I2C_Send7bitAddress(i2c, ctx->dev_addr << 1, I2C_Direction_Transmitter);
         }
     }
@@ -1162,10 +1156,7 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
             {
                 // 普通写操作
                 I2C_GenerateSTOP(i2c, ENABLE);
-                if (ctx->callback)
-                {
-                    ctx->callback(num, 0);
-                }
+                i2c_master_tx_cplt_callback(num);
             }
         }
     }
@@ -1174,7 +1165,7 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
     {
         if (ctx->rx_len > 0)
         {
-            uint8_t data = I2C_ReceiveData(i2c);
+            uint8_t data        = I2C_ReceiveData(i2c);
             *(ctx->rx_buffer++) = data;
             ctx->rx_len--;
 
@@ -1183,9 +1174,9 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
                 // 所有数据接收完毕
                 I2C_GenerateSTOP(i2c, ENABLE);
                 I2C_AcknowledgeConfig(i2c, ENABLE); // 恢复 ACK
-                if (ctx->callback)
-                {
-                    ctx->callback(num, 0);
+                if (ctx->rx_buffer != NULL)
+                { // 这是一个读操作
+                    i2c_master_rx_cplt_callback(num);
                 }
             }
             else if (ctx->rx_len == 1)
@@ -1202,13 +1193,12 @@ static void I2C_EV_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
         volatile uint16_t temp = i2c->STAR1;
         (void)temp;
         // 如果是写操作且 DR 为空，可以写下一个字节
-
     }
 }
 
 static void I2C_ER_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
 {
-    i2c_async_ctx_t *ctx = &i2c_async_ctx[num];
+    i2c_async_ctx_t *ctx   = &i2c_async_ctx[num];
     i2c_ErrCode_t err_code = MASTER_UNKNOW;
 
     // 1. ACK Failure (从机无响应)
@@ -1232,16 +1222,13 @@ static void I2C_ER_IRQHandler_Handler(I2C_TypeDef *i2c, i2c_num_t num)
         err_code = MASTER_BUSERR;
     }
 
-    // 调用统一错误回调（含恢复逻辑）
+    // 错误回调
     CommTimeOut_CallBack(err_code);
 
-    // 调用用户回调（通知失败）
-    if (ctx->callback)
-    {
-        ctx->callback(num, -1);
-    }
+    // 用户回调
+    i2c_error_callback(num, err_code);
 
-    // 重置上下文状态（可选）
+    // 重置
     memset(ctx, 0, sizeof(i2c_async_ctx_t));
 }
 
@@ -1249,3 +1236,30 @@ void I2C1_EV_IRQHandler(void) { I2C_EV_IRQHandler_Handler(I2C1, I2C_NUM_1); }
 void I2C1_ER_IRQHandler(void) { I2C_ER_IRQHandler_Handler(I2C1, I2C_NUM_1); }
 void I2C2_EV_IRQHandler(void) { I2C_EV_IRQHandler_Handler(I2C2, I2C_NUM_2); }
 void I2C2_ER_IRQHandler(void) { I2C_ER_IRQHandler_Handler(I2C2, I2C_NUM_2); }
+
+// 默认的弱函数实现
+
+/**
+ * @brief I2C设备通信完成回调函数
+ * @param i2c_num I2C设备编号(I2C1, I2C2等)
+ */
+__attribute__((weak)) void i2c_master_tx_cplt_callback(i2c_num_t i2c_num)
+{
+    // 默认空实现，用户可重写
+    (void)i2c_num;
+}
+/**
+ * @brief I2C设备通信完成回调函数
+ * @param i2c_num I2C设备编号(I2C1, I2C2等)
+ */
+__attribute__((weak)) void i2c_master_rx_cplt_callback(i2c_num_t i2c_num) { (void)i2c_num; }
+/**
+ * @brief I2C设备通信错误回调函数
+ * @param i2c_num I2C设备编号(I2C1, I2C2等)
+ * @param errcode 错误码
+ */
+__attribute__((weak)) void i2c_error_callback(i2c_num_t i2c_num, i2c_ErrCode_t errcode)
+{
+    (void)i2c_num;
+    (void)errcode;
+}

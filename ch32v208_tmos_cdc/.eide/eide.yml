@@ -10,7 +10,7 @@ srcDirs:
   - task
   - bsp
   - public
-  - sensor
+  - drivers
 virtualFolder:
   name: <virtual_root>
   files: []
@@ -40,8 +40,10 @@ targets:
         - sdk/USBLIB/USB-Driver/inc
         - bsp/UART
         - public
-        - sensor/sc7a20htr
-        - sensor/sht40
+        - drivers/sensor/sc7a20htr/inc
+        - drivers/sensor/sht40
+        - drivers/oled
+        - drivers/sensor/sc7a20htr/platform
       libList:
         - sdk/LIB
     excludeList:
@@ -69,19 +71,20 @@ targets:
             one-elf-section-per-data: true
             one-elf-section-per-function: true
             optimization: level-0
+            signed-char: true
             warnings: all-warnings
           global:
             abi: ilp32
             arch: rv32imac_xw
             code-model: medlow
-            misc-control: -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fdata-sections -fno-common -fsingle-precision-constant -Wunused -Wuninitialized
+            misc-control: -msmall-data-limit=8 -msave-restore -fmessage-length=0 -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -fsingle-precision-constant
             output-debug-info: enable
           linker:
             $outputTaskExcludes:
               - .bin
             $toolName: auto
-            LD_FLAGS: -nostartfiles -Xlinker -T "sdk/HAL/Link.ld" -Wl,-Map,CH32V208GBU.map --specs=nano.specs --specs=nosys.specs
-            LIB_FLAGS: -lwchble
+            LD_FLAGS: -nostartfiles -Xlinker -g -T "sdk/HAL/Link.ld" -Wl,-Map,CH32V208GBU.map --specs=nosys.specs --specs=nano.specs
+            LIB_FLAGS: -lwchble -lm
             output-format: elf
             remove-unused-input-sections: true
     uploadConfigMap:

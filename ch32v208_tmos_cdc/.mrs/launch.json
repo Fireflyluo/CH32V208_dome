@@ -5,7 +5,7 @@
 			"type": "mrs-debugger",
 			"request": "launch",
 			"name": "CH32V208GBU_Templete",
-			"cwd": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_tmos_cdc",
+			"cwd": "d:\\Desktop\\ch32\\0.ch32v208_dome\\ch32v208_tmos_cdc",
 			"openOCDCfg": {
 				"useLocalOpenOCD": true,
 				"executable": "e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/OpenOCD/OpenOCD/bin/openocd.exe",
@@ -39,8 +39,8 @@
 					"additionalCommands": []
 				},
 				"loadedFiles": {
-					"executableFile": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_tmos_cdc\\obj\\CH32V208GBU_Templete.elf",
-					"symbolFile": "d:\\Desktop\\ch32\\0.CH32V208_dome\\ch32v208_tmos_cdc\\obj\\CH32V208GBU_Templete.elf",
+					"executableFile": "d:\\Desktop\\ch32\\0.ch32v208_dome\\ch32v208_tmos_cdc\\obj\\CH32V208GBU_Templete.elf",
+					"symbolFile": "d:\\Desktop\\ch32\\0.ch32v208_dome\\ch32v208_tmos_cdc\\obj\\CH32V208GBU_Templete.elf",
 					"executableFileOffset": 0,
 					"symbolFileOffset": 0
 				},

@@ -28,13 +28,13 @@ extern "C"
 #define COMM_RECOVER_MODE MODULE_SELF_RESET
 
 #define I2C1_MODE I2C_MODE_IT
-#define I2C2_MODE I2C_MODE_IT
+#define I2C2_MODE I2C_MODE_POLLING
 
 #define I2C_MODE_POLLING 0
 #define I2C_MODE_IT 1
     // #define I2C_MODE_DMA       2 // DMA模式暂不支持
     /* ========================== 类型定义 ========================== */
-#define I2C_MAX_WRITE_LEN 16 
+#define I2C_MAX_WRITE_LEN 16
     // I2C编号枚举
     typedef enum
     {
@@ -85,7 +85,7 @@ extern "C"
     } i2c_config_t;
 
     // 异步传输完成回调函数类型
-    typedef void (*i2c_async_callback_t)(i2c_num_t i2c_num, int result);
+    //    typedef void (*i2c_async_callback_t)(i2c_num_t i2c_num, int result);
 
     // 异步传输结构
     typedef struct
@@ -96,8 +96,8 @@ extern "C"
         volatile uint16_t rx_len;
         volatile uint8_t dev_addr;
 
-        volatile bool is_reg_write;    // 标记是否处于寄存器地址发送阶段
-        i2c_async_callback_t callback; // 用户回调
+        volatile bool is_reg_write; // 标记是否处于寄存器地址发送阶段
+                                    //        i2c_async_callback_t callback; // 用户回调
     } i2c_async_ctx_t;
 
 // 默认配置
@@ -127,21 +127,17 @@ extern "C"
     int i2c_read_byte(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t *data);
 
     // 非阻塞异步接口（回调通知）
-    int i2c_write_async(i2c_num_t i2c_num, uint8_t dev_addr, const uint8_t *data, uint16_t len,
-                        i2c_async_callback_t callback);
+    int i2c_write_async(i2c_num_t i2c_num, uint8_t dev_addr, const uint8_t *data, uint16_t len );
 
-    int i2c_read_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t *data, uint16_t len, i2c_async_callback_t callback);
+    int i2c_read_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t *data, uint16_t len);
 
-    int i2c_write_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, const uint8_t *data, uint16_t len,
-                                 i2c_async_callback_t callback);
+    int i2c_write_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, const uint8_t *data, uint16_t len);
 
-    int i2c_read_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t *data, uint16_t len,
-                                i2c_async_callback_t callback);
+    int i2c_read_register_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t *data, uint16_t len);
 
-    int i2c_write_byte_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t data,
-                             i2c_async_callback_t callback);
+    int i2c_write_byte_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, uint8_t data );
 
-    int i2c_read_byte_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg, i2c_async_callback_t callback);
+    int i2c_read_byte_async(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg);
 
     // 状态检查函数
     bool i2c_is_busy(i2c_num_t i2c_num);

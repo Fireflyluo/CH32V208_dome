@@ -29,7 +29,8 @@ uint8_t SHT40_Soft_Reset(void)
     uint8_t cmd = SHT40_SOFT_RESET;
 
     // 发送复位命令
-    uint8_t ret = i2c_write_async(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1, NULL);
+    // uint8_t ret = i2c_write_async(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    uint8_t ret = i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
     if (ret != 0)
     {
         return 1; // 发送失败
@@ -65,7 +66,8 @@ uint8_t SHT40_Read_Temperature_Humidity_Ex(uint8_t cmd, float *temperature, floa
     uint8_t ret        = 0;
 
     // 1. 发送测量命令
-    ret = i2c_write_async(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1, NULL);
+    // ret = i2c_write_async(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    ret = i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
     if (ret != 0)
     {
         return 1; // 发送命令失败
@@ -90,7 +92,8 @@ uint8_t SHT40_Read_Temperature_Humidity_Ex(uint8_t cmd, float *temperature, floa
     }
 
     // 3. 读取6字节数据
-    ret = i2c_read_async(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6, NULL);
+    // ret = i2c_read_async(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6);
+    ret = i2c_read(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6);
     if (ret != 0)
     {
         return 2; // 读取数据失败
@@ -126,7 +129,8 @@ uint32_t SHT40_Read_Serial_Number(void)
     uint8_t rx_data[6] = {0};
     uint8_t ret        = 0;
     // 1. 发送读取序列号命令
-    ret = i2c_write_async(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1, NULL);
+    // ret = i2c_write_async(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    ret = i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
     if (ret != 0)
     {
         return 0; // 发送命令失败
@@ -135,7 +139,8 @@ uint32_t SHT40_Read_Serial_Number(void)
     SHT40_Delay(1); // 短暂延时
 
     // 2. 读取序列号数据
-    ret = i2c_read_async(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6, NULL);
+    // ret = i2c_read_async(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6);
+    ret = i2c_read(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6);
     if (ret != 0)
     {
         return 0; // 读取数据失败
@@ -167,7 +172,8 @@ uint8_t SHT40_Heater(uint8_t heater_cmd)
     }
 
     // 发送加热命令
-    uint8_t ret = i2c_write_async(I2C_NUM_1, SHT40_I2C_ADDR, &heater_cmd, 1, NULL);
+    // uint8_t ret = i2c_write_async(I2C_NUM_1, SHT40_I2C_ADDR, &heater_cmd, 1);
+    uint8_t ret = i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &heater_cmd, 1);
     if (ret != 0)
     {
         return 2; // 发送失败
