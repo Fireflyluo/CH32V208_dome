@@ -1,7 +1,7 @@
 {
     files = {
-        [[D:\Desktop\ch32\0.CH32V208_dome\ch32v208_templete\xmake_cmake\xmake.lua]],
-        [[D:\Desktop\ch32\0.CH32V208_dome\ch32v208_templete\xmake_cmake\.xmake\windows\x64\xmake.conf]]
+        [[D:\Desktop\ch32\0.ch32v208_dome\ch32v208_templete\xmake_cmake\xmake.lua]],
+        [[D:\Desktop\ch32\0.ch32v208_dome\ch32v208_templete\xmake_cmake\.xmake\windows\x64\xmake.conf]]
     },
     values = {
         [[APP\ch32v20x_it.c]],

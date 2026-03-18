@@ -17,6 +17,21 @@
         "xmake ",
         [[xmake lua E:\APP\xmake\modules\private\utils\statistics.lua]],
         [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\explorer.lua]],
-        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\config.lua]]
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\config.lua]],
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\explorer.lua]],
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\config.lua]],
+        "xmake check",
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\explorer.lua]],
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\config.lua]],
+        "xmake check",
+        "xmake f -p windows -a x64 -m debug",
+        "xmake ",
+        [[xmake lua E:\APP\xmake\modules\private\utils\statistics.lua]],
+        [[xmake lua E:\APP\xmake\actions\build\cleaner.lua]],
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\explorer.lua]],
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\config.lua]],
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\explorer.lua]],
+        [[xmake l c:\Users\21614\.vscode\extensions\tboox.xmake-vscode-2.5.4\assets\config.lua]],
+        "xmake check"
     }
 }

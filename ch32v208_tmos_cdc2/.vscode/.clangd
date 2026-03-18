@@ -1,0 +1,22 @@
+CompileFlags:
+  CompilationDatabase: ..
+  Add:
+    [
+      --target=riscv32-unknown-elf,
+      -isystem,
+      e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/lib/gcc/riscv-wch-elf/12.1.0/include,
+      -isystem,
+      e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/lib/gcc/riscv-wch-elf/12.1.0/include-fixed,
+      -isystem,
+      e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/riscv-wch-elf/include,
+    ]
+  Remove:
+    [
+      -mabi=*,
+      -march=*,
+      -mcpu=*,
+      -mtune=*,
+      -mbranch-cost=*,
+      -msave-restore,
+      -G,
+    ]

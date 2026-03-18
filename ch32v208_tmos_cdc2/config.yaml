@@ -1,0 +1,28 @@
+serial:
+  # 串口配置
+  port: COM8  # 可选，如果不指定则自动查找。设置为LOOP_BACK时启用回环模式，发送什么就接收什么
+  baud_rate: 115200  # 可选，默认 115200
+  timeout: 1.0  # 可选，默认 1.0
+  read_timeout: 1.0  # 读取超时时间，1秒内不应答则报错
+  # response_start_string: CMD  # 注释掉，单片机主动发送数据没有固定起始字符串
+
+commands:
+  # 读取串口数据命令（被动接收单片机发送的数据）
+  read_data:
+    command: ""  # 空命令，只读取不发送
+    need_parse: false  # 不需要解析响应内容
+    prompts:
+      - "读取串口数据"
+      - "获取单片机数据"
+      - "看看收到了什么"
+
+  # PWM控制命令
+  set_pwm:
+    command: "CMD_PWM {frequency}"  # 实际发送的命令格式，server会自动添加\r\n
+    need_parse: false  # 不需要解析响应内容
+    prompts:
+      - "把PWM调到最大"
+      - "把PWM调到最小"
+      - "请将PWM设置为{value}"
+      - "关闭PWM"
+      - "把PWM调到一半"

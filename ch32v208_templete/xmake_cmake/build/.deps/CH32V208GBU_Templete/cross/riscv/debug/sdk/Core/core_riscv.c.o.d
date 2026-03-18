@@ -1,10 +1,10 @@
 {
+    depfiles = "core_riscv.o: sdk\\Core\\core_riscv.c\
+",
     files = {
         [[sdk\Core\core_riscv.c]]
     },
     depfiles_format = "gcc",
-    depfiles = "core_riscv.o: sdk\\Core\\core_riscv.c\
-",
     values = {
         "E:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/bin/riscv-wch-elf-gcc",
         {
@@ -36,7 +36,7 @@
             "-g",
             "-std=gnu17",
             "-O0",
-            [[-fmacro-prefix-map=D:\Desktop\ch32\0.CH32V208_dome\ch32v208_templete\xmake_cmake=..]]
+            [[-fmacro-prefix-map=D:\Desktop\ch32\0.ch32v208_dome\ch32v208_templete\xmake_cmake=..]]
         }
     }
 }

@@ -157,7 +157,9 @@
 							"${project}/public",
 							"${project}/drivers/sensor/sht40",
 							"${project}/drivers/oled",
-							"${project}/drivers/sensor/sc7a20htr"
+							"${project}/drivers/sensor/sc7a20htr",
+							"${project}/drivers/sensor/sc7a20htr/inc",
+							"${project}/drivers/sensor/sc7a20htr/platform"
 						],
 						"include_system_paths": [],
 						"include_files": []
