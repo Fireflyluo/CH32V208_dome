@@ -15,9 +15,10 @@
 #include "usb_desc.h"
 #include "usb_pwr.h"
 #include "hw_config.h"
-#include "UART.h"
 
 uint8_t Request = 0;
+/* CDC line coding: 115200, 1 stop bit, no parity, 8 data bits */
+static uint8_t g_cdc_line_coding[7] = {0x00, 0xC2, 0x01, 0x00, 0x00, 0x00, 0x08};
 
 extern uint8_t USBD_Endp3_Busy;
 
@@ -145,14 +146,7 @@ void USBD_ClearFeature(void)
  */
 void USBD_Status_In(void)
 {
-    uint32_t Request_No = pInformation->USBbRequest;
-    if (Type_Recipient == (CLASS_REQUEST | INTERFACE_RECIPIENT))
-    {
-        if (Request_No == CDC_SET_LINE_CODING)
-        {
-            UART2_USB_Init();
-        }
-    }
+    /* Line coding is stored in g_cdc_line_coding; no UART side-effect needed. */
 }
 
 /*******************************************************************************
@@ -336,7 +330,7 @@ uint8_t *USB_CDC_GetLineCoding( uint16_t Length )
         pInformation->Ctrl_Info.Usb_wLength = 7;
         return( NULL );
     }
-    return (uint8_t *)&Uart.Com_Cfg[ 0 ];
+    return (uint8_t *)&g_cdc_line_coding[0];
 }
 
 /*********************************************************************
@@ -355,7 +349,7 @@ uint8_t *USB_CDC_SetLineCoding( uint16_t Length )
         pInformation->Ctrl_Info.Usb_wLength = 7;
         return( NULL );
     }
-    return(uint8_t *)&Uart.Com_Cfg[ 0 ];
+    return (uint8_t *)&g_cdc_line_coding[0];
 }
 
 

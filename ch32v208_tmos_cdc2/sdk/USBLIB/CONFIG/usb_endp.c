@@ -9,7 +9,6 @@
  * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
-#include "UART.h"
 #include "hw_config.h"
 #include "usb_cdc.h"
 #include "usb_desc.h"
@@ -21,11 +20,12 @@
 
 uint8_t USBD_Endp3_Busy;
 uint16_t USB_Rx_Cnt = 0;
-extern uint8_t USB_Up_IngFlag;
+static uint8_t ep2_rx_buf[DEF_USBD_MAX_PACK_SIZE];
+
 /*********************************************************************
- * @fn      EP2_IN_Callback
+ * @fn      EP1_IN_Callback
  *
- * @brief  Endpoint 1 IN.
+ * @brief   Endpoint 1 IN.
  *
  * @return  none
  */
@@ -36,34 +36,27 @@ void EP1_IN_Callback(void)
 /*********************************************************************
  * @fn      EP2_OUT_Callback
  *
- * @brief  Endpoint 2 OUT.
+ * @brief   Endpoint 2 OUT.
  *
  * @return  none
  */
 void EP2_OUT_Callback(void)
 {
-    uint32_t len;
-    len = GetEPRxCount(EP2_OUT & 0x7F);
-    PMAToUserBufferCopy(&UART2_Tx_Buf[(Uart.Tx_LoadNum * DEF_USB_FS_PACK_LEN)], GetEPRxAddr(EP2_OUT & 0x7F), len);
-    // 将接收到的数据存储到CDC缓冲区
-    CDC_StoreReceivedData(&UART2_Tx_Buf[(Uart.Tx_LoadNum * DEF_USB_FS_PACK_LEN)], len);
-
-    Uart.Tx_PackLen[Uart.Tx_LoadNum] = len;
-    Uart.Tx_LoadNum++;
-    if (Uart.Tx_LoadNum >= DEF_UARTx_TX_BUF_NUM_MAX)
+    uint16_t len = GetEPRxCount(EP2_OUT & 0x7F);
+    if (len > DEF_USBD_MAX_PACK_SIZE)
     {
-        Uart.Tx_LoadNum = 0x00;
+        len = DEF_USBD_MAX_PACK_SIZE;
     }
 
-
-
+    PMAToUserBufferCopy(ep2_rx_buf, GetEPRxAddr(EP2_OUT & 0x7F), len);
+    CDC_StoreReceivedData(ep2_rx_buf, len);
     SetEPRxValid(ENDP2);
-    
 }
+
 /*********************************************************************
  * @fn      EP3_IN_Callback
  *
- * @brief  Endpoint 3 IN.
+ * @brief   Endpoint 3 IN.
  *
  * @return  none
  */
@@ -75,30 +68,29 @@ void EP3_IN_Callback(void)
 /*********************************************************************
  * @fn      USBD_ENDPx_DataUp
  *
- * @brief  USBD ENDPx DataUp Function
+ * @brief   USBD ENDPx DataUp Function
  *
  * @param   endp - endpoint num.
- *          *pbuf - A pointer points to data.
+ *          pbuf - A pointer points to data.
  *          len - data length to transmit.
  *
  * @return  data up status.
  */
 uint8_t USBD_ENDPx_DataUp(uint8_t endp, uint8_t *pbuf, uint16_t len)
 {
-    if (endp == ENDP3)
-    {
-        if (USBD_Endp3_Busy)
-        {
-
-            return USB_ERROR;
-        }
-        USB_SIL_Write(EP3_IN, pbuf, len);
-        USBD_Endp3_Busy = 1;
-        SetEPTxStatus(ENDP3, EP_TX_VALID);
-    }
-    else
+    if (endp != ENDP3)
     {
         return USB_ERROR;
     }
+
+    if (USBD_Endp3_Busy)
+    {
+        return USB_ERROR;
+    }
+
+    USB_SIL_Write(EP3_IN, pbuf, len);
+    USBD_Endp3_Busy = 1;
+    SetEPTxStatus(ENDP3, EP_TX_VALID);
     return USB_SUCCESS;
 }
+

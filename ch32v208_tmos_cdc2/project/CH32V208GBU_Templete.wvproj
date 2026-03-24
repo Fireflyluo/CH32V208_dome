@@ -85,7 +85,8 @@
 					"${project}/SDK/Ld",
 					"${project}/sdk/Ld",
 					"${project}/sdk/Startup/startup_ch32v20x_D6.S",
-					"${project}/sdk/Startup/startup_ch32v20x_D8.S"
+					"${project}/sdk/Startup/startup_ch32v20x_D8.S",
+					"${project}/bsp/UART"
 				],
 				"optimization": {
 					"level": "none",
@@ -179,7 +180,6 @@
 							"${project}/ble_profile/include",
 							"${project}/app/tasks",
 							"${project}/bsp/include",
-							"${project}/bsp/UART",
 							"${project}/sdk/USBLIB/CONFIG",
 							"${project}/sdk/USBLIB/USB-Driver/inc",
 							"${project}/utils",

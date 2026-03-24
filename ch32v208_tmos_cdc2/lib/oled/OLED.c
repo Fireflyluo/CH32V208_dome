@@ -272,9 +272,6 @@ void OLED_Init(void)
 {
     //	OLED_GPIO_Init();			//先调用底层的端口初始化
 
-    /*写入一系列的命令，对OLED进行初始化配置*/
-    // I2C_ITConfig(I2C1, I2C_IT_BUF | I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-    // I2C_ITConfig(I2C2, I2C_IT_BUF | I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
     OLED_WriteCommand(0xAE); // 设置显示开启/关闭，0xAE关闭，0xAF开启
 
@@ -314,8 +311,7 @@ void OLED_Init(void)
 
     OLED_WriteCommand(0xAF); // 开启显示
 
-    // I2C_ITConfig(I2C1, I2C_IT_BUF | I2C_IT_EVT | I2C_IT_ERR, ENABLE);
-    // I2C_ITConfig(I2C2, I2C_IT_BUF | I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+ 
     OLED_Clear();  // 清空显存数组
     OLED_Update(); // 更新显示，清屏，防止初始化后未显示内容时花屏
 }

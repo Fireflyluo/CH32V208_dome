@@ -2,6 +2,43 @@
 #include "board.h"
 #include "debug.h" // 用于调试输出
 #include "drv_i2c.h"
+
+static uint8_t sht40_wait_i2c_idle(uint32_t timeout_ms)
+{
+    uint32_t start = HAL_GetTick();
+    uint32_t guard = 0;
+    uint32_t err;
+
+    while (1)
+    {
+        if (bsp_i2c_get_state(I2C_NUM_1) == I2C_STATE_IDLE)
+        {
+            err = bsp_i2c_get_error(I2C_NUM_1);
+            return (err == I2C_OK) ? 0 : 1;
+        }
+
+        err = bsp_i2c_get_error(I2C_NUM_1);
+        if (err != I2C_OK)
+        {
+            return 1;
+        }
+
+        if ((HAL_GetTick() - start) >= timeout_ms)
+        {
+            bsp_i2c_recover(I2C_NUM_1);
+            return 1;
+        }
+
+        guard++;
+        if (guard > 2000000U)
+        {
+            bsp_i2c_recover(I2C_NUM_1);
+            return 1;
+        }
+    }
+}
+
+
 /*************************************************************************************************
  *	函 数 名: SHT40_Init
  *	入口参数: I2Cx - I2C外设指针
@@ -11,6 +48,7 @@
 void SHT40_Init(void)
 {
     uint32_t serial = 0;
+
     // 执行软件复位
     SHT40_Soft_Reset();
     SHT40_Delay(10); // 复位后需要等待
@@ -30,10 +68,14 @@ uint8_t SHT40_Soft_Reset(void)
 
     // 发送复位命令
     // 使用新的 HAL 风格 API - 轮询模式
-    uint8_t ret = bsp_i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    uint8_t ret = (uint8_t)bsp_i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    if (ret == 0)
+    {
+        ret = sht40_wait_i2c_idle(20U);
+    }
     if (ret != 0)
     {
-        return 1; // 发送失败
+        return 1;
     }
 
     SHT40_Delay(2); // 等待复位完成
@@ -65,9 +107,14 @@ uint8_t SHT40_Read_Temperature_Humidity_Ex(uint8_t cmd, float *temperature, floa
     uint8_t rx_data[6] = {0};
     uint8_t ret        = 0;
 
+
     // 1. 发送测量命令
     // 使用新的 HAL 风格 API - 轮询模式
-    ret = bsp_i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    ret = (uint8_t)bsp_i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    if (ret == 0)
+    {
+        ret = sht40_wait_i2c_idle(20U);
+    }
     if (ret != 0)
     {
         return 1; // 发送命令失败
@@ -93,7 +140,11 @@ uint8_t SHT40_Read_Temperature_Humidity_Ex(uint8_t cmd, float *temperature, floa
 
     // 3. 读取6字节数据
     // 使用新的 HAL 风格 API - 轮询模式
-    ret = bsp_i2c_read(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6);
+    ret = (uint8_t)bsp_i2c_read(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6);
+    if (ret == 0)
+    {
+        ret = sht40_wait_i2c_idle(20U);
+    }
     if (ret != 0)
     {
         return 2; // 读取数据失败
@@ -128,9 +179,15 @@ uint32_t SHT40_Read_Serial_Number(void)
     uint8_t cmd        = SHT40_READ_SERIAL_NUMBER;
     uint8_t rx_data[6] = {0};
     uint8_t ret        = 0;
+
+
     // 1. 发送读取序列号命令
     // 使用新的 HAL 风格 API - 轮询模式
-    ret = bsp_i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    ret = (uint8_t)bsp_i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &cmd, 1);
+    if (ret == 0)
+    {
+        ret = sht40_wait_i2c_idle(20U);
+    }
     if (ret != 0)
     {
         return 0; // 发送命令失败
@@ -140,7 +197,11 @@ uint32_t SHT40_Read_Serial_Number(void)
 
     // 2. 读取序列号数据
     // 使用新的 HAL 风格 API - 轮询模式
-    ret = bsp_i2c_read(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6);
+    ret = (uint8_t)bsp_i2c_read(I2C_NUM_1, SHT40_I2C_ADDR, rx_data, 6);
+    if (ret == 0)
+    {
+        ret = sht40_wait_i2c_idle(20U);
+    }
     if (ret != 0)
     {
         return 0; // 读取数据失败
@@ -171,9 +232,15 @@ uint8_t SHT40_Heater(uint8_t heater_cmd)
         return 1; // 无效的加热命令
     }
 
+  
+
     // 发送加热命令
     // 使用新的 HAL 风格 API - 轮询模式
-    uint8_t ret = bsp_i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &heater_cmd, 1);
+    uint8_t ret = (uint8_t)bsp_i2c_write(I2C_NUM_1, SHT40_I2C_ADDR, &heater_cmd, 1);
+    if (ret == 0)
+    {
+        ret = sht40_wait_i2c_idle(20U);
+    }
     if (ret != 0)
     {
         return 2; // 发送失败
@@ -210,6 +277,6 @@ uint8_t SHT40_Heater(uint8_t heater_cmd)
 void SHT40_Delay(uint32_t ms)
 {
     // 调用系统延时函数
-    Delay_Ms(ms);
-    // HAL_Delay(ms);
+//    Delay_Ms(ms);
+     HAL_Delay(ms);
 }

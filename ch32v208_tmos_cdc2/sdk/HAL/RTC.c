@@ -54,7 +54,6 @@ void RTC_SetTignTime(uint32_t time)
  */
 void HAL_TimeInit(void)
 {
-    uint16_t temp = 0;
     uint8_t state = 0;
     bleClockConfig_t conf = {0};
 
@@ -65,6 +64,7 @@ void HAL_TimeInit(void)
     RCC_LSEConfig(RCC_LSE_OFF);
     RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
 #else
+    uint16_t temp = 0;
     RCC_LSEConfig(RCC_LSE_ON);
     /* Check the specified RCC logo position settings or not,
      * wait for the low-speed crystal oscillator to be ready */

@@ -1,5 +1,6 @@
 #include "drv_gpio.h"
 #include "tmos_task.h"
+#include "usb_cdc.h"
 
 #define MSG_EVENT 0x10
 #define MSG_TEST_EVENT 0x11
@@ -65,6 +66,7 @@ static void demo_task_data_process_TMOSMsg(tmos_var_msg_t *pMsg)
 // task的event处理回调函数,需要在注册task时候,传进去
 static uint16_t led_task_process_event(uint8_t task_id, uint16_t events)
 {
+    static const uint8_t usb_heartbeat[] = "CDC heartbeat: led task tick\r\n";
     uint8_t *msgPtr;
     tmos_event_hdr_t *test_message;
     // 处理系统消息事件,该事件由tmos_msg_send发送消息时产生
@@ -92,6 +94,7 @@ static uint16_t led_task_process_event(uint8_t task_id, uint16_t events)
     {
         gpio_write(LED_PIN, GPIO_PIN_RESET);
         PRINT("关闭 led,1000ms 后开启 \r\n");
+        CDC_SendData((uint8_t *)usb_heartbeat, sizeof(usb_heartbeat) - 1);
         tmos_start_task(led_task_id, DEMO_TASK_TMOS_EVT_TEST_1, 1600);
         tmos_set_event(led_task_id, DEMO_TASK_TMOS_EVT_TEST_3);
         return (events ^ DEMO_TASK_TMOS_EVT_TEST_2);

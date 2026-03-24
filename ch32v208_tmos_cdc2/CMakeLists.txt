@@ -110,6 +110,7 @@ set(SRC_FILES
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/Debug/debug.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/Core/core_riscv.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/utils/ringbuffer.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/utils/sw_timer.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40/sht40_hal.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr/platform/platform.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr/example/async_example.c"
@@ -118,10 +119,10 @@ set(SRC_FILES
 "${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr/sc7a20_core_async.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/lib/oled/OLED.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/lib/oled/OLED_Data.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/bsp/UART/UART.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/bsp/board.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/bsp/drv_gpio.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/bsp/drv_i2c.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/bsp/drv_tim.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/bsp/usb_cdc.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/ble_profile/devinfoservice.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/ble_profile/gattprofile.c"
@@ -130,7 +131,7 @@ set(SRC_FILES
 "${CMAKE_CURRENT_SOURCE_DIR}/app/peripheral.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/app/system_ch32v20x.c"
 )
-set(CMAKE_C_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Debug\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Core\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Peripheral/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/LIB\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/ble_profile/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/bsp/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/bsp/UART\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/CONFIG\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/USB-Driver/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/utils\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/oled\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr/platform\" -DCH32V20x_D8W -std=gnu17")
+set(CMAKE_C_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Debug\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Core\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Peripheral/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/LIB\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/ble_profile/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/bsp/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/CONFIG\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/USB-Driver/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/utils\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/oled\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20htr/platform\" -DCH32V20x_D8W -std=gnu17")
 set(CMAKE_CXX_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -std=gnu++11 -fabi-version=0")
 set(CMAKE_ASM_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Startup\" -x assembler-with-cpp")
 

@@ -16,6 +16,7 @@
 #include "ch32v20x_it.h"
 #include "CONFIG.h"
 #include "drv_i2c.h"
+#include "drv_tim.h"
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -72,13 +73,7 @@ void BB_IRQHandler(void)
  */
 void TIM2_IRQHandler(void)
 {
-
-    /* uart timeout counts */
-    // Uart.Rx_TimeOut++;
-    // Uart.USB_Up_TimeOut++;
-
-    /* clear status */
-    TIM2->INTFR = (uint16_t)~TIM_IT_Update;
+    drv_tim_irq_handler();
 }
 
 /*********************************************************************

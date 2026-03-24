@@ -54,7 +54,7 @@
 - **[drv_gpio.c/h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/drv_gpio.c)**: GPIO 驱动接口
 - **[drv_i2c.c/h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/drv_i2c.c)**: I2C 通信驱动
 - **[usb_cdc.c/h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/usb_cdc.c)**: USB CDC 通信接口
-- **[UART.c/h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/UART/UART.c)**: 串口通信功能
+- **UART（已废弃）**: 历史串口实现，当前工程以 USB CDC 为主
 
 #### 2. 传感器驱动
 - **SC7A20HTR**: 三轴加速度传感器
@@ -74,7 +74,7 @@
 ### 已实现功能
 - ✅ **LED控制**: 通过GPIO实现LED指示灯控制
 - ✅ **I2C通信**: 实现I2C总线通信及设备扫描功能
-- ✅ **串口通信**: 支持UART通信
+- ✅ **USB CDC 串口通信**: 支持虚拟串口通信
 - ✅ **USB CDC**: 虚拟串口功能
 - ✅ **传感器集成**: 支持加速度计和温湿度传感器
 
@@ -97,6 +97,12 @@
 ### 项目构建
 项目采用模块化设计，支持使用 EIDE 以及 MR2 进行编译和调试。
 
+## 编码规范
+
+- 工程文本文件统一使用 UTF-8 编码。
+- 在 VS Code 中已通过 `.editorconfig` 和 `.vscode/settings.json` 固化 UTF-8 配置。
+- 若使用 PowerShell 查看文件内容，建议显式使用 `Get-Content -Encoding utf8`，避免因终端默认编码导致“看起来像乱码”的显示问题。
+
 ## 系统初始化流程
 
 1. **系统时钟配置**: 通过 [system_ch32v20x.c](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/app/system_ch32v20x.c) 进行系统时钟初始化
@@ -115,6 +121,13 @@
 ### 软件配置
 - 修改 [board.c](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/board.c) 文件进行板级配置
 - 通过 [config.h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/sdk/HAL/include/config.h) 进行系统参数配置
+
+### 串口调试
+- 单次读取（推荐快速验证）：
+  `python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8 --once`
+- 持续读取：
+  `python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8`
+- 如设备输出使用非 UTF-8 编码，可切换 `--encoding`（例如 `gbk`）。
 
 ## 技术支持
 
