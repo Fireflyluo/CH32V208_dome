@@ -260,7 +260,7 @@ DRV_GPIO_PinState gpio_read(gpio_pin_t pin)
     index = gpio_get_pin(pin);
     if (index == NULL)
     {
-        return Bit_RESET;
+        return GPIO_PIN_RESET;
     }
 
     DRV_GPIO_PinState state = GPIO_ReadInputDataBit(index->gpio, index->pin_bit);
