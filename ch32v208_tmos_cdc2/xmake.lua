@@ -86,8 +86,6 @@ target("CH32V208GBU_Templete")
         "lib/sht40/sht40_hal.c",
         "lib/sc7a20htr/platform/platform.c",
         "lib/sc7a20htr/platform/sc7a20_ch32_adapter.c",
-        "lib/sc7a20htr/example/async_example.c",
-        "lib/sc7a20htr/example/simple_loop_example.c",
         "lib/sc7a20htr/sc7a20_core.c",
         "lib/sc7a20htr/sc7a20_core_async.c",
         "lib/oled/OLED.c",

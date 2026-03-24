@@ -6,6 +6,14 @@
 
 static sc7a20_dev_t g_accel_dev;
 static uint8_t g_accel_i2c_addr = SC7A20_I2C_ADDR_H;
+#if SC7A20_ASYNC_SUPPORT
+static volatile bool g_accel_async_busy = false;
+static volatile bool g_accel_async_ready = false;
+static volatile sc7a20_status_t g_accel_async_status = SC7A20_OK;
+static sc7a20_accel_data_t g_accel_async_data;
+static void (*g_sc7a20_tx_done_cb)(void *user_data, sc7a20_status_t status) = NULL;
+static void (*g_sc7a20_rx_done_cb)(void *user_data, sc7a20_status_t status) = NULL;
+#endif
 
 static int accel_i2c_wait_idle(i2c_num_t i2c_num, uint32_t timeout_ms)
 {
@@ -68,10 +76,125 @@ static sc7a20_status_t accel_i2c_read_reg(uint8_t reg, uint8_t *data, uint16_t l
     return (ret == I2C_OK) ? SC7A20_OK : SC7A20_COMM_ERROR;
 }
 
+#if SC7A20_ASYNC_SUPPORT
+void accel_adapter_i2c_tx_cplt_callback(i2c_num_t i2c_num)
+{
+    void (*cb)(void *user_data, sc7a20_status_t status);
+
+    (void)i2c_num;
+    cb = g_sc7a20_tx_done_cb;
+    g_sc7a20_tx_done_cb = NULL;
+    if (cb != NULL)
+    {
+        cb(NULL, SC7A20_OK);
+    }
+}
+
+void accel_adapter_i2c_rx_cplt_callback(i2c_num_t i2c_num)
+{
+    void (*cb)(void *user_data, sc7a20_status_t status);
+
+    (void)i2c_num;
+    cb = g_sc7a20_rx_done_cb;
+    g_sc7a20_rx_done_cb = NULL;
+    if (cb != NULL)
+    {
+        cb(NULL, SC7A20_OK);
+    }
+}
+
+void accel_adapter_i2c_error_callback(i2c_num_t i2c_num, uint32_t error_code)
+{
+    void (*tx_cb)(void *user_data, sc7a20_status_t status);
+    void (*rx_cb)(void *user_data, sc7a20_status_t status);
+
+    (void)i2c_num;
+    (void)error_code;
+
+    tx_cb = g_sc7a20_tx_done_cb;
+    rx_cb = g_sc7a20_rx_done_cb;
+    g_sc7a20_tx_done_cb = NULL;
+    g_sc7a20_rx_done_cb = NULL;
+
+    if (tx_cb != NULL)
+    {
+        tx_cb(NULL, SC7A20_COMM_ERROR);
+    }
+    if (rx_cb != NULL)
+    {
+        rx_cb(NULL, SC7A20_COMM_ERROR);
+    }
+}
+
+static sc7a20_status_t accel_i2c_write_reg_async(uint8_t reg,
+                                                  const uint8_t *data,
+                                                  uint16_t len,
+                                                  void (*callback)(void *user_data, sc7a20_status_t status))
+{
+    int ret;
+
+    if (callback == NULL)
+    {
+        return SC7A20_INVALID_PARAM;
+    }
+
+    g_sc7a20_tx_done_cb = callback;
+    ret = bsp_i2c_write_register_it(I2C_NUM_1, g_accel_i2c_addr, reg, data, len);
+    if (ret != I2C_OK)
+    {
+        g_sc7a20_tx_done_cb = NULL;
+        return SC7A20_COMM_ERROR;
+    }
+
+    return SC7A20_OK;
+}
+
+static sc7a20_status_t accel_i2c_read_reg_async(uint8_t reg,
+                                                 uint8_t *data,
+                                                 uint16_t len,
+                                                 void (*callback)(void *user_data, sc7a20_status_t status))
+{
+    int ret;
+
+    if (callback == NULL)
+    {
+        return SC7A20_INVALID_PARAM;
+    }
+
+    g_sc7a20_rx_done_cb = callback;
+    ret = bsp_i2c_read_register_it(I2C_NUM_1, g_accel_i2c_addr, reg, data, len);
+    if (ret != I2C_OK)
+    {
+        g_sc7a20_rx_done_cb = NULL;
+        return SC7A20_COMM_ERROR;
+    }
+
+    return SC7A20_OK;
+}
+
+static bool accel_i2c_is_busy(void)
+{
+    return bsp_i2c_is_busy(I2C_NUM_1);
+}
+
+static void accel_read_done_callback(sc7a20_handle_t handle, sc7a20_status_t status)
+{
+    (void)handle;
+    g_accel_async_status = status;
+    g_accel_async_busy = false;
+    g_accel_async_ready = (status == SC7A20_OK);
+}
+#endif
+
 static sc7a20_ops_t g_accel_ops = {
     .write = accel_i2c_write_reg,
     .read = accel_i2c_read_reg,
     .delay_ms = Delay_Ms,
+#if SC7A20_ASYNC_SUPPORT
+    .write_async = accel_i2c_write_reg_async,
+    .read_async = accel_i2c_read_reg_async,
+    .is_busy = accel_i2c_is_busy,
+#endif
     .user_data = NULL,
 };
 
@@ -89,6 +212,11 @@ int accel_init(void)
     sc7a20_status_t status;
 
     g_accel_i2c_addr = config.i2c_addr;
+#if SC7A20_ASYNC_SUPPORT
+    g_accel_async_busy = false;
+    g_accel_async_ready = false;
+    g_accel_async_status = SC7A20_OK;
+#endif
     status = sc7a20_init(&g_accel_dev, &g_accel_ops, &config);
     if (status != SC7A20_OK)
     {
@@ -109,13 +237,44 @@ int accel_init(void)
 
 int accel_read_data(sc7a20_accel_data_t *accel_data)
 {
+#if SC7A20_ASYNC_SUPPORT
     sc7a20_status_t status;
+#else
+    sc7a20_status_t status;
+#endif
 
     if (accel_data == NULL)
     {
         return -1;
     }
 
+#if SC7A20_ASYNC_SUPPORT
+    if (!g_accel_async_busy)
+    {
+        g_accel_async_busy = true;
+        status = sc7a20_read_acceleration_async(&g_accel_dev, &g_accel_async_data, accel_read_done_callback);
+        if (status != SC7A20_OK)
+        {
+            g_accel_async_busy = false;
+            g_accel_async_status = status;
+            return -2;
+        }
+    }
+
+    if (g_accel_async_ready)
+    {
+        *accel_data = g_accel_async_data;
+        g_accel_async_ready = false;
+        return 0;
+    }
+
+    if (g_accel_async_status != SC7A20_OK)
+    {
+        return -2;
+    }
+
+    return 1;
+#else
     status = sc7a20_read_acceleration(&g_accel_dev, accel_data);
     if (status != SC7A20_OK)
     {
@@ -123,6 +282,7 @@ int accel_read_data(sc7a20_accel_data_t *accel_data)
     }
 
     return 0;
+#endif
 }
 
 void read_acceleration_data(void)

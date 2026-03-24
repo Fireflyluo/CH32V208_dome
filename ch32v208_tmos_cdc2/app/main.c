@@ -108,16 +108,27 @@ __attribute__((section(".highcode"))) __attribute__((noinline)) void Main_Circul
             accel_ret = accel_read_data(&accel_data);
             sht_ret = SHT40_Read_Temperature_Humidity(&temperature, &humidity);
 
-            if (accel_ret == 0 && sht_ret == 0U)
+            if ((accel_ret == 0 || accel_ret == 1) && sht_ret == 0U)
             {
-                snprintf(sensor_line,
-                         sizeof(sensor_line),
-                         "SC7A20[g]: X=%.3f Y=%.3f Z=%.3f | SHT40: T=%.2fC RH=%.2f%%\r\n",
-                         accel_data.x_g,
-                         accel_data.y_g,
-                         accel_data.z_g,
-                         temperature,
-                         humidity);
+                if (accel_ret == 0)
+                {
+                    snprintf(sensor_line,
+                             sizeof(sensor_line),
+                             "SC7A20[g]: X=%.3f Y=%.3f Z=%.3f | SHT40: T=%.2fC RH=%.2f%%\r\n",
+                             accel_data.x_g,
+                             accel_data.y_g,
+                             accel_data.z_g,
+                             temperature,
+                             humidity);
+                }
+                else
+                {
+                    snprintf(sensor_line,
+                             sizeof(sensor_line),
+                             "SC7A20: pending | SHT40: T=%.2fC RH=%.2f%%\r\n",
+                             temperature,
+                             humidity);
+                }
             }
             else
             {

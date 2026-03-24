@@ -23,7 +23,7 @@ extern "C" {
 
 // 启用异步操作支持（默认禁用）
 #ifndef SC7A20_ASYNC_SUPPORT
-#define SC7A20_ASYNC_SUPPORT 0
+#define SC7A20_ASYNC_SUPPORT 1
 #endif
 
 /* ========================== 常量定义 ========================== */

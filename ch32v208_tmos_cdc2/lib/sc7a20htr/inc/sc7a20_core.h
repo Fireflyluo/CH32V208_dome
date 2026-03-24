@@ -26,11 +26,14 @@ extern "C"
      * 使用索引或指针，这里使用指针但指向静态分配的内存
      */
 
+    typedef struct sc7a20_dev_t sc7a20_dev_t;
+    typedef sc7a20_dev_t *sc7a20_handle_t;
+
     /**
      * @brief 设备上下文结构
      * @note 用户需要静态分配此结构体，避免动态内存分配
      */
-    typedef struct
+    struct sc7a20_dev_t
     {
         sc7a20_ops_t ops;            // 硬件操作接口
         sc7a20_config_t config;      // 当前配置
@@ -72,9 +75,8 @@ extern "C"
         uint8_t internal_buffer[6];        // 6字节加速度数据缓冲区
 #endif
 
-    } sc7a20_dev_t;
+    };
     /* ========================== 设备管理接口 ========================== */
-    typedef sc7a20_dev_t *sc7a20_handle_t;
     /**
      * @brief 初始化SC7A20传感器
      * @param handle 设备句柄指针（输出参数）

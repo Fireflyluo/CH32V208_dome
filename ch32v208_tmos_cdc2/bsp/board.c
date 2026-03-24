@@ -28,7 +28,31 @@ void HAL_Delay(uint32_t Delay)
 vu8 tx_flag = 0;
 void i2c_master_tx_cplt_callback(i2c_num_t i2c_num)
 {
+    tx_flag = 0;
+#if SC7A20_ASYNC_SUPPORT
+    accel_adapter_i2c_tx_cplt_callback(i2c_num);
+#else
     (void)i2c_num;
+#endif
+}
+
+void i2c_master_rx_cplt_callback(i2c_num_t i2c_num)
+{
+#if SC7A20_ASYNC_SUPPORT
+    accel_adapter_i2c_rx_cplt_callback(i2c_num);
+#else
+    (void)i2c_num;
+#endif
+}
+
+void i2c_master_error_callback(i2c_num_t i2c_num, uint32_t error_code)
+{
+#if SC7A20_ASYNC_SUPPORT
+    accel_adapter_i2c_error_callback(i2c_num, error_code);
+#else
+    (void)i2c_num;
+    (void)error_code;
+#endif
     tx_flag = 0;
 }
 
@@ -45,6 +69,8 @@ static void board_i2c_init(void)
 
     bsp_i2c_init(I2C_NUM_1, &config);
     bsp_i2c_register_tx_callback(I2C_NUM_1, i2c_master_tx_cplt_callback);
+    bsp_i2c_register_rx_callback(I2C_NUM_1, i2c_master_rx_cplt_callback);
+    bsp_i2c_register_error_callback(I2C_NUM_1, i2c_master_error_callback);
 }
 
 static void GPIO_Toggle_INIT(void)
