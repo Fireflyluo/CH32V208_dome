@@ -3,6 +3,8 @@ CompileFlags:
   Add:
     [
       --target=riscv32-unknown-elf,
+      -Wno-unknown-attributes,
+      -Wno-ignored-attributes,
       -isystem,
       e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12/lib/gcc/riscv-wch-elf/12.1.0/include,
       -isystem,
@@ -19,4 +21,11 @@ CompileFlags:
       -mbranch-cost=*,
       -msave-restore,
       -G,
+    ]
+
+Diagnostics:
+  Suppress:
+    [
+      unknown-attributes,
+      ignored-attributes,
     ]

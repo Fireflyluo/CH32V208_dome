@@ -139,7 +139,7 @@ set(CMAKE_ASM_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-
 
 add_executable("${TARGET_ARTIFACT}" ${SRC_FILES})
 
-set_target_properties("${TARGET_ARTIFACT}" PROPERTIES LINK_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T \"${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/Link.ld\"  -L\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/LIB\"  -nostartfiles -Xlinker --gc-sections -Xlinker --print-memory-usage -Wl,-Map,\"CH32V208GBU_Templete.map\" --specs=nano.specs --specs=nosys.specs")
+set_target_properties("${TARGET_ARTIFACT}" PROPERTIES LINK_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T \"${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/Link.ld\"  -L\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/LIB\"  -nostartfiles -Xlinker --gc-sections -Xlinker --print-memory-usage -Wl,-Map,\"${CMAKE_BINARY_DIR}/CH32V208GBU_Templete.map\" --specs=nano.specs --specs=nosys.specs")
 
 target_link_libraries(
 "${TARGET_ARTIFACT}" 

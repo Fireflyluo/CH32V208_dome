@@ -13,3 +13,16 @@
 # eide template
 *.ept
 *.eide-template
+
+# build cache / artifacts
+/.xmake
+*.o
+*.obj
+*.d
+*.su
+*.tmp
+*.elf
+*.bin
+*.hex
+*.map
+*.lst

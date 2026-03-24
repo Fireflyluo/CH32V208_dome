@@ -213,7 +213,8 @@ target("CH32V208GBU_Templete")
     
     -- 在 on_load 中设置需要目标名称的链接选项
     on_load(function (target)
-        target:add("ldflags", "-Wl,-Map," .. target:name() .. ".map", {force = true})
+        local map_file = path.translate(path.join(target:targetdir(), target:name() .. ".map"))
+        target:add("ldflags", "-Wl,-Map," .. map_file, {force = true})
     end)
     
     -- 库文件

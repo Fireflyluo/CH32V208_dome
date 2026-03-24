@@ -1,0 +1,18 @@
+﻿# project out
+
+# build cache / artifacts
+/build
+/bin
+/obj
+/out
+/.xmake
+*.o
+*.obj
+*.d
+*.su
+*.tmp
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
