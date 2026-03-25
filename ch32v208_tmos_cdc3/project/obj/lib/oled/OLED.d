@@ -2,7 +2,7 @@ lib/oled/OLED.o: \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED.c \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED_Data.h \
- d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_i2c.h \
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_i2c.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Core/core_riscv.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/system_ch32v20x.h \
@@ -28,10 +28,11 @@ lib/oled/OLED.o: \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_wwdg.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/ch32v20x_it.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Debug/debug.h \
- d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_misc.h
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_misc.h \
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/bus/inc/i2c_bus_arbiter.h
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED_Data.h:
-d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_i2c.h:
+d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_i2c.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Core/core_riscv.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/system_ch32v20x.h:
@@ -58,3 +59,4 @@ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_w
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/ch32v20x_it.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Debug/debug.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_misc.h:
+d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/bus/inc/i2c_bus_arbiter.h:

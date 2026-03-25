@@ -42,14 +42,13 @@ app \
 app/tasks \
 ble_profile \
 bsp \
-bsp/src \
+bsp/bus/src \
+bsp/drivers/src \
 lib/oled \
 lib/sc7a20/adapters \
 lib/sc7a20/src \
-lib/sc7a20/test \
 lib/sht40/adapters \
 lib/sht40/src \
-lib/sht40/test \
 sdk/Core \
 sdk/Debug \
 sdk/HAL \
@@ -58,4 +57,5 @@ sdk/Peripheral/src \
 sdk/Startup \
 sdk/USBLIB/CONFIG \
 sdk/USBLIB/USB-Driver/src \
+test \
 utils \

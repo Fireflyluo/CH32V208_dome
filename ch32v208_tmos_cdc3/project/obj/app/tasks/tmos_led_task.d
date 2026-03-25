@@ -1,6 +1,6 @@
 app/tasks/tmos_led_task.o: \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/tasks/tmos_led_task.c \
- d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_gpio.h \
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_gpio.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Core/core_riscv.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/system_ch32v20x.h \
@@ -29,7 +29,7 @@ app/tasks/tmos_led_task.o: \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_misc.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/tmos_task.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/LIB/wchble.h
-d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_gpio.h:
+d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_gpio.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Core/core_riscv.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/system_ch32v20x.h:

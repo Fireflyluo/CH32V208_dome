@@ -9,6 +9,7 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include utils/subdir.mk
+-include test/subdir.mk
 -include sdk/USBLIB/USB-Driver/src/subdir.mk
 -include sdk/USBLIB/CONFIG/subdir.mk
 -include sdk/Startup/subdir.mk
@@ -17,14 +18,13 @@ RM := rm -rf
 -include sdk/HAL/subdir.mk
 -include sdk/Debug/subdir.mk
 -include sdk/Core/subdir.mk
--include lib/sht40/test/subdir.mk
 -include lib/sht40/src/subdir.mk
 -include lib/sht40/adapters/subdir.mk
--include lib/sc7a20/test/subdir.mk
 -include lib/sc7a20/src/subdir.mk
 -include lib/sc7a20/adapters/subdir.mk
 -include lib/oled/subdir.mk
--include bsp/src/subdir.mk
+-include bsp/drivers/src/subdir.mk
+-include bsp/bus/src/subdir.mk
 -include bsp/subdir.mk
 -include ble_profile/subdir.mk
 -include app/tasks/subdir.mk

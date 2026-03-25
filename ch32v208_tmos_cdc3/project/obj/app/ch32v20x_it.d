@@ -29,8 +29,8 @@ app/ch32v20x_it.o: \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_misc.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/HAL/include/CONFIG.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/LIB/wchble.H \
- d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_i2c.h \
- d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_tim.h
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_i2c.h \
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_tim.h
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/ch32v20x_it.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Debug/debug.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x.h:
@@ -60,5 +60,5 @@ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/ch32v20x_it.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_misc.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/HAL/include/CONFIG.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/LIB/wchble.H:
-d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_i2c.h:
-d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_tim.h:
+d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_i2c.h:
+d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_tim.h:

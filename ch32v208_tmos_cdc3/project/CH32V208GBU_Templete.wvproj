@@ -41,6 +41,10 @@
 			{
 				"name": "utils",
 				"location": "../utils"
+			},
+			{
+				"name": "test",
+				"location": "../test"
 			}
 		],
 		"removedResources": [
@@ -85,7 +89,10 @@
 					"${project}/SDK/Ld",
 					"${project}/sdk/Ld",
 					"${project}/sdk/Startup/startup_ch32v20x_D6.S",
-					"${project}/sdk/Startup/startup_ch32v20x_D8.S"
+					"${project}/sdk/Startup/startup_ch32v20x_D8.S",
+					"${project}/lib/sc7a20/test/integration_test.c",
+					"${project}/lib/sc7a20/test",
+					"${project}/lib/sht40/test"
 				],
 				"optimization": {
 					"level": "none",
@@ -170,22 +177,28 @@
 					},
 					"includes": {
 						"include_paths": [
-							"${project}/sdk/Debug",
-							"${project}/sdk/Core",
 							"${project}/app/include",
-							"${project}/sdk/Peripheral/inc",
-							"${project}/sdk/HAL/include",
-							"${project}/sdk/LIB",
-							"${project}/ble_profile/include",
 							"${project}/app/tasks",
-							"${project}/bsp/inc",
+							"${project}/ble_profile/include",
+							"${project}/bsp",
+							"${project}/bsp/bus/inc",
+							"${project}/bsp/drivers/inc",
+							"${project}/lib",
+							"${project}/lib/oled",
+							"${project}/lib/sc7a20/adapters",
+							"${project}/lib/sc7a20/inc",
+							"${project}/lib/sht40/adapters",
+							"${project}/lib/sht40/inc",
+							"${project}/sdk/Core",
+							"${project}/sdk/Debug",
+							"${project}/sdk/HAL/include",
+							"${project}/sdk/Ld",
+							"${project}/sdk/LIB",
+							"${project}/sdk/Peripheral/inc",
 							"${project}/sdk/USBLIB/CONFIG",
 							"${project}/sdk/USBLIB/USB-Driver/inc",
 							"${project}/utils",
-							"${project}/lib/sht40",
-							"${project}/lib/oled",
-							"${project}/lib/sc7a20",
-							"${project}/lib/sc7a20/inc"
+							"${project}/test"
 						],
 						"include_system_paths": [
 							"${project}/bsp"

@@ -29,8 +29,9 @@ bsp/board.o: \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_misc.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED_Data.h \
- d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_i2c.h \
- d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_tim.h \
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_i2c.h \
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/bus/inc/i2c_bus_arbiter.h \
+ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_tim.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/USBLIB/USB-Driver/inc/usb_lib.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/USBLIB/CONFIG/hw_config.h \
  d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/USBLIB/USB-Driver/inc/usb_type.h \
@@ -72,8 +73,9 @@ d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/app/include/ch32v20x_it.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/Peripheral/inc/ch32v20x_misc.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/lib/oled/OLED_Data.h:
-d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_i2c.h:
-d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/inc/drv_tim.h:
+d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_i2c.h:
+d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/bus/inc/i2c_bus_arbiter.h:
+d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/bsp/drivers/inc/drv_tim.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/USBLIB/USB-Driver/inc/usb_lib.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/USBLIB/CONFIG/hw_config.h:
 d:/Desktop/ch32/0.ch32v208_dome/ch32v208_tmos_cdc3/sdk/USBLIB/USB-Driver/inc/usb_type.h:
