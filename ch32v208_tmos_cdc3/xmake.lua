@@ -200,7 +200,6 @@ target("CH32V208GBU_Templete")
         add_defines("DEBUG=5")
     else
         add_cflags("-Os", {force = true})
-        add_defines("NDEBUG=5")
     end
     
     -- 汇编标志 (避免 -MMD 标志问题)

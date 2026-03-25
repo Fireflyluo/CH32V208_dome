@@ -352,14 +352,14 @@ void main_runtime_test_process(void)
     uint16_t usb_tx_len;              // 发送数据长度
     uint32_t now_tick;                // 当前时间戳
     char sensor_line[SENSOR_LINE_MAX_LEN];  // 传感器数据显示行
-    sc7a20_vec3i16_t accel_raw;       // 加速度计原始数据
-    sc7a20_vec3f_t accel_g;           // 加速度计重力单位数据
-    sht40_sample_t sht_sample;        // SHT40采样数据
-    int32_t accel_x_mg;               // X轴加速度（毫重力）
-    int32_t accel_y_mg;               // Y轴加速度（毫重力）
-    int32_t accel_z_mg;               // Z轴加速度（毫重力）
-    int32_t temp_centi;               // 温度（百分之一摄氏度）
-    int32_t rh_centi;                 // 相对湿度（百分之一百分比）
+    sc7a20_vec3i16_t accel_raw = {0}; // 加速度计原始数据
+    sc7a20_vec3f_t accel_g = {0.0f, 0.0f, 0.0f}; // 加速度计重力单位数据
+    sht40_sample_t sht_sample = {0};  // SHT40采样数据
+    int32_t accel_x_mg = 0;           // X轴加速度（毫重力）
+    int32_t accel_y_mg = 0;           // Y轴加速度（毫重力）
+    int32_t accel_z_mg = 0;           // Z轴加速度（毫重力）
+    int32_t temp_centi = 0;           // 温度（百分之一摄氏度）
+    int32_t rh_centi = 0;             // 相对湿度（百分之一百分比）
     char ax_buf[16];                  // X轴数据显示缓冲区
     char ay_buf[16];                  // Y轴数据显示缓冲区
     char az_buf[16];                  // Z轴数据显示缓冲区
