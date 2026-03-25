@@ -10,6 +10,13 @@ static void sht40_delay_if_present(const sht40_dev_t *dev, uint32_t ms)
     }
 }
 
+static void sht40_try_bus_recover(sht40_dev_t *dev)
+{
+    if (dev != 0 && dev->ops != 0 && dev->ops->cancel != 0) {
+        (void)dev->ops->cancel(dev->bus_ctx);
+    }
+}
+
 int sht40_init(sht40_dev_t *dev)
 {
     int rc;
@@ -33,6 +40,11 @@ int sht40_init(sht40_dev_t *dev)
     dev->initialized = true;
 
     rc = sht40_soft_reset(dev);
+    if (rc != 0) {
+        // init 失败时回滚状态，避免后续在脏状态下继续访问总线
+        dev->initialized = false;
+        sht40_try_bus_recover(dev);
+    }
 
     sht40_core_unlock(dev);
     return rc;
@@ -52,6 +64,7 @@ int sht40_soft_reset(sht40_dev_t *dev)
 
     rc = sht40_core_xfer_sync(dev, &cmd, 1u, false);
     if (rc != 0) {
+        sht40_try_bus_recover(dev);
         return rc;
     }
 
@@ -74,6 +87,7 @@ int sht40_read_serial(sht40_dev_t *dev, uint32_t *serial)
 
     rc = sht40_core_xfer_sync(dev, &cmd, 1u, false);
     if (rc != 0) {
+        sht40_try_bus_recover(dev);
         return rc;
     }
 
@@ -81,6 +95,7 @@ int sht40_read_serial(sht40_dev_t *dev, uint32_t *serial)
 
     rc = sht40_core_xfer_sync(dev, rx, 6u, true);
     if (rc != 0) {
+        sht40_try_bus_recover(dev);
         return rc;
     }
 
@@ -105,6 +120,7 @@ int sht40_read_sample(sht40_dev_t *dev, sht40_precision_t precision, sht40_sampl
 
     rc = sht40_core_xfer_sync(dev, &cmd, 1u, false);
     if (rc != 0) {
+        sht40_try_bus_recover(dev);
         return rc;
     }
 
@@ -112,6 +128,7 @@ int sht40_read_sample(sht40_dev_t *dev, sht40_precision_t precision, sht40_sampl
 
     rc = sht40_core_xfer_sync(dev, rx, 6u, true);
     if (rc != 0) {
+        sht40_try_bus_recover(dev);
         return rc;
     }
 
@@ -133,6 +150,7 @@ int sht40_heater(sht40_dev_t *dev, sht40_heater_cmd_t cmd)
     b = (uint8_t)cmd;
     rc = sht40_core_xfer_sync(dev, &b, 1u, false);
     if (rc != 0) {
+        sht40_try_bus_recover(dev);
         return rc;
     }
 

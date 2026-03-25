@@ -102,6 +102,7 @@ typedef struct {
     bool IsRegWrite;                        ///< 是否寄存器操作
     uint8_t RegAddr;                        ///< 寄存器地址
     uint8_t Mode;                           ///< 当前操作模式
+    bsp_i2c_config_t InitCfg;               ///< 初始化参数备份（用于错误恢复后重建 I2C）
     uint32_t ErrorCode;                     ///< 错误码
     
     // DMA 相关

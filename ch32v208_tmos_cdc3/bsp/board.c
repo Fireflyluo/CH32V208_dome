@@ -8,10 +8,16 @@
 #include "board.h"
 #include "OLED.h"
 #include "drv_i2c.h"
+#include "i2c_bus_arbiter.h"
 #include "drv_tim.h"
 #include "usb_lib.h"
 
 static void oled_test(void);
+
+/* I2C1 传输模式开关：I2C_MODE_IT / I2C_MODE_DMA */
+#ifndef BOARD_I2C1_TRANSFER_MODE
+#define BOARD_I2C1_TRANSFER_MODE I2C_MODE_DMA
+#endif
 
 uint32_t HAL_GetTick(void)
 {
@@ -50,13 +56,30 @@ static void board_i2c_init(void)
         .own_address = 0,
         .enable_ack = true,
         .is_7_bit_address = true,
-        .mode = I2C_MODE_IT,
+        .mode = BOARD_I2C1_TRANSFER_MODE,
     };
 
     bsp_i2c_init(I2C_NUM_1, &config);
+#if (BOARD_I2C1_TRANSFER_MODE == I2C_MODE_DMA)
+    /* CH32V20x: I2C1_TX=DMA1_CH6, I2C1_RX=DMA1_CH7 */
+    bsp_i2c_dma_init(I2C_NUM_1, DMA1_Channel6, DMA1_Channel7);
+
+    NVIC_InitTypeDef nvic_init = {0};
+    nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
+    nvic_init.NVIC_IRQChannelSubPriority = 2;
+    nvic_init.NVIC_IRQChannelCmd = ENABLE;
+
+    nvic_init.NVIC_IRQChannel = DMA1_Channel6_IRQn;
+    NVIC_Init(&nvic_init);
+    nvic_init.NVIC_IRQChannel = DMA1_Channel7_IRQn;
+    NVIC_Init(&nvic_init);
+#endif
+
     bsp_i2c_register_tx_callback(I2C_NUM_1, i2c_master_tx_cplt_callback);
     bsp_i2c_register_rx_callback(I2C_NUM_1, i2c_master_rx_cplt_callback);
     bsp_i2c_register_error_callback(I2C_NUM_1, i2c_master_error_callback);
+
+    i2c_bus_arbiter_init(I2C_NUM_1);
 }
 
 static void GPIO_Toggle_INIT(void)

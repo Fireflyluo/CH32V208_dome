@@ -10,9 +10,40 @@ add_rules("mode.debug", "mode.release")
 -- 设置默认构建模式为 debug
 set_config("mode", "debug")
 
--- 设置工具链路径
-local toolchain_path = "e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12"
+-- 工具链可手动切换:
+--   xmake f --wch_gcc_ver=15   (默认)
+--   xmake f --wch_gcc_ver=12
+--   xmake f --wch_gcc_ver=auto (优先15, 回退12)
+option("wch_gcc_ver")
+    set_default("15")
+    set_showmenu(true)
+    set_values("15", "12", "auto")
+    set_description("Select WCH RISC-V GCC toolchain version")
+option_end()
+
+local toolchain_root = "e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain"
+local selected_ver = get_config("wch_gcc_ver") or "15"
+local toolchain_path = nil
+
+if selected_ver == "12" then
+    toolchain_path = toolchain_root .. "/RISC-V Embedded GCC12"
+elseif selected_ver == "15" then
+    toolchain_path = toolchain_root .. "/RISC-V Embedded GCC15"
+else
+    local gcc15_path = toolchain_root .. "/RISC-V Embedded GCC15"
+    local gcc12_path = toolchain_root .. "/RISC-V Embedded GCC12"
+    if os.isdir(gcc15_path) then
+        toolchain_path = gcc15_path
+    else
+        toolchain_path = gcc12_path
+    end
+end
+
 local toolchain_bin = toolchain_path .. "/bin"
+local cross_prefix = toolchain_bin .. "/riscv32-wch-elf-"
+if not os.isfile(cross_prefix .. "gcc.exe") then
+    cross_prefix = toolchain_bin .. "/riscv-wch-elf-"
+end
 
 -- 设置平台和架构
 set_plat("cross")
@@ -29,8 +60,13 @@ target("CH32V208GBU_Templete")
     set_kind("binary")
     set_extension(".elf")
     
-    -- 设置工具链
-    set_toolchains("cross", {cross = "riscv-wch-elf-"})
+    -- 显式指定工具，避免 xmake 内置 cross 检查在部分环境下误判
+    set_toolset("cc", cross_prefix .. "gcc.exe")
+    set_toolset("cxx", cross_prefix .. "g++.exe")
+    set_toolset("as", cross_prefix .. "gcc.exe")
+    set_toolset("ld", cross_prefix .. "gcc.exe")
+    set_toolset("ar", cross_prefix .. "ar.exe")
+    set_toolset("ranlib", cross_prefix .. "ranlib.exe")
     
     -- 设置架构和ABI (RISC-V RV32IMACXW)
     add_cflags("-march=rv32imacxw", "-mabi=ilp32", {force = true})
@@ -94,14 +130,16 @@ target("CH32V208GBU_Templete")
         "lib/oled/OLED.c",
         "lib/oled/OLED_Data.c",
         "bsp/board.c",
-        "bsp/src/drv_gpio.c",
-        "bsp/src/drv_i2c.c",
-        "bsp/src/drv_tim.c",
+        "bsp/drivers/src/drv_gpio.c",
+        "bsp/drivers/src/drv_i2c.c",
+        "bsp/drivers/src/drv_tim.c",
+        "bsp/bus/src/i2c_bus_arbiter.c",
         "bsp/usb_cdc.c",
         "ble_profile/devinfoservice.c",
         "ble_profile/gattprofile.c",
         "app/ch32v20x_it.c",
         "app/main.c",
+        "test/main_runtime_test.c",
         "app/peripheral.c",
         "app/system_ch32v20x.c"
     )
@@ -116,7 +154,8 @@ target("CH32V208GBU_Templete")
         "sdk/LIB",
         "ble_profile/include",
         "bsp",
-        "bsp/inc",
+        "bsp/drivers/inc",
+        "bsp/bus/inc",
         "sdk/USBLIB/CONFIG",
         "sdk/USBLIB/USB-Driver/inc",
         "utils",
@@ -126,7 +165,8 @@ target("CH32V208GBU_Templete")
         "lib/oled",
         "lib/sc7a20",
         "lib/sc7a20/inc",
-        "lib/sc7a20/adapters"
+        "lib/sc7a20/adapters",
+        "test"
     )
     
     -- 汇编包含路径
@@ -227,5 +267,5 @@ target("CH32V208GBU_Templete")
     -- 构建后处理 - 调用外部脚本
     after_build(function (target)
         import("scripts.post_build", {rootdir = os.scriptdir()})
-        post_build.main(target, toolchain_path)
+        post_build.main(target, toolchain_path, cross_prefix)
     end)

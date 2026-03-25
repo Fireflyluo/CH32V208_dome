@@ -27,6 +27,8 @@ void BB_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C1_EV_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C1_ER_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void DMA1_Channel6_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void DMA1_Channel7_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 /*********************************************************************
  * @fn      NMI_Handler
  *
@@ -98,4 +100,28 @@ void I2C1_EV_IRQHandler(void)
 void I2C1_ER_IRQHandler(void)
 {
     bsp_i2c_irq_handler(I2C_NUM_1);
+}
+
+/*********************************************************************
+ * @fn      DMA1_Channel6_IRQHandler
+ *
+ * @brief   This function handles I2C1 TX DMA interrupt.
+ *
+ * @return  none
+ */
+void DMA1_Channel6_IRQHandler(void)
+{
+    bsp_i2c_dma_tx_irq_handler(I2C_NUM_1);
+}
+
+/*********************************************************************
+ * @fn      DMA1_Channel7_IRQHandler
+ *
+ * @brief   This function handles I2C1 RX DMA interrupt.
+ *
+ * @return  none
+ */
+void DMA1_Channel7_IRQHandler(void)
+{
+    bsp_i2c_dma_rx_irq_handler(I2C_NUM_1);
 }

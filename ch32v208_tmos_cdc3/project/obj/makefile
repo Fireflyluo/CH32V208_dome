@@ -17,12 +17,14 @@ RM := rm -rf
 -include sdk/HAL/subdir.mk
 -include sdk/Debug/subdir.mk
 -include sdk/Core/subdir.mk
--include lib/sht40/subdir.mk
--include lib/sc7a20htr/platform/subdir.mk
--include lib/sc7a20htr/example/subdir.mk
--include lib/sc7a20htr/subdir.mk
+-include lib/sht40/test/subdir.mk
+-include lib/sht40/src/subdir.mk
+-include lib/sht40/adapters/subdir.mk
+-include lib/sc7a20/test/subdir.mk
+-include lib/sc7a20/src/subdir.mk
+-include lib/sc7a20/adapters/subdir.mk
 -include lib/oled/subdir.mk
--include bsp/UART/subdir.mk
+-include bsp/src/subdir.mk
 -include bsp/subdir.mk
 -include ble_profile/subdir.mk
 -include app/tasks/subdir.mk
@@ -84,7 +86,7 @@ main-build: CH32V208GBU_Templete.elf secondary-outputs
 
 # Tool invocations
 CH32V208GBU_Templete.elf: $(OBJS) $(USER_OBJS_ESCAPE)
-	@	riscv32-wch-elf-g++ -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -gdwarf-4 -T "d:\Desktop\ch32\0.ch32v208_dome\ch32v208_tmos_cdc2\sdk\HAL\Link.ld" -nostartfiles -Xlinker --gc-sections -L"d:\Desktop\ch32\0.ch32v208_dome\ch32v208_tmos_cdc2\sdk\LIB" -Xlinker --print-memory-usage -Xlinker --print-memory-usage -Wl,-Map,"CH32V208GBU_Templete.map" --specs=nano.specs --specs=nosys.specs -o "CH32V208GBU_Templete.elf" $(OBJS) $(LIBS)
+	@	riscv32-wch-elf-g++ -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -gdwarf-4 -T "d:\Desktop\ch32\0.ch32v208_dome\ch32v208_tmos_cdc3\sdk\HAL\Link.ld" -nostartfiles -Xlinker --gc-sections -L"d:\Desktop\ch32\0.ch32v208_dome\ch32v208_tmos_cdc3\sdk\LIB" -Xlinker --print-memory-usage -Xlinker --print-memory-usage -Wl,-Map,"CH32V208GBU_Templete.map" --specs=nano.specs --specs=nosys.specs -o "CH32V208GBU_Templete.elf" $(OBJS) $(LIBS)
 CH32V208GBU_Templete.hex: CH32V208GBU_Templete.elf
 	@	riscv32-wch-elf-objcopy -O ihex "CH32V208GBU_Templete.elf" "CH32V208GBU_Templete.hex"
 CH32V208GBU_Templete.lst: CH32V208GBU_Templete.elf

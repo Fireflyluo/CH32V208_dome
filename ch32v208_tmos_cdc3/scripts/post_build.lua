@@ -54,8 +54,16 @@ local function parse_memory_from_ldscript(ldscript_path)
     return rom_total, ram_total
 end
 
-function main(target, toolchain_path)
+function main(target, toolchain_path, cross_prefix)
     local toolchain_bin = toolchain_path .. "/bin"
+    local tool_prefix = cross_prefix
+    if not tool_prefix then
+        if os.isfile(toolchain_bin .. "/riscv32-wch-elf-gcc.exe") then
+            tool_prefix = toolchain_bin .. "/riscv32-wch-elf-"
+        else
+            tool_prefix = toolchain_bin .. "/riscv-wch-elf-"
+        end
+    end
     local elf_file = target:targetfile()
     local target_name = target:name()
     local output_dir = path.directory(elf_file)
@@ -150,7 +158,7 @@ function main(target, toolchain_path)
         cprint("")
         
         -- 获取详细段信息
-        local size_result = os.iorunv(toolchain_bin .. "/riscv-wch-elf-size.exe", {"-A", elf_file})
+        local size_result = os.iorunv(tool_prefix .. "size.exe", {"-A", elf_file})
         
         -- 解析各个段的大小
         local text_size = 0
@@ -244,7 +252,7 @@ function main(target, toolchain_path)
         cprint("")
         
         -- 生成 hex 文件
-        os.execv(toolchain_bin .. "/riscv-wch-elf-objcopy.exe", {"-O", "ihex", elf_file, hex_file})
+        os.execv(tool_prefix .. "objcopy.exe", {"-O", "ihex", elf_file, hex_file})
         if os.isfile(hex_file) then
             success("生成 HEX 文件              [完成]")
             cprint("        文件路径: \"%s\"", hex_file)
@@ -252,7 +260,7 @@ function main(target, toolchain_path)
         cprint("")
         
         -- 生成 lst 文件
-        local lst_content = os.iorunv(toolchain_bin .. "/riscv-wch-elf-objdump.exe", 
+        local lst_content = os.iorunv(tool_prefix .. "objdump.exe", 
             {"--all-headers", "--demangle", "--disassemble", "-M", "xw", elf_file})
         io.writefile(lst_file, lst_content)
         if os.isfile(lst_file) then

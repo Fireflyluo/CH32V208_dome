@@ -21,6 +21,7 @@
 #include "OLED.h"
 #include "IQmath_RV32.h"
 #include "drv_i2c.h"
+#include "i2c_bus_arbiter.h"
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -80,6 +81,11 @@
  * 才会将显存数组的数据发送到OLED硬件，进行显示
  */
 uint8_t OLED_DisplayBuf[8][128];
+
+#define OLED_I2C_DEV_ADDR           0x3C
+#define OLED_I2C_OWNER_ID           3U
+#define OLED_DMA_BULK_THRESHOLD     16
+#define OLED_I2C_REQ_TIMEOUT_MS     50U
 
 /*********************全局变量*/
 
@@ -218,15 +224,19 @@ void OLED_WriteCommand(uint8_t Command)
     // OLED_I2C_SendByte(Command);		//写入指定的命令
     // OLED_I2C_Stop();				//I2C终止
 
-    extern vu8 tx_flag;
-    tx_flag = 1;
-
-    // 使用新的 HAL 风格 API - 中断模式
-    bsp_i2c_write_byte(I2C_NUM_1, 0x3C, 0x00, Command);
-
-    // 等待传输完成（中断模式下需要等待）
-    while (tx_flag == 1)
-        ;
+    i2c_bus_request_t req;
+    req.bus = I2C_NUM_1;
+    req.type = I2C_BUS_REQ_WRITE_REG;
+    req.owner_id = OLED_I2C_OWNER_ID;
+    req.dev_addr = OLED_I2C_DEV_ADDR;
+    req.reg = 0x00;
+    req.wbuf = &Command;
+    req.rbuf = NULL;
+    req.len = 1;
+    req.mode_hint = I2C_MODE_IT;
+    req.prio = I2C_BUS_PRIO_NORMAL;
+    req.timeout_ms = OLED_I2C_REQ_TIMEOUT_MS;
+    (void)i2c_bus_submit_sync(&req);
 }
 
 /**
@@ -249,13 +259,19 @@ void OLED_WriteData(uint8_t *Data, uint8_t Count)
     // }
     // OLED_I2C_Stop();				//I2C终止
 
-    extern vu8 tx_flag;
-    tx_flag = 1;
-
-    // 使用新的 HAL 风格 API - 中断模式
-    bsp_i2c_write_register_it(I2C_NUM_1, 0x3C, 0x40, Data, Count);
-    while (tx_flag == 1)
-        ;
+    i2c_bus_request_t req;
+    req.bus = I2C_NUM_1;
+    req.type = I2C_BUS_REQ_WRITE_REG;
+    req.owner_id = OLED_I2C_OWNER_ID;
+    req.dev_addr = OLED_I2C_DEV_ADDR;
+    req.reg = 0x40;
+    req.wbuf = Data;
+    req.rbuf = NULL;
+    req.len = Count;
+    req.mode_hint = (Count >= OLED_DMA_BULK_THRESHOLD) ? I2C_MODE_DMA : I2C_MODE_IT;
+    req.prio = (Count >= OLED_DMA_BULK_THRESHOLD) ? I2C_BUS_PRIO_LOW : I2C_BUS_PRIO_NORMAL;
+    req.timeout_ms = OLED_I2C_REQ_TIMEOUT_MS;
+    (void)i2c_bus_submit_sync(&req);
 }
 
 /*********************通信协议*/

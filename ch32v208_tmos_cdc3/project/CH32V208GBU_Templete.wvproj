@@ -85,8 +85,7 @@
 					"${project}/SDK/Ld",
 					"${project}/sdk/Ld",
 					"${project}/sdk/Startup/startup_ch32v20x_D6.S",
-					"${project}/sdk/Startup/startup_ch32v20x_D8.S",
-					"${project}/bsp/UART"
+					"${project}/sdk/Startup/startup_ch32v20x_D8.S"
 				],
 				"optimization": {
 					"level": "none",
@@ -179,17 +178,18 @@
 							"${project}/sdk/LIB",
 							"${project}/ble_profile/include",
 							"${project}/app/tasks",
-							"${project}/bsp/include",
+							"${project}/bsp/inc",
 							"${project}/sdk/USBLIB/CONFIG",
 							"${project}/sdk/USBLIB/USB-Driver/inc",
 							"${project}/utils",
 							"${project}/lib/sht40",
 							"${project}/lib/oled",
-							"${project}/lib/sc7a20htr/inc",
-							"${project}/lib/sc7a20htr/platform",
-							"${project}/lib/sc7a20htr/example"
+							"${project}/lib/sc7a20",
+							"${project}/lib/sc7a20/inc"
 						],
-						"include_system_paths": [],
+						"include_system_paths": [
+							"${project}/bsp"
+						],
 						"include_files": []
 					},
 					"optimization": {

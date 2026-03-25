@@ -64,7 +64,7 @@ static void board_i2c_init(void)
         .own_address = 0,
         .enable_ack = true,
         .is_7_bit_address = true,
-        .mode = I2C_MODE_IT,
+        .mode = I2C_MODE_DMA,
     };
 
     bsp_i2c_init(I2C_NUM_1, &config);
