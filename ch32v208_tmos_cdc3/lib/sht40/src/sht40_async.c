@@ -1,7 +1,6 @@
 ﻿#include "../inc/sht40.h"
 
 #include <errno.h>
-#include <string.h>
 
 static void sht40_async_read_done(void *user, int status)
 {
@@ -90,7 +89,7 @@ int sht40_soft_reset_async(sht40_dev_t *dev, sht40_done_cb_t cb, void *user)
         return rc;
     }
 
-    memset(&dev->async, 0, sizeof(dev->async));
+    SHT40_MEMSET(&dev->async, 0, sizeof(dev->async));
     dev->async.op = SHT40_ASYNC_SOFT_RESET;
     dev->async.cmd = 0x94u;
     dev->async.done_cb = cb;
@@ -128,7 +127,7 @@ int sht40_read_sample_async(sht40_dev_t *dev,
         return rc;
     }
 
-    memset(&dev->async, 0, sizeof(dev->async));
+    SHT40_MEMSET(&dev->async, 0, sizeof(dev->async));
     dev->async.op = SHT40_ASYNC_READ_SAMPLE;
     dev->async.cmd = sht40_core_precision_cmd(precision);
     dev->async.sample_cb = cb;

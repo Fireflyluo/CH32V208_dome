@@ -1,7 +1,6 @@
 ﻿#include "../inc/sc7a20_core.h"
 
 #include <errno.h>
-#include <string.h>
 
 #ifndef EHWPOISON
 #define EHWPOISON 133
@@ -192,11 +191,11 @@ int sc7a20_core_apply_config(sc7a20_dev_t *dev, const sc7a20_cfg_t *cfg)
         return -EINVAL;
     }
 
-    memset(&ctrl0, 0, sizeof(ctrl0));
-    memset(&ctrl1, 0, sizeof(ctrl1));
-    memset(&ctrl2, 0, sizeof(ctrl2));
-    memset(&ctrl3, 0, sizeof(ctrl3));
-    memset(&ctrl4, 0, sizeof(ctrl4));
+    SC7A20_MEMSET(&ctrl0, 0, sizeof(ctrl0));
+    SC7A20_MEMSET(&ctrl1, 0, sizeof(ctrl1));
+    SC7A20_MEMSET(&ctrl2, 0, sizeof(ctrl2));
+    SC7A20_MEMSET(&ctrl3, 0, sizeof(ctrl3));
+    SC7A20_MEMSET(&ctrl4, 0, sizeof(ctrl4));
 
     ctrl0.bit.HR = cfg->high_resolution ? 1u : 0u;
     ctrl0.bit.OSR = 0u;

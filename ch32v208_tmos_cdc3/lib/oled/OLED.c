@@ -1,4 +1,4 @@
-
+﻿
 /***************************************************************************************
  * 本程序由江协科技创建并免费开源共享
  * 你可以任意查看、使用和修改，并应用到自己的项目之中
@@ -20,6 +20,7 @@
 
 #include "OLED.h"
 #include "IQmath_RV32.h"
+#include "board.h"
 #include "drv_i2c.h"
 #include "i2c_bus_arbiter.h"
 #include <math.h>
@@ -82,10 +83,153 @@
  */
 uint8_t OLED_DisplayBuf[8][128];
 
-#define OLED_I2C_DEV_ADDR           0x3C
-#define OLED_I2C_OWNER_ID           3U
-#define OLED_DMA_BULK_THRESHOLD     16
-#define OLED_I2C_REQ_TIMEOUT_MS     50U
+#define OLED_I2C_DEV_ADDR 0x3C
+#define OLED_I2C_OWNER_ID 3U
+#define OLED_DMA_BULK_THRESHOLD 16U
+#define OLED_I2C_REQ_TIMEOUT_MS 50U
+#define OLED_I2C_FRAME_TIMEOUT_MS 1500U
+#define OLED_WIDTH 128U
+#define OLED_HEIGHT 64U
+#define OLED_PAGE_CNT (OLED_HEIGHT / 8U)
+#define OLED_FRAME_BYTES (OLED_WIDTH * OLED_PAGE_CNT)
+
+void OLED_SetCursor(uint8_t Page, uint8_t X);
+void OLED_WriteData(uint8_t *Data, uint16_t Count);
+
+static int oled_submit_commands(const uint8_t *cmds, uint16_t len)
+{
+    i2c_bus_request_t req;
+
+    if ((cmds == NULL) || (len == 0U))
+    {
+        return -1;
+    }
+
+    req.bus = I2C_NUM_1;
+    req.type = I2C_BUS_REQ_WRITE_REG;
+    req.owner_id = OLED_I2C_OWNER_ID;
+    req.dev_addr = OLED_I2C_DEV_ADDR;
+    req.reg = 0x00;
+    req.wbuf = cmds;
+    req.rbuf = NULL;
+    req.len = len;
+    req.mode_hint = I2C_MODE_IT;
+    req.prio = I2C_BUS_PRIO_HIGH;
+    req.timeout_ms = OLED_I2C_REQ_TIMEOUT_MS;
+    return i2c_bus_submit_sync(&req);
+}
+
+static int oled_set_cursor_checked(uint8_t Page, uint8_t X)
+{
+    uint8_t cmds[3];
+
+    cmds[0] = (uint8_t)(0xB0U | Page);
+    cmds[1] = (uint8_t)(0x10U | ((X & 0xF0U) >> 4));
+    cmds[2] = (uint8_t)(0x00U | (X & 0x0FU));
+    return oled_submit_commands(cmds, 3U);
+}
+
+static int oled_write_data_checked(uint8_t *Data, uint16_t Count)
+{
+    static uint8_t s_oled_dma_chunk[1U + (I2C_MAX_WRITE_LEN - 1U)];
+    i2c_bus_request_t req;
+    uint16_t offset;
+    uint16_t chunk;
+    int ret;
+
+    if ((Data == NULL) || (Count == 0U) || (Count > OLED_FRAME_BYTES))
+    {
+        return -1;
+    }
+
+    req.bus = I2C_NUM_1;
+    req.type = I2C_BUS_REQ_WRITE;
+    req.owner_id = OLED_I2C_OWNER_ID;
+    req.dev_addr = OLED_I2C_DEV_ADDR;
+    req.reg = 0U;
+    req.rbuf = NULL;
+    req.prio = I2C_BUS_PRIO_HIGH;
+    req.timeout_ms = OLED_I2C_FRAME_TIMEOUT_MS;
+
+    offset = 0U;
+    while (offset < Count)
+    {
+        chunk = (uint16_t)(Count - offset);
+        if (chunk > (uint16_t)(I2C_MAX_WRITE_LEN - 1U))
+        {
+            chunk = (uint16_t)(I2C_MAX_WRITE_LEN - 1U);
+        }
+
+        s_oled_dma_chunk[0] = 0x40U;
+        memcpy(&s_oled_dma_chunk[1], &Data[offset], chunk);
+
+        req.wbuf = s_oled_dma_chunk;
+        req.len = (uint16_t)(chunk + 1U);
+        req.mode_hint = (chunk >= OLED_DMA_BULK_THRESHOLD) ? I2C_MODE_DMA : I2C_MODE_IT;
+        ret = i2c_bus_submit_sync(&req);
+        if ((ret != 0) && (req.mode_hint == I2C_MODE_DMA))
+        {
+            req.mode_hint = I2C_MODE_IT;
+            ret = i2c_bus_submit_sync(&req);
+        }
+        if (ret != 0)
+        {
+            return ret;
+        }
+
+        offset = (uint16_t)(offset + chunk);
+    }
+
+    return 0;
+}
+
+static void oled_refresh_area_pages(uint8_t x, uint8_t page_start, uint8_t page_end, uint8_t width)
+{
+#if (OLED_ADDR_MODE == OLED_ADDR_MODE_HORIZONTAL)
+    uint8_t cmd_window[6];
+    uint8_t page;
+    uint16_t bytes_total;
+    static uint8_t s_oled_area_buf[OLED_FRAME_BYTES];
+
+    cmd_window[0] = 0x21;
+    cmd_window[1] = x;
+    cmd_window[2] = (uint8_t)(x + width - 1U);
+    cmd_window[3] = 0x22;
+    cmd_window[4] = page_start;
+    cmd_window[5] = page_end;
+    if (oled_submit_commands(cmd_window, 6U) != 0)
+    {
+        return;
+    }
+
+    bytes_total = (uint16_t)((uint16_t)(page_end - page_start + 1U) * width);
+    if ((x == 0U) && (width == OLED_WIDTH))
+    {
+        (void)oled_write_data_checked(&OLED_DisplayBuf[page_start][0], bytes_total);
+        return;
+    }
+
+    for (page = page_start; page <= page_end; page++)
+    {
+        uint16_t dst_off = (uint16_t)((uint16_t)(page - page_start) * width);
+        memcpy(&s_oled_area_buf[dst_off], &OLED_DisplayBuf[page][x], width);
+    }
+    (void)oled_write_data_checked(s_oled_area_buf, bytes_total);
+#else
+    uint8_t page;
+    for (page = page_start; page <= page_end; page++)
+    {
+        if (oled_set_cursor_checked(page, x) != 0)
+        {
+            break;
+        }
+        if (oled_write_data_checked(&OLED_DisplayBuf[page][x], width) != 0)
+        {
+            break;
+        }
+    }
+#endif
+}
 
 /*********************全局变量*/
 
@@ -224,19 +368,7 @@ void OLED_WriteCommand(uint8_t Command)
     // OLED_I2C_SendByte(Command);		//写入指定的命令
     // OLED_I2C_Stop();				//I2C终止
 
-    i2c_bus_request_t req;
-    req.bus = I2C_NUM_1;
-    req.type = I2C_BUS_REQ_WRITE_REG;
-    req.owner_id = OLED_I2C_OWNER_ID;
-    req.dev_addr = OLED_I2C_DEV_ADDR;
-    req.reg = 0x00;
-    req.wbuf = &Command;
-    req.rbuf = NULL;
-    req.len = 1;
-    req.mode_hint = I2C_MODE_IT;
-    req.prio = I2C_BUS_PRIO_NORMAL;
-    req.timeout_ms = OLED_I2C_REQ_TIMEOUT_MS;
-    (void)i2c_bus_submit_sync(&req);
+    (void)oled_submit_commands(&Command, 1U);
 }
 
 /**
@@ -245,34 +377,11 @@ void OLED_WriteCommand(uint8_t Command)
  * 参    数：Count 要写入数据的数量
  * 返 回 值：无
  */
-void OLED_WriteData(uint8_t *Data, uint8_t Count)
+void OLED_WriteData(uint8_t *Data, uint16_t Count)
 {
-    // uint8_t i;
-
-    // OLED_I2C_Start();				//I2C起始
-    // OLED_I2C_SendByte(0x78);		//发送OLED的I2C从机地址
-    // OLED_I2C_SendByte(0x40);		//控制字节，给0x40，表示即将写数量
-    // /*循环Count次，进行连续的数据写入*/
-    // for (i = 0; i < Count; i ++)
-    // {
-    // 	OLED_I2C_SendByte(Data[i]);	//依次发送Data的每一个数据
-    // }
-    // OLED_I2C_Stop();				//I2C终止
-
-    i2c_bus_request_t req;
-    req.bus = I2C_NUM_1;
-    req.type = I2C_BUS_REQ_WRITE_REG;
-    req.owner_id = OLED_I2C_OWNER_ID;
-    req.dev_addr = OLED_I2C_DEV_ADDR;
-    req.reg = 0x40;
-    req.wbuf = Data;
-    req.rbuf = NULL;
-    req.len = Count;
-    req.mode_hint = (Count >= OLED_DMA_BULK_THRESHOLD) ? I2C_MODE_DMA : I2C_MODE_IT;
-    req.prio = (Count >= OLED_DMA_BULK_THRESHOLD) ? I2C_BUS_PRIO_LOW : I2C_BUS_PRIO_NORMAL;
-    req.timeout_ms = OLED_I2C_REQ_TIMEOUT_MS;
-    (void)i2c_bus_submit_sync(&req);
+    (void)oled_write_data_checked(Data, Count);
 }
+
 
 /*********************通信协议*/
 
@@ -288,7 +397,7 @@ void OLED_Init(void)
 {
     //	OLED_GPIO_Init();			//先调用底层的端口初始化
 
-
+    HAL_Delay(50);
     OLED_WriteCommand(0xAE); // 设置显示开启/关闭，0xAE关闭，0xAF开启
 
     OLED_WriteCommand(0xD5); // 设置显示时钟分频比/振荡器频率
@@ -299,6 +408,9 @@ void OLED_Init(void)
 
     OLED_WriteCommand(0xD3); // 设置显示偏移
     OLED_WriteCommand(0x00); // 0x00~0x7F
+
+    OLED_WriteCommand(0x20);              // 设置内存寻址模式
+    OLED_WriteCommand(OLED_ADDR_MODE);    // 0x00:水平寻址, 0x02:页寻址
 
     OLED_WriteCommand(0x40); // 设置显示开始行，0x40~0x7F
 
@@ -325,9 +437,10 @@ void OLED_Init(void)
     OLED_WriteCommand(0x8D); // 设置充电泵
     OLED_WriteCommand(0x14);
 
-    OLED_WriteCommand(0xAF); // 开启显示
+    OLED_WriteCommand(0x2E); // 关闭硬件滚动
 
- 
+    OLED_WriteCommand(0xAF); // 开启显示
+    HAL_Delay(50);
     OLED_Clear();  // 清空显存数组
     OLED_Update(); // 更新显示，清屏，防止初始化后未显示内容时花屏
 }
@@ -341,16 +454,8 @@ void OLED_Init(void)
  */
 void OLED_SetCursor(uint8_t Page, uint8_t X)
 {
-    /*如果使用此程序驱动1.3寸的OLED显示屏，则需要解除此注释*/
-    /*因为1.3寸的OLED驱动芯片（SH1106）有132列*/
-    /*屏幕的起始列接在了第2列，而不是第0列*/
-    /*所以需要将X加2，才能正常显示*/
-    //	X += 2;
-
-    /*通过指令设置页地址和列地址*/
-    OLED_WriteCommand(0xB0 | Page);              // 设置页位置
-    OLED_WriteCommand(0x10 | ((X & 0xF0) >> 4)); // 设置X位置高4位
-    OLED_WriteCommand(0x00 | (X & 0x0F));        // 设置X位置低4位
+    /*如果使用此程序驱动1.3寸的OLED显示屏，可按需将X加2*/
+    (void)oled_set_cursor_checked(Page, X);
 }
 
 /*********************硬件配置*/
@@ -444,15 +549,7 @@ uint8_t OLED_IsInAngle(int16_t X, int16_t Y, int16_t StartAngle, int16_t EndAngl
  */
 void OLED_Update(void)
 {
-    uint8_t j;
-    /*遍历每一页*/
-    for (j = 0; j < 8; j++)
-    {
-        /*设置光标位置为每一页的第一列*/
-        OLED_SetCursor(j, 0);
-        /*连续写入128个数据，将显存数组的数据写入到OLED硬件*/
-        OLED_WriteData(OLED_DisplayBuf[j], 128);
-    }
+    oled_refresh_area_pages(0U, 0U, (uint8_t)(OLED_PAGE_CNT - 1U), OLED_WIDTH);
 }
 
 /**
@@ -471,35 +568,34 @@ void OLED_Update(void)
  */
 void OLED_UpdateArea(uint8_t X, uint8_t Y, uint8_t Width, uint8_t Height)
 {
-    uint8_t j;
+    uint8_t page_start;
+    uint8_t page_end;
 
     /*参数检查，保证指定区域不会超出屏幕范围*/
-    if (X > 127)
+    if (X > (OLED_WIDTH - 1U))
     {
         return;
     }
-    if (Y > 63)
+    if (Y > (OLED_HEIGHT - 1U))
     {
         return;
     }
-    if (X + Width > 128)
+    if ((uint16_t)X + (uint16_t)Width > OLED_WIDTH)
     {
-        Width = 128 - X;
+        Width = (uint8_t)(OLED_WIDTH - X);
     }
-    if (Y + Height > 64)
+    if ((uint16_t)Y + (uint16_t)Height > OLED_HEIGHT)
     {
-        Height = 64 - Y;
+        Height = (uint8_t)(OLED_HEIGHT - Y);
+    }
+    if ((Width == 0U) || (Height == 0U))
+    {
+        return;
     }
 
-    /*遍历指定区域涉及的相关页*/
-    /*(Y + Height - 1) / 8 + 1的目的是(Y + Height) / 8并向上取整*/
-    for (j = Y / 8; j < (Y + Height - 1) / 8 + 1; j++)
-    {
-        /*设置光标位置为相关页的指定列*/
-        OLED_SetCursor(j, X);
-        /*连续写入Width个数据，将显存数组的数据写入到OLED硬件*/
-        OLED_WriteData(&OLED_DisplayBuf[j][X], Width);
-    }
+    page_start = (uint8_t)(Y / 8U);
+    page_end = (uint8_t)((Y + Height - 1U) / 8U);
+    oled_refresh_area_pages(X, page_start, page_end, Width);
 }
 
 /**
@@ -1619,3 +1715,6 @@ void OLED_DrawArc(uint8_t X, uint8_t Y, uint8_t Radius, int16_t StartAngle, int1
 
 /*****************江协科技|版权所有****************/
 /*****************jiangxiekeji.com*****************/
+
+
+

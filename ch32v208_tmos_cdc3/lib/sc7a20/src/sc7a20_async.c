@@ -1,7 +1,6 @@
 ﻿#include "../inc/sc7a20.h"
 
 #include <errno.h>
-#include <string.h>
 
 static void sc7a20_async_on_bus_done(void *user, int status)
 {
@@ -59,7 +58,7 @@ int sc7a20_read_reg_async(sc7a20_dev_t *dev,
         return rc;
     }
 
-    memset(&dev->async, 0, sizeof(dev->async));
+    SC7A20_MEMSET(&dev->async, 0, sizeof(dev->async));
     dev->async.op = SC7A20_ASYNC_OP_READ_REG;
     dev->async.reg_addr = (len > 1u) ? (uint8_t)(reg | 0x80u) : reg;
     dev->async.read_buf = data;
@@ -105,7 +104,7 @@ int sc7a20_write_reg_async(sc7a20_dev_t *dev,
         return rc;
     }
 
-    memset(&dev->async, 0, sizeof(dev->async));
+    SC7A20_MEMSET(&dev->async, 0, sizeof(dev->async));
     dev->async.op = SC7A20_ASYNC_OP_WRITE_REG;
     dev->async.reg_addr = (len > 1u) ? (uint8_t)(reg | 0x80u) : reg;
     dev->async.write_buf = data;
@@ -146,7 +145,7 @@ int sc7a20_read_xyz_raw_async(sc7a20_dev_t *dev, sc7a20_read_xyz_cb_t cb, void *
         return rc;
     }
 
-    memset(&dev->async, 0, sizeof(dev->async));
+    SC7A20_MEMSET(&dev->async, 0, sizeof(dev->async));
     dev->async.op = SC7A20_ASYNC_OP_READ_XYZ;
     dev->async.reg_addr = (uint8_t)(SC7A20_OUTX_L | 0x80u);
     dev->async.xyz_cb = cb;

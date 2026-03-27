@@ -17,6 +17,8 @@ When the user asks to build, flash, clean, or monitor logs, mirror the repositor
 - `build`: Run `xmake` from the repository root.
 - `flash`: Run the OpenOCD command defined in `.vscode/tasks.json` and program `build/cross/riscv/debug/CH32V208GBU_Templete.elf`.
 - `clean`: Follow the local clean task behavior: `xmake c`, then remove `build` and `.xmake`.
+- Always run `build` and `flash` sequentially: wait for `xmake` to finish successfully before starting OpenOCD.
+- Do not run build and flash in parallel; this can program stale artifacts and trigger intermittent verify failures.
 
 Prefer the local task meaning even if another build system also exists in the repository.
 This repository contains both `xmake.lua` and `CMakeLists.txt`, but the default operational workflow is the VS Code task set backed by `xmake`.
@@ -25,6 +27,7 @@ For serial debug on a connected board:
 
 - Single read smoke test: `python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8 --once`
 - Continuous monitor: `python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8`
+- Timed monitor (recommended to avoid port leaks): `python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8 --duration 8`
 - For non-UTF8 payload experiments: switch `--encoding` (for example `gbk`)
 
 Use `COM8` and `115200` as defaults unless the user specifies a different port or baud rate.

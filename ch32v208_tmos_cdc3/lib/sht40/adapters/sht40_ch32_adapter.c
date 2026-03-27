@@ -7,8 +7,22 @@
 #define SHT40_I2C_USE_IT 1
 #endif
 
-#define SHT40_I2C_REQ_TIMEOUT_MS 50U
+#define SHT40_I2C_REQ_TIMEOUT_MS 100U
 #define SHT40_I2C_OWNER_ID       2U
+
+static uint8_t sht40_mode_select(uint8_t is_read, uint16_t len)
+{
+#if SHT40_I2C_USE_IT
+    (void)is_read;
+    (void)len;
+    /* SHT40对“发命令后延时再读”时序较敏感，统一IT模式避免混合模式切换问题 */
+    return I2C_MODE_IT;
+#else
+    (void)is_read;
+    (void)len;
+    return I2C_MODE_POLLING;
+#endif
+}
 
 static int sht40_ch32_xfer(void *ctx,
                            const sht40_comm_msg_t *msgs,
@@ -33,6 +47,7 @@ static int sht40_ch32_xfer(void *ctx,
     }
     else if ((msgs[0].flags & SHT40_COMM_READ) != 0u)
     {
+        uint8_t mode = sht40_mode_select(1u, msgs[0].len);
         req.bus = bus->i2c_num;
         req.type = I2C_BUS_REQ_READ;
         req.owner_id = SHT40_I2C_OWNER_ID;
@@ -41,13 +56,14 @@ static int sht40_ch32_xfer(void *ctx,
         req.wbuf = NULL;
         req.rbuf = msgs[0].buf;
         req.len = msgs[0].len;
-        req.mode_hint = SHT40_I2C_USE_IT ? I2C_MODE_IT : I2C_MODE_POLLING;
+        req.mode_hint = mode;
         req.prio = I2C_BUS_PRIO_NORMAL;
         req.timeout_ms = SHT40_I2C_REQ_TIMEOUT_MS;
         rc = i2c_bus_submit_sync(&req);
     }
     else if ((msgs[0].flags & SHT40_COMM_WRITE) != 0u)
     {
+        uint8_t mode = sht40_mode_select(0u, msgs[0].len);
         req.bus = bus->i2c_num;
         req.type = I2C_BUS_REQ_WRITE;
         req.owner_id = SHT40_I2C_OWNER_ID;
@@ -56,7 +72,7 @@ static int sht40_ch32_xfer(void *ctx,
         req.wbuf = msgs[0].buf;
         req.rbuf = NULL;
         req.len = msgs[0].len;
-        req.mode_hint = SHT40_I2C_USE_IT ? I2C_MODE_IT : I2C_MODE_POLLING;
+        req.mode_hint = mode;
         req.prio = I2C_BUS_PRIO_NORMAL;
         req.timeout_ms = SHT40_I2C_REQ_TIMEOUT_MS;
         rc = i2c_bus_submit_sync(&req);

@@ -1,115 +1,76 @@
-/**
+﻿/**
  ******************************************************************************
  * @file    board.c
- * @brief   Board specific initialization
+ * @brief   板级外设初始化实现
+ ******************************************************************************
+ * @details 初始化顺序：
+ *          1) 基础系统：中断分组、时钟、延时、调试串口、毫秒定时器
+ *          2) I2C1 与 DMA 通道
+ *          3) I2C 总线仲裁器
+ *          4) USB CDC
  ******************************************************************************
  */
 
 #include "board.h"
-#include "OLED.h"
+
 #include "drv_i2c.h"
-#include "i2c_bus_arbiter.h"
 #include "drv_tim.h"
-#include "usb_lib.h"
+#include "i2c_bus_arbiter.h"
+#include "usb_cdc.h"
+#include "hw_config.h"
+#include "usb_core.h"
+#include "usb_init.h"
 
-static void oled_test(void);
-
-/* I2C1 传输模式开关：I2C_MODE_IT / I2C_MODE_DMA */
-#ifndef BOARD_I2C1_TRANSFER_MODE
-#define BOARD_I2C1_TRANSFER_MODE I2C_MODE_DMA
-#endif
-
+/* 提供给 HAL 的毫秒计时接口 */
 uint32_t HAL_GetTick(void)
 {
     return drv_tim_get_tick_ms();
 }
 
-void HAL_Delay(uint32_t Delay)
+/* 提供给 HAL 的阻塞延时接口 */
+void HAL_Delay(uint32_t ms)
 {
-    drv_tim_delay_ms(Delay);
+    drv_tim_delay_ms(ms);
 }
 
-vu8 tx_flag = 0;
-void i2c_master_tx_cplt_callback(i2c_num_t i2c_num)
+/* 板级初始化入口 */
+void board_init(void)
 {
-    tx_flag = 0;
-    (void)i2c_num;
-}
+    bsp_i2c_config_t i2c_cfg;
+    NVIC_InitTypeDef nvic_init = {0};
 
-void i2c_master_rx_cplt_callback(i2c_num_t i2c_num)
-{
-    (void)i2c_num;
-}
+    /* 基础系统初始化 */
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+    SystemCoreClockUpdate();
+    Delay_Init();
+    USART_Printf_Init(115200);
+    drv_tim_init(1000u);
 
-void i2c_master_error_callback(i2c_num_t i2c_num, uint32_t error_code)
-{
-    (void)i2c_num;
-    (void)error_code;
-    tx_flag = 0;
-}
-
-static void board_i2c_init(void)
-{
-    bsp_i2c_config_t config = {
-        .clock_speed = 100000,
-        .duty_cycle = I2C_DutyCycle_16_9,
-        .own_address = 0,
-        .enable_ack = true,
-        .is_7_bit_address = true,
-        .mode = BOARD_I2C1_TRANSFER_MODE,
-    };
-
-    bsp_i2c_init(I2C_NUM_1, &config);
-#if (BOARD_I2C1_TRANSFER_MODE == I2C_MODE_DMA)
-    /* CH32V20x: I2C1_TX=DMA1_CH6, I2C1_RX=DMA1_CH7 */
+    /* I2C1 初始化（默认 IT，DMA 用于大块传输） */
+    i2c_cfg.clock_speed = 100000u;
+    i2c_cfg.duty_cycle = I2C_DutyCycle_16_9;
+    i2c_cfg.own_address = 0u;
+    i2c_cfg.enable_ack = true;
+    i2c_cfg.is_7_bit_address = true;
+    i2c_cfg.mode = I2C_MODE_IT;
+    (void)bsp_i2c_init(I2C_NUM_1, &i2c_cfg);
     bsp_i2c_dma_init(I2C_NUM_1, DMA1_Channel6, DMA1_Channel7);
 
-    NVIC_InitTypeDef nvic_init = {0};
+    /* DMA 中断：CH6=I2C1_TX, CH7=I2C1_RX */
     nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
     nvic_init.NVIC_IRQChannelSubPriority = 2;
     nvic_init.NVIC_IRQChannelCmd = ENABLE;
-
     nvic_init.NVIC_IRQChannel = DMA1_Channel6_IRQn;
     NVIC_Init(&nvic_init);
     nvic_init.NVIC_IRQChannel = DMA1_Channel7_IRQn;
     NVIC_Init(&nvic_init);
-#endif
 
-    bsp_i2c_register_tx_callback(I2C_NUM_1, i2c_master_tx_cplt_callback);
-    bsp_i2c_register_rx_callback(I2C_NUM_1, i2c_master_rx_cplt_callback);
-    bsp_i2c_register_error_callback(I2C_NUM_1, i2c_master_error_callback);
-
+    /* I2C 请求仲裁器 */
     i2c_bus_arbiter_init(I2C_NUM_1);
-}
 
-static void GPIO_Toggle_INIT(void)
-{
-    GPIO_InitTypeDef GPIO_InitStructure = {0};
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
-}
-
-void board_init(void)
-{
-    GPIO_Toggle_INIT();
-    board_i2c_init();
-
+    /* USB CDC */
     Set_USBConfig();
     USB_Init();
     USB_Interrupts_Config();
-
-    drv_tim_init(1000);
-    oled_test();
-}
-
-static void oled_test(void)
-{
-    OLED_Init();
-    OLED_ShowChar(0, 0, 'A', OLED_8X16);
-    OLED_ShowString(16, 0, "Hello World!", OLED_8X16);
-    OLED_Update();
+    CDC_VirtualUartInit();
 }

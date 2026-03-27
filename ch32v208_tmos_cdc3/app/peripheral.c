@@ -1,3 +1,32 @@
+/**
+ * @file    peripheral.c
+ * @brief   BLE 外设角色应用实现文件
+ * @details 本文件实现了 BLE 外设 (Peripheral) 角色的应用逻辑，包括：
+ *          - 广播参数配置和启动
+ *          - 连接参数管理
+ *          - GATT 服务和特征值定义
+ *          - 连接状态通知回调
+ *          - 周期性任务处理（如特征值通知）
+ *          - RSSI 读取和 PHY 更新
+ *          
+ *          应用支持单连接模式，包含以下 GATT 服务：
+ *          - GAP 服务（通用访问配置文件）
+ *          - GATT 服务（通用属性配置文件）
+ *          - 设备信息服务（Device Information Service）
+ *          - 简单 GATT 配置文件服务（Simple GATT Profile）
+ *          
+ *          主要事件处理：
+ *          - SBP_START_DEVICE_EVT: 启动设备广播
+ *          - SBP_PERIODIC_EVT: 周期性任务（每 1.6 秒）
+ *          - SBP_READ_RSSI_EVT: 读取 RSSI（每 3.2 秒）
+ *          - SBP_PARAM_UPDATE_EVT: 连接参数更新请求
+ *          - SBP_PHY_UPDATE_EVT: PHY 更新请求
+ *
+ * @author  WCH (南京沁恒微电子股份有限公司)
+ * @version V1.0
+ * @date    2018/12/10
+ */
+
 /********************************** (C) COPYRIGHT *******************************
  * File Name          : peripheral.C
  * Author             : WCH

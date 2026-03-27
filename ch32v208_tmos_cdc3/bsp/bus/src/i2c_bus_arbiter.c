@@ -1,6 +1,35 @@
 #include "i2c_bus_arbiter.h"
 #include "board.h"
 
+// #include <errno.h>
+#include <string.h>
+
+/**
+ ******************************************************************************
+ * @file    i2c_bus_arbiter.c
+ * @brief   I2C总线仲裁器实现
+ ******************************************************************************
+ * @details 本文件实现了I2C总线仲裁器的核心功能，采用基于优先级队列的设计，
+ *          支持多任务环境下的I2C总线访问管理。
+ *          
+ *          核心设计：
+ *          - 使用三个优先级队列（高、正常、低）管理请求
+ *          - 基于轮询的处理机制，避免中断嵌套复杂性
+ *          - 完善的超时检测和总线恢复机制
+ *          - 详细的统计信息收集，便于性能分析
+ *          
+ *          工作流程：
+ *          1. 应用层调用i2c_bus_submit_sync()提交请求
+ *          2. 请求被加入对应优先级的队列中
+ *          3. 主循环定期调用i2c_bus_arbiter_process()处理队列
+ *          4. 仲裁器从高优先级到低优先级依次处理请求
+ *          5. 监控请求执行状态，处理完成或超时事件
+ *
+ ******************************************************************************
+ */
+#include "i2c_bus_arbiter.h"
+#include "board.h"
+
 #include <errno.h>
 #include <string.h>
 
@@ -11,16 +40,18 @@
 
 /**
  * @brief I2C总线请求节点结构体
+ * @details 封装单个I2C请求及其元数据，用于队列存储。
  */
 typedef struct
 {
-    uint32_t id;                  ///< 请求ID
-    uint32_t enqueue_tick;        ///< 入队时间戳
+    uint32_t id;                  ///< 请求ID（用于同步等待）
+    uint32_t enqueue_tick;        ///< 入队时间戳（用于统计等待时间）
     i2c_bus_request_t req;        ///< I2C总线请求
 } i2c_bus_req_node_t;
 
 /**
  * @brief I2C总线优先级队列结构体
+ * @details 实现环形缓冲区形式的优先级队列。
  */
 typedef struct
 {
@@ -32,6 +63,7 @@ typedef struct
 
 /**
  * @brief I2C总线上下文结构体
+ * @details 管理单个I2C总线的所有状态信息，包括队列、当前请求、统计信息等。
  */
 typedef struct
 {
@@ -57,6 +89,7 @@ static i2c_bus_ctx_t s_bus_ctx[I2C_NUM_MAX];
 
 /**
  * @brief 规范化I2C优先级
+ * @details 将用户提供的优先级值规范化为有效的枚举值，防止越界访问。
  * @param prio 原始优先级
  * @return 规范化后的优先级
  */
@@ -74,6 +107,7 @@ static int i2c_bus_cancel_queued_if(i2c_num_t bus, uint8_t match_owner, uint8_t 
 
 /**
  * @brief 将I2C返回值转换为错误码
+ * @details 将底层I2C驱动的返回值映射为标准POSIX错误码，便于上层处理。
  * @param ret I2C返回值
  * @return 对应的错误码
  */
@@ -100,8 +134,10 @@ static int i2c_ret_to_errno(int ret)
 
 /**
  * @brief 开始处理I2C请求
+ * @details 根据请求类型和模式提示，调用底层I2C驱动执行相应的操作。
+ *          支持轮询、中断、DMA三种传输模式，根据请求中的mode_hint字段选择。
  * @param req I2C总线请求指针
- * @return I2C操作结果
+ * @return I2C操作结果（I2C_OK表示成功）
  */
 static int i2c_bus_start_request(const i2c_bus_request_t *req)
 {
@@ -163,6 +199,7 @@ static int i2c_bus_start_request(const i2c_bus_request_t *req)
 
 /**
  * @brief 向优先级队列中添加请求节点
+ * @details 将请求节点添加到指定优先级队列的尾部，如果队列已满则返回错误。
  * @param q 优先级队列指针
  * @param node 请求节点指针
  * @return 成功返回0，失败返回-1
@@ -182,6 +219,7 @@ static int prio_queue_push(i2c_bus_prio_queue_t *q, const i2c_bus_req_node_t *no
 
 /**
  * @brief 从优先级队列中取出请求节点
+ * @details 从指定优先级队列的头部取出请求节点，如果队列为空则返回错误。
  * @param q 优先级队列指针
  * @param node 请求节点指针（输出参数）
  * @return 成功返回0，失败返回-1
@@ -201,6 +239,7 @@ static int prio_queue_pop(i2c_bus_prio_queue_t *q, i2c_bus_req_node_t *node)
 
 /**
  * @brief 从仲裁器中取出下一个请求
+ * @details 按照优先级顺序（高->正常->低）从队列中取出下一个待处理的请求。
  * @param ctx I2C总线上下文指针
  * @param node 请求节点指针（输出参数）
  * @return 成功返回0，失败返回-1
@@ -222,6 +261,7 @@ static int arbiter_pop_next(i2c_bus_ctx_t *ctx, i2c_bus_req_node_t *node)
 
 /**
  * @brief 标记当前请求已完成
+ * @details 更新统计信息，标记当前请求为完成状态，并记录执行时间和结果。
  * @param ctx I2C总线上下文指针
  * @param status 完成状态
  */
@@ -256,6 +296,8 @@ static void i2c_bus_mark_done(i2c_bus_ctx_t *ctx, int status)
 
 /**
  * @brief 初始化I2C总线仲裁器
+ * @details 初始化指定I2C总线的仲裁器上下文，清空所有队列和统计信息，
+ *          为后续的请求处理做好准备。
  * @param bus I2C总线编号
  */
 void i2c_bus_arbiter_init(i2c_num_t bus)
@@ -271,6 +313,11 @@ void i2c_bus_arbiter_init(i2c_num_t bus)
 
 /**
  * @brief 处理I2C总线仲裁器
+ * @details I2C总线仲裁器的主处理函数，需要在系统主循环或定时器中断中定期调用。
+ *          执行以下主要任务：
+ *          1. 如果当前没有运行的请求，从队列中取出下一个请求开始执行
+ *          2. 如果当前有运行的请求，监控其执行状态和超时情况
+ *          3. 处理请求完成、超时或错误事件
  * @param bus I2C总线编号
  */
 void i2c_bus_arbiter_process(i2c_num_t bus)
@@ -354,6 +401,8 @@ void i2c_bus_arbiter_process(i2c_num_t bus)
 
 /**
  * @brief 同步提交I2C总线请求
+ * @details 同步方式提交I2C请求，内部将请求加入队列后阻塞等待直到完成。
+ *          适用于需要确保操作完成后再继续执行的场景。
  * @param req I2C总线请求指针
  * @return 成功返回0，失败返回负错误码
  */
@@ -441,6 +490,7 @@ int i2c_bus_submit_sync(const i2c_bus_request_t *req)
 
 /**
  * @brief 根据设备地址取消排队中的请求
+ * @details 取消指定设备地址的所有排队请求，通常在设备异常或需要重置时使用。
  * @param bus I2C总线编号
  * @param dev_addr 设备地址
  * @return 取消的请求数量
@@ -452,6 +502,7 @@ int i2c_bus_cancel_by_dev(i2c_num_t bus, uint8_t dev_addr)
 
 /**
  * @brief 根据条件取消排队中的请求（内部函数）
+ * @details 内部实现函数，根据match_owner参数决定是按设备地址还是所有者ID进行匹配取消。
  * @param bus I2C总线编号
  * @param match_owner 是否匹配所有者ID（0=匹配设备地址，非0=匹配所有者ID）
  * @param key 匹配键值（设备地址或所有者ID）
@@ -529,6 +580,7 @@ static int i2c_bus_cancel_queued_if(i2c_num_t bus, uint8_t match_owner, uint8_t 
 
 /**
  * @brief 根据所有者ID取消排队中的请求
+ * @details 取消指定所有者ID的所有排队请求，通常在模块卸载或任务结束时使用。
  * @param bus I2C总线编号
  * @param owner_id 所有者ID
  * @return 取消的请求数量
@@ -540,6 +592,8 @@ int i2c_bus_cancel_by_owner(i2c_num_t bus, uint8_t owner_id)
 
 /**
  * @brief 获取I2C总线统计信息
+ * @details 获取指定I2C总线的详细统计信息，包括成功率、平均等待时间、最大执行时间等。
+ *          统计信息可用于性能分析和系统调试。
  * @param bus I2C总线编号
  * @param stats 统计信息结构体指针
  */
@@ -569,6 +623,8 @@ void i2c_bus_get_stats(i2c_num_t bus, i2c_bus_stats_t *stats)
 
 /**
  * @brief 重置I2C总线统计信息
+ * @details 清空指定I2C总线的所有统计信息，重新开始收集数据。
+ *          通常在系统初始化或需要重新开始性能分析时调用。
  * @param bus I2C总线编号
  */
 void i2c_bus_reset_stats(i2c_num_t bus)

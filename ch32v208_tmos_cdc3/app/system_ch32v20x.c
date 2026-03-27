@@ -1,16 +1,26 @@
-/********************************** (C) COPYRIGHT *******************************
- * File Name          : system_ch32v20x.c
- * Author             : WCH
- * Version            : V1.0.0
- * Date               : 2021/06/06
- * Description        : CH32V20x Device Peripheral Access Layer System Source File.
- *                      For HSE = 32Mhz (CH32V208x/CH32V203RBT)
- *                      For HSE = 8Mhz (other CH32V203x)
- *********************************************************************************
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
+/**
+ * @file    system_ch32v20x.c
+ * @brief   CH32V20x设备外设访问层系统源文件
+ * @details 本文件实现了CH32V20x微控制器的系统时钟配置功能，包括：
+ *          - 系统时钟频率定义和选择
+ *          - PLL配置和使能
+ *          - AHB/APB总线分频器配置
+ *          - SystemCoreClock变量管理和更新
+ *          
+ *          支持的时钟源：
+ *          - HSE（外部高速晶振）：CH32V208x/CH32V203RBT为32MHz，其他CH32V203x为8MHz
+ *          - HSI（内部高速RC振荡器）：默认8MHz
+ *          
+ *          支持的系统时钟频率（通过PLL倍频）：
+ *          - HSE输入：48MHz、56MHz、72MHz、96MHz、120MHz、144MHz
+ *          - HSI输入：48MHz、56MHz、72MHz、96MHz、120MHz、144MHz
+ *          
+ *          当前配置：SYSCLK_FREQ_144MHz_HSE（144MHz系统时钟，使用HSE作为PLL输入）
+ *
+ * @author  WCH (南京沁恒微电子股份有限公司)
+ * @version V1.0.0
+ * @date    2021/06/06
+ */
 #include "ch32v20x.h" 
 
 /* 

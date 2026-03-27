@@ -1,7 +1,6 @@
 ﻿#include "../inc/sc7a20.h"
 
 #include <errno.h>
-#include <string.h>
 
 int sc7a20_init(sc7a20_dev_t *dev)
 {
@@ -80,7 +79,7 @@ int sc7a20_deinit(sc7a20_dev_t *dev)
         return rc;
     }
 
-    memset(&ctrl1, 0, sizeof(ctrl1));
+    SC7A20_MEMSET(&ctrl1, 0, sizeof(ctrl1));
     ctrl1.bit.ODR = SC7A20_ACCEL_ODR_POWER_DOWN;
     rc = sc7a20_core_write_reg(dev, SC7A20_CTRL1, &ctrl1.reg, 1u);
     dev->initialized = false;

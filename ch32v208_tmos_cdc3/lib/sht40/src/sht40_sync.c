@@ -1,7 +1,6 @@
 ﻿#include "../inc/sht40.h"
 
 #include <errno.h>
-#include <string.h>
 
 static void sht40_delay_if_present(const sht40_dev_t *dev, uint32_t ms)
 {
@@ -36,7 +35,7 @@ int sht40_init(sht40_dev_t *dev)
     }
 
     dev->addr = (dev->addr == 0u) ? SHT40_I2C_ADDR : dev->addr;
-    memset(&dev->async, 0, sizeof(dev->async));
+    SHT40_MEMSET(&dev->async, 0, sizeof(dev->async));
     dev->initialized = true;
 
     rc = sht40_soft_reset(dev);

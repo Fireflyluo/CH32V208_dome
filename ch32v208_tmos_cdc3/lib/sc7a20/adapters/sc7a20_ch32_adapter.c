@@ -7,8 +7,20 @@
 #define SC7A20_I2C_USE_DMA_BURST_READ 1
 #endif
 
+#ifndef SC7A20_I2C_DMA_BURST_MIN_LEN
+#define SC7A20_I2C_DMA_BURST_MIN_LEN 6u
+#endif
+
+#ifndef SC7A20_CH32_XFER_STATS_ENABLE
+#define SC7A20_CH32_XFER_STATS_ENABLE 0
+#endif
+
 #define SC7A20_I2C_REQ_TIMEOUT_MS 50U
 #define SC7A20_I2C_OWNER_ID       1U
+
+#if SC7A20_CH32_XFER_STATS_ENABLE
+static volatile sc7a20_ch32_xfer_stats_t s_xfer_stats = {0};
+#endif
 
 static int ch32_do_two_msg_xfer(sc7a20_ch32_bus_ctx_t *ctx, const sc7a20_comm_msg_t *msgs)
 {
@@ -25,6 +37,8 @@ static int ch32_do_two_msg_xfer(sc7a20_ch32_bus_ctx_t *ctx, const sc7a20_comm_ms
 
     if ((msgs[1].flags & SC7A20_COMM_READ) != 0u)
     {
+        int rc;
+
         req.bus = ctx->i2c_num;
         req.type = I2C_BUS_REQ_READ_REG;
         req.owner_id = SC7A20_I2C_OWNER_ID;
@@ -37,11 +51,30 @@ static int ch32_do_two_msg_xfer(sc7a20_ch32_bus_ctx_t *ctx, const sc7a20_comm_ms
         req.timeout_ms = SC7A20_I2C_REQ_TIMEOUT_MS;
 
 #if SC7A20_I2C_USE_DMA_BURST_READ
-        req.mode_hint = (msgs[1].len > 1u) ? I2C_MODE_DMA : I2C_MODE_IT;
-#else
-        req.mode_hint = I2C_MODE_IT;
+        if (msgs[1].len >= SC7A20_I2C_DMA_BURST_MIN_LEN)
+        {
+#if SC7A20_CH32_XFER_STATS_ENABLE
+            s_xfer_stats.dma_try_cnt++;
 #endif
-
+            req.mode_hint = I2C_MODE_DMA;
+            rc = i2c_bus_submit_sync(&req);
+            if (rc == 0)
+            {
+#if SC7A20_CH32_XFER_STATS_ENABLE
+                s_xfer_stats.dma_ok_cnt++;
+#endif
+                return 0;
+            }
+            /* DMA burst失败后回退IT，提升抗干扰能力 */
+#if SC7A20_CH32_XFER_STATS_ENABLE
+            s_xfer_stats.it_fallback_cnt++;
+#endif
+        }
+#endif
+        req.mode_hint = I2C_MODE_IT;
+#if SC7A20_CH32_XFER_STATS_ENABLE
+        s_xfer_stats.it_direct_cnt++;
+#endif
         return i2c_bus_submit_sync(&req);
     }
 
@@ -116,3 +149,32 @@ const sc7a20_bus_ops_t g_sc7a20_ch32_i2c_ops = {
     .xfer = ch32_i2c_xfer,
     .cancel = ch32_i2c_cancel,
 };
+
+void sc7a20_ch32_get_xfer_stats(sc7a20_ch32_xfer_stats_t *out)
+{
+    if (out == NULL)
+    {
+        return;
+    }
+#if SC7A20_CH32_XFER_STATS_ENABLE
+    out->dma_try_cnt = s_xfer_stats.dma_try_cnt;
+    out->dma_ok_cnt = s_xfer_stats.dma_ok_cnt;
+    out->it_fallback_cnt = s_xfer_stats.it_fallback_cnt;
+    out->it_direct_cnt = s_xfer_stats.it_direct_cnt;
+#else
+    out->dma_try_cnt = 0u;
+    out->dma_ok_cnt = 0u;
+    out->it_fallback_cnt = 0u;
+    out->it_direct_cnt = 0u;
+#endif
+}
+
+void sc7a20_ch32_reset_xfer_stats(void)
+{
+#if SC7A20_CH32_XFER_STATS_ENABLE
+    s_xfer_stats.dma_try_cnt = 0u;
+    s_xfer_stats.dma_ok_cnt = 0u;
+    s_xfer_stats.it_fallback_cnt = 0u;
+    s_xfer_stats.it_direct_cnt = 0u;
+#endif
+}

@@ -112,6 +112,7 @@ static void i2c_error_handler(I2C_HandleTypeDef *hi2c, uint32_t error_code)
     I2C_AcknowledgeConfig(hi2c->Instance, ENABLE);
     I2C_ITConfig(hi2c->Instance, I2C_IT_BUF, DISABLE);
     hi2c->State = I2C_STATE_IDLE;
+    hi2c->XferUseDma = false;
 
     // BERR/ARLO/TIMEOUT 才做重型总线恢复；AF(NACK) 常见于设备忙/地址无应答，不直接做重置
     if (error_code == I2C_ERR_BERR || error_code == I2C_ERR_ARLO || error_code == I2C_ERR_TIMEOUT)
@@ -237,6 +238,7 @@ int bsp_i2c_init(i2c_num_t i2c_num, const bsp_i2c_config_t *init_cfg)
     hi2c->InitCfg = *init_cfg;
     hi2c->Mode = init_cfg->mode;
     hi2c->State = I2C_STATE_IDLE;
+    hi2c->XferUseDma = false;
     hi2c->ErrorCode = I2C_OK;
 
     // 使能时钟
@@ -348,8 +350,9 @@ I2C_StateTypeDef bsp_i2c_get_state(i2c_num_t i2c_num)
         return I2C_STATE_ERROR;
 
     I2C_HandleTypeDef *hi2c = get_handle(i2c_num);
-    // 兜底：在轮询状态查询时顺带服务 DMA 完成，避免仅依赖 NVIC IRQ
-    if (hi2c->Mode == I2C_MODE_DMA)
+    // 兜底：在轮询状态查询时顺带服务 DMA 完成，避免仅依赖 NVIC IRQ。
+    // 注意这里不能仅看 hi2c->Mode，因为上层可能采用“全局IT + 单次请求DMA”的混合模式。
+    if (hi2c->DmaEnabled && hi2c->XferUseDma)
     {
         if (hi2c->State == I2C_STATE_BUSY_TX)
         {
@@ -685,6 +688,7 @@ int bsp_i2c_write_it(i2c_num_t i2c_num, uint8_t dev_addr, const uint8_t *data, u
     hi2c->TxCount = 0;
     hi2c->RxLength = 0;
     hi2c->IsRegWrite = false;
+    hi2c->XferUseDma = false;
     hi2c->State = I2C_STATE_BUSY_TX;
     hi2c->ErrorCode = I2C_OK;
 
@@ -717,6 +721,7 @@ int bsp_i2c_read_it(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t *data, uint16_t
     hi2c->RxCount = 0;
     hi2c->TxLength = 0;
     hi2c->IsRegWrite = false;
+    hi2c->XferUseDma = false;
     hi2c->State = I2C_STATE_BUSY_RX;
     hi2c->ErrorCode = I2C_OK;
 
@@ -761,6 +766,7 @@ int bsp_i2c_write_register_it(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg,
     hi2c->TxCount = 0;
     hi2c->RxLength = 0;
     hi2c->IsRegWrite = false;
+    hi2c->XferUseDma = false;
     hi2c->State = I2C_STATE_BUSY_TX;
     hi2c->ErrorCode = I2C_OK;
 
@@ -796,6 +802,7 @@ int bsp_i2c_read_register_it(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t reg,
     hi2c->TxLength = 1;
     hi2c->TxCount = 0;
     hi2c->IsRegWrite = true;
+    hi2c->XferUseDma = false;
     hi2c->State = I2C_STATE_BUSY_TX;
     hi2c->ErrorCode = I2C_OK;
 
@@ -887,18 +894,23 @@ int bsp_i2c_write_dma(i2c_num_t i2c_num, uint8_t dev_addr, const uint8_t *data, 
     hi2c->TxLength = len;
     hi2c->TxCount = 0;
     hi2c->RxLength = 0;
+    hi2c->IsRegWrite = false;
+    hi2c->XferUseDma = true;
     hi2c->State = I2C_STATE_BUSY_TX;
     hi2c->ErrorCode = I2C_OK;
+
+    // 避免 IT 残留路径干扰 DMA 数据发送
+    I2C_ITConfig(i2c, I2C_IT_BUF, DISABLE);
+    I2C_ITConfig(i2c, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
 
     // 使能 DMA 中断
     DMA_ITConfig(hi2c->TxDmaChannel, DMA_IT_TC, ENABLE);
     DMA_ClearFlag(i2c_dma_tc_it_from_channel(hi2c->TxDmaChannel));
     DMA_ClearITPendingBit(i2c_dma_tc_it_from_channel(hi2c->TxDmaChannel));
 
-    // 每次传输前重新使能 I2C DMA 请求（上次传输完成后会在 IRQ 中关闭）
+    // 先保持 DMA 通道关闭，等待 ADDR 事件后再开启，避免首字节在地址阶段前被写入 DATAR
     I2C_DMACmd(i2c, ENABLE);
-
-    DMA_Cmd(hi2c->TxDmaChannel, ENABLE);
+    DMA_Cmd(hi2c->TxDmaChannel, DISABLE);
     I2C_GenerateSTART(i2c, ENABLE);
 
     return I2C_OK;
@@ -941,8 +953,13 @@ int bsp_i2c_read_dma(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t *data, uint16_
     hi2c->RxCount = 0;
     hi2c->TxLength = 0;
     hi2c->IsRegWrite = false;
+    hi2c->XferUseDma = true;
     hi2c->State = I2C_STATE_BUSY_RX;
     hi2c->ErrorCode = I2C_OK;
+
+    // 避免 IT 残留路径干扰 DMA 接收
+    I2C_ITConfig(i2c, I2C_IT_BUF, DISABLE);
+    I2C_ITConfig(i2c, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
 
     // DMA 读默认保持 ACK 打开（单字节读已走轮询分支）
     I2C_AcknowledgeConfig(i2c, ENABLE);
@@ -955,10 +972,9 @@ int bsp_i2c_read_dma(i2c_num_t i2c_num, uint8_t dev_addr, uint8_t *data, uint16_
     DMA_ClearFlag(i2c_dma_tc_it_from_channel(hi2c->RxDmaChannel));
     DMA_ClearITPendingBit(i2c_dma_tc_it_from_channel(hi2c->RxDmaChannel));
 
-    // 每次传输前重新使能 I2C DMA 请求（上次传输完成后会在 IRQ 中关闭）
+    // 先保持 DMA 通道关闭，等待 ADDR 事件后再开启
     I2C_DMACmd(i2c, ENABLE);
-
-    DMA_Cmd(hi2c->RxDmaChannel, ENABLE);
+    DMA_Cmd(hi2c->RxDmaChannel, DISABLE);
     I2C_GenerateSTART(i2c, ENABLE);
 
     return I2C_OK;
@@ -1195,6 +1211,7 @@ void bsp_i2c_register_error_callback(i2c_num_t i2c_num, bsp_i2c_error_callback_t
 static void i2c_ev_handler(I2C_HandleTypeDef *hi2c, i2c_num_t num)
 {
     I2C_TypeDef *i2c = hi2c->Instance;
+    bool dma_active = hi2c->XferUseDma;
 
     if (hi2c->State == I2C_STATE_IDLE)
     {
@@ -1229,11 +1246,29 @@ static void i2c_ev_handler(I2C_HandleTypeDef *hi2c, i2c_num_t num)
         tmp = i2c->STAR2;
         (void)tmp;
 
+        // DMA 事务在地址阶段完成后再开启 DMA 通道，避免首字节被地址写入覆盖
+        if (dma_active)
+        {
+            if (hi2c->State == I2C_STATE_BUSY_TX && hi2c->TxDmaChannel != NULL)
+            {
+                DMA_Cmd(hi2c->TxDmaChannel, ENABLE);
+            }
+            else if (hi2c->State == I2C_STATE_BUSY_RX && hi2c->RxDmaChannel != NULL)
+            {
+                DMA_Cmd(hi2c->RxDmaChannel, ENABLE);
+            }
+        }
+
         // 如果是接收模式且只剩1字节，提前禁用 ACK
         if (hi2c->RxLength == 1 && !hi2c->IsRegWrite)
         {
             I2C_AcknowledgeConfig(i2c, DISABLE);
         }
+    }
+    // DMA 模式下，数据搬运与收尾由 DMA 路径处理，避免与 IT 路径并发
+    else if (dma_active)
+    {
+        return;
     }
     // 3. BTF - 当前字节真正发送完成，用于收尾或重复起始
     else if (I2C_GetITStatus(i2c, I2C_IT_BTF))
@@ -1255,6 +1290,7 @@ static void i2c_ev_handler(I2C_HandleTypeDef *hi2c, i2c_num_t num)
                 I2C_GenerateSTOP(i2c, ENABLE);
                 I2C_ITConfig(i2c, I2C_IT_BUF, DISABLE);
                 hi2c->State = I2C_STATE_IDLE;
+                hi2c->XferUseDma = false;
 
                 if (hi2c->TxCpltCallback)
                 {
@@ -1299,6 +1335,7 @@ static void i2c_ev_handler(I2C_HandleTypeDef *hi2c, i2c_num_t num)
                 I2C_AcknowledgeConfig(i2c, ENABLE);
                 I2C_ITConfig(i2c, I2C_IT_BUF, DISABLE);
                 hi2c->State = I2C_STATE_IDLE;
+                hi2c->XferUseDma = false;
 
                 if (hi2c->RxCpltCallback)
                 {
@@ -1382,6 +1419,13 @@ void bsp_i2c_dma_tx_irq_handler(i2c_num_t i2c_num)
 
     if (tc_it != 0 && DMA_GetITStatus(tc_it))
     {
+        // 防止残留 TC 标志导致“提前完成”误判
+        if (DMA_GetCurrDataCounter(channel) != 0U)
+        {
+            DMA_ClearITPendingBit(tc_it);
+            return;
+        }
+
         DMA_ClearITPendingBit(tc_it);
         DMA_Cmd(channel, DISABLE);
 
@@ -1400,7 +1444,19 @@ void bsp_i2c_dma_tx_irq_handler(i2c_num_t i2c_num)
         I2C_GenerateSTOP(i2c, ENABLE);
         I2C_DMACmd(i2c, DISABLE);
 
+        // 等待总线真正空闲，避免下一笔过早启动导致首字节异常
+        timeout = I2C_TIMEOUT_DEFAULT;
+        while (I2C_GetFlagStatus(i2c, I2C_FLAG_BUSY))
+        {
+            if (timeout-- == 0)
+            {
+                i2c_error_handler(hi2c, I2C_ERR_TIMEOUT);
+                return;
+            }
+        }
+
         hi2c->State = I2C_STATE_IDLE;
+        hi2c->XferUseDma = false;
 
         if (hi2c->TxCpltCallback)
         {
@@ -1421,6 +1477,13 @@ void bsp_i2c_dma_rx_irq_handler(i2c_num_t i2c_num)
 
     if (tc_it != 0 && DMA_GetITStatus(tc_it))
     {
+        // 防止残留 TC 标志导致“提前完成”误判
+        if (DMA_GetCurrDataCounter(channel) != 0U)
+        {
+            DMA_ClearITPendingBit(tc_it);
+            return;
+        }
+
         DMA_ClearITPendingBit(tc_it);
         DMA_Cmd(channel, DISABLE);
 
@@ -1430,7 +1493,19 @@ void bsp_i2c_dma_rx_irq_handler(i2c_num_t i2c_num)
         I2C_DMALastTransferCmd(i2c, DISABLE);
         I2C_DMACmd(i2c, DISABLE);
 
+        // 等待总线真正空闲
+        uint32_t timeout = I2C_TIMEOUT_DEFAULT;
+        while (I2C_GetFlagStatus(i2c, I2C_FLAG_BUSY))
+        {
+            if (timeout-- == 0)
+            {
+                i2c_error_handler(hi2c, I2C_ERR_TIMEOUT);
+                return;
+            }
+        }
+
         hi2c->State = I2C_STATE_IDLE;
+        hi2c->XferUseDma = false;
 
         if (hi2c->RxCpltCallback)
         {
@@ -1461,4 +1536,7 @@ __attribute__((weak)) void bsp_i2c2_error_callback(uint32_t error_code)
 {
     (void)error_code;
 }
+
+
+
 

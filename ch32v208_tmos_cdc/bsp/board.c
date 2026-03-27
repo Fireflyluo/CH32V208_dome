@@ -102,7 +102,7 @@ void board_init(void)
     // i2c_read_register_async(I2C_NUM_1, 0x19, 0x0F, &test_id, 1, accel_read_callback);
     accel_init();
     SHT40_Init();
-    // oled_test();
+     oled_test();
 }
 
 // 硬件操作函数实现

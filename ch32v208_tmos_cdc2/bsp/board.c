@@ -64,7 +64,7 @@ static void board_i2c_init(void)
         .own_address = 0,
         .enable_ack = true,
         .is_7_bit_address = true,
-        .mode = I2C_MODE_DMA,
+        .mode = I2C_MODE_IT,
     };
 
     bsp_i2c_init(I2C_NUM_1, &config);
@@ -95,8 +95,8 @@ void board_init(void)
 
     drv_tim_init(1000);
 
-    accel_init();
-    SHT40_Init();
+    // accel_init();
+    // SHT40_Init();
     oled_test();
 }
 
