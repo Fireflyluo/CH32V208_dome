@@ -1,148 +1,111 @@
-# CH32V208 TMOS CDC 工程说明文档
+﻿# CH32V208 TMOS CDC 工程说明
 
-## 项目概述
+## 1. 项目简介
+本工程基于 **CH32V208**，使用 **TMOS** 进行任务调度，当前已实现：
+- SC7A20 三轴加速度采集
+- SHT40 温湿度采集（两段式）
+- OLED 显示任务
+- USB CDC 串口上报任务
+- I2C 总线仲裁与 IT/DMA 混合传输
 
-这是一个基于 CH32V208 微控制器的嵌入式开发项目，集成了 TMOS（Tiny Multi-task Operating System）操作系统和 USB CDC（Communication Device Class）功能。该项目主要用作 CH32V208 学习记录和驱动示例，整合了多种外设和传感器，为用户提供了一个完整的开发验证平台。
+主入口位于 [app/main.c](app/main.c)，初始化顺序如下：
+1. `board_init()`
+2. `WCHBLE_Init()`
+3. `HAL_Init()`
+4. `sensor_task_init()`
+5. `display_task_init()`
+6. `serial_upload_task_init()`
+7. `while(1) { TMOS_SystemProcess(); }`
 
-## 硬件资源配置
+## 2. 当前任务与频率
+### 2.1 传感器任务（sensor_task）
+文件：`app/tasks/sensor_task.c`
+- SC7A20：**100 Hz** 采样（10 ms）
+- SHT40：**1 Hz** 采样（1000 ms）
+- SHT40 采用两段式事件：
+  - 第一步发送测量命令
+  - 延时后第二步读取结果
+- 使用快照结构共享数据，供显示任务与串口任务读取
 
-### 主控芯片
-- **型号**: CH32V208gbu6/wbu6
+### 2.2 显示任务（display_task）
+文件：`app/tasks/display_task.c`
+- OLED 刷新周期：**500 ms（2 Hz）**
+- 显示内容：
+  - AX/AY/AZ（mg）
+  - 温度（C）
+  - 湿度（%）
 
-### 板载设备
-- **2.4G射频模块**: SI24R1 型号
-- **OLED显示屏**: I2C 接口屏幕
-- **传感器模块**:
-  - SC7A20HTR 加速度计
-  - SHT40 温湿度传感器
+### 2.3 串口上报任务（serial_upload_task）
+文件：`app/tasks/serial_upload_task.c`
+- 上报周期：**1 s**
+- 每秒打印最近一次：
+  - 加速度数据
+  - 温湿度数据
+  - 统计信息（accel_hz/sht_hz/sht_ok/sht_err/ready）
 
-### 其他外设
-- **LED指示灯**: GPIO 控制
-- **按键**: 用户输入接口
+## 3. I2C 与 OLED 说明
+### 3.1 I2C 架构
+- 底层驱动：`bsp/drivers/src/drv_i2c.c`
+- 仲裁层：`bsp/bus/src/i2c_bus_arbiter.c`
+- OLED、SC7A20、SHT40 都通过仲裁层提交 I2C 请求
 
-## 项目架构
+### 3.2 OLED 寻址模式（可选）
+文件：`lib/oled/OLED.h`
+- `OLED_ADDR_MODE_HORIZONTAL` = `0`
+- `OLED_ADDR_MODE_PAGE` = `2`
+- 当前默认：
+  - `#define OLED_ADDR_MODE OLED_ADDR_MODE_PAGE`
 
-### 目录结构
+### 3.3 OLED 刷新稳定性处理
+文件：`lib/oled/OLED.c`
+- 局部刷新已支持两种寻址模式
+- 刷新链路增加了失败检查：命令/数据发送失败会中止当前轮，避免页错位扩散
+
+## 4. 构建与运行
+## 4.1 构建
+```bash
+xmake -r
 ```
-├── app/               # 应用层代码
-│   ├── include/       # 应用头文件
-│   ├── tasks/         # TMOS 任务
-│   └── 源文件
-├── ble_profile/       # BLE 配置文件
-├── bsp/               # 板级支持包
-│   ├── include/       # BSP 头文件
-│   ├── UART/          # 串口驱动
-│   └── 驱动源文件
-├── lib/               # 外设驱动库
-│   ├── oled/          # OLED 显示屏驱动
-│   ├── sc7a20htr/     # 加速度计驱动
-│   └── sht40/         # 温湿度传感器驱动
-├── utils/             # 公共组件
-├── sdk/               # SDK 库文件
-│   ├── Core/          # RISC-V 核心代码
-│   ├── Debug/         # 调试功能
-│   ├── HAL/           # 硬件抽象层
-│   ├── LIB/           # 库文件
-│   ├── Peripheral/    # 外设驱动
-│   └── USBLIB/        # USB 库
-└── tools/             # 开发工具配置
+
+## 4.2 构建选项
+- 关闭运行日志：
+```bash
+xmake f --log_print=false
+xmake -r
+```
+- 打开运行日志：
+```bash
+xmake f --log_print=true
+xmake -r
 ```
 
-### 关键模块说明
+## 4.3 串口查看（USB CDC）
+示例：
+```bash
+python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8
+```
+单次读取：
+```bash
+python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8 --once
+```
 
-#### 1. BSP（板级支持包）
-- **[drv_gpio.c/h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/drv_gpio.c)**: GPIO 驱动接口
-- **[drv_i2c.c/h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/drv_i2c.c)**: I2C 通信驱动
-- **[usb_cdc.c/h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/usb_cdc.c)**: USB CDC 通信接口
-- **UART（已废弃）**: 历史串口实现，当前工程以 USB CDC 为主
+## 5. 目录概览（当前）
+- `app/`：应用入口与任务
+- `bsp/`：板级初始化、驱动、I2C 仲裁、USB CDC
+- `lib/oled/`：OLED 驱动与字库
+- `lib/sc7a20/`：加速度计驱动
+- `lib/sht40/`：温湿度驱动
+- `sdk/`：CH32 SDK/HAL/外设库
+- `utils/`：公共工具
+- `scripts/`：构建与串口辅助脚本
 
-#### 2. 传感器驱动
-- **SC7A20HTR**: 三轴加速度传感器
-- **SHT40**: 数字温湿度传感器
+## 6. 注意事项
+- 本工程文本文件统一建议使用 **UTF-8**。
+- 若终端显示乱码，请确认终端编码与文件编码一致。
+- OLED 寻址模式切换后，建议重新上电并观察一段时间，确认显示稳定。
 
-#### 3. 任务管理
-- **TMOS**: 轻量级多任务操作系统
-- **LED任务**: LED 控制任务管理
-
-#### 4. SDK 组件
-- **CH32V208 HAL库**: 硬件抽象层
-- **USB库**: USB通信协议栈
-- **BLE库**: 无线通信支持
-
-## 功能特性
-
-### 已实现功能
-- ✅ **LED控制**: 通过GPIO实现LED指示灯控制
-- ✅ **I2C通信**: 实现I2C总线通信及设备扫描功能
-- ✅ **USB CDC 串口通信**: 支持虚拟串口通信
-- ✅ **USB CDC**: 虚拟串口功能
-- ✅ **传感器集成**: 支持加速度计和温湿度传感器
-
-
-
-### 待实现功能
-- ❏ **SPI通信**: SPI接口通信示例
-- ❏ **定时器应用**: 定时器功能演示
-- ❏ **中断处理**: 中断服务程序示例
-- ❏ **低功耗模式**: 省电模式实现
-- ❏ **更多外设驱动**: 扩展其他外设支持
-
-## 开发环境配置
-
-### 编译工具链
-- **IDE/编译器**: MR2/vscode eide/cmake/xmake
-- **调试工具**: WCH-LINK
-- **编程语言**: C/C++
-
-### 项目构建
-项目采用模块化设计，支持使用 EIDE 以及 MR2 进行编译和调试。
-
-## 编码规范
-
-- 工程文本文件统一使用 UTF-8 编码。
-- 在 VS Code 中已通过 `.editorconfig` 和 `.vscode/settings.json` 固化 UTF-8 配置。
-- 若使用 PowerShell 查看文件内容，建议显式使用 `Get-Content -Encoding utf8`，避免因终端默认编码导致“看起来像乱码”的显示问题。
-
-## 系统初始化流程
-
-1. **系统时钟配置**: 通过 [system_ch32v20x.c](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/app/system_ch32v20x.c) 进行系统时钟初始化
-2. **外设初始化**: GPIO、I2C、UART、USB等外设初始化
-3. **TMOS系统启动**: 任务调度系统启动
-4. **传感器初始化**: 加速度计和温湿度传感器初始化
-5. **USB CDC激活**: 虚拟串口功能启用
-
-## 使用说明
-
-### 硬件连接
-- 通过USB连接PC和开发板
-- 可连接外部传感器至I2C接口
-- LED和按键可直接使用
-
-### 软件配置
-- 修改 [board.c](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/bsp/board.c) 文件进行板级配置
-- 通过 [config.h](file:///d:/Desktop/ch32/0.CH32V208_dome/ch32v208_tmos_cdc/sdk/HAL/include/config.h) 进行系统参数配置
-
-### 串口调试
-- 单次读取（推荐快速验证）：
-  `python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8 --once`
-- 持续读取：
-  `python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8`
-- 如设备输出使用非 UTF-8 编码，可切换 `--encoding`（例如 `gbk`）。
-
-## 技术支持
-
-- **作者**: Fireflyluo
-- **QQ**: 2161486135
-- **邮箱**: 2161486135@qq.com
-
-## 版本信息
-
-- **创建日期**: 2026-2-10
-- **当前状态**: 初始版本，持续更新中
-
-## 注意事项
-
-1. 项目仍在开发阶段，部分功能有待完善
-2. 使用前请确认硬件连接正确
-3. 调试时建议使用WCH-LINK调试器
-4. 传感器驱动可根据实际需求进行调整优化
+## 7. 维护建议
+如需继续扩展，建议优先保持以下约定：
+1. 新增 I2C 设备统一走仲裁层。
+2. 任务间数据共享统一走快照接口。
+3. 日志输出统一走 `LOG_PRINT` 宏，便于整体开关。
