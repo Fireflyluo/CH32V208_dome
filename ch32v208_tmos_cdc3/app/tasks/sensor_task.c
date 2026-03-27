@@ -24,6 +24,7 @@
  * @version V1.0.0
  * @date    2022/06/16
  */
+
 #include "sensor_task.h"
 
 #include "board.h"
@@ -42,7 +43,7 @@
 #define SENSOR_EVT_SHT_READ   (0x0001u << 4)
 
 /* 采样与统计周期 */
-#define ACCEL_SAMPLE_MS       10u
+#define ACCEL_SAMPLE_MS       100u
 #define SHT_SAMPLE_MS         1000u
 #define SHT_MEASURE_DELAY_MS  3u
 #define STATS_PERIOD_MS       1000u

@@ -1,0 +1,111 @@
+/**
+ * @file    serial_upload_task.c
+ * @brief   串口上报任务：每秒输出最近一次采集数据
+ * @details 本文件实现了基于TMOS的串口数据上报任务，主要功能包括：
+ *          - 周期性（1Hz）从传感器任务获取最新数据快照
+ *          - 格式化输出加速度计、温度、湿度等传感器数据
+ *          - 输出传感器统计信息（采样频率、成功/失败计数等）
+ *          - 通过USB CDC虚拟串口发送数据（替代传统UART）
+ *          
+ *          数据格式：
+ *          - 加速度数据：ax=xxx ay=xxx az=xxx mg
+ *          - 温度数据：t=±xx.xx°C（支持负温度）
+ *          - 湿度数据：rh=xx.xx%
+ *          - 统计信息：accel_hz=100 sht_hz=1 sht_ok=xxx sht_err=xxx ready=1
+ *          
+ *          任务事件：
+ *          - SERIAL_EVT_INIT: 初始化事件，启动周期性上报
+ *          - SERIAL_EVT_UPLOAD: 数据上报事件，执行实际的数据输出
+ *
+ * @author  WCH (南京沁恒微电子股份有限公司)
+ * @version V1.0.0
+ * @date    2022/06/16
+ */
+#include "serial_upload_task.h"
+
+#include "log_print.h"
+#include "sensor_task.h"
+#include "wchble.h"
+
+#define SERIAL_EVT_INIT   (0x0001u << 0)
+#define SERIAL_EVT_UPLOAD (0x0001u << 1)
+
+/* 上报周期 1s */
+#define SERIAL_UPLOAD_MS 1000u
+
+static tmosTaskID s_serial_task_id = INVALID_TASK_ID;
+
+static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvents events);
+
+/**
+ * @brief  串口上传任务初始化函数
+ * @details 注册TMOS串口上传任务并触发初始化事件。
+ *          如果任务已存在或注册失败，则直接返回。
+ */
+void serial_upload_task_init(void)
+{
+    if (s_serial_task_id != INVALID_TASK_ID)
+    {
+        return;
+    }
+
+    s_serial_task_id = TMOS_ProcessEventRegister(serial_upload_task_process_event);
+    if (s_serial_task_id == INVALID_TASK_ID)
+    {
+        LOG_PRINT("serial upload task register failed\r\n");
+        return;
+    }
+
+    tmos_set_event(s_serial_task_id, SERIAL_EVT_INIT);
+}
+
+/**
+ * @brief  串口上传任务事件处理函数
+ * @details 处理串口上传任务的各类事件：
+ *          - SERIAL_EVT_INIT: 启动周期性数据上报定时器
+ *          - SERIAL_EVT_UPLOAD: 获取传感器数据并格式化输出
+ * 
+ * @param[in] task_id 当前任务ID
+ * @param[in] events 待处理的事件位图
+ * @return 未处理的事件
+ */
+static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvents events)
+{
+    sensor_snapshot_t snap;
+    int32_t t_abs;
+
+    (void)task_id;
+
+    if (events & SERIAL_EVT_INIT)
+    {
+        tmos_start_reload_task(s_serial_task_id, SERIAL_EVT_UPLOAD, MS1_TO_SYSTEM_TIME(SERIAL_UPLOAD_MS));
+        return (events ^ SERIAL_EVT_INIT);
+    }
+
+    if (events & SERIAL_EVT_UPLOAD)
+    {
+        /* 读取最近一次传感器结果并格式化输出 */
+        sensor_task_get_snapshot(&snap);
+        t_abs = (snap.temp_centi_c >= 0) ? snap.temp_centi_c : -snap.temp_centi_c;
+
+        LOG_PRINT("uplink ax=%ld ay=%ld az=%ld mg, t=%s%ld.%02ldC rh=%ld.%02ld%%\r\n",
+                  (long)snap.accel_mg_x,
+                  (long)snap.accel_mg_y,
+                  (long)snap.accel_mg_z,
+                  (snap.temp_centi_c < 0) ? "-" : "",
+                  (long)(t_abs / 100),
+                  (long)(t_abs % 100),
+                  (long)(snap.rh_centi_pct / 100),
+                  (long)(snap.rh_centi_pct % 100));
+        LOG_PRINT("uplink stat accel_hz=%u sht_hz=%u sht_ok=%lu sht_err=%lu ready=%u\r\n",
+                  (unsigned int)snap.accel_hz,
+                  (unsigned int)snap.sht_hz,
+                  (unsigned long)snap.sht_ok_cnt,
+                  (unsigned long)snap.sht_err_cnt,
+                  (unsigned int)snap.ready);
+
+        return (events ^ SERIAL_EVT_UPLOAD);
+    }
+
+    return 0;
+}

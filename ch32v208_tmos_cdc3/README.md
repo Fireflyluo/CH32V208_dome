@@ -8,6 +8,8 @@
 - USB CDC 串口上报任务
 - I2C 总线仲裁与 IT/DMA 混合传输
 
+（内部中文注释多数使用ai添加，可能存在错误）
+
 主入口位于 [app/main.c](app/main.c)，初始化顺序如下：
 1. `board_init()`
 2. `WCHBLE_Init()`
@@ -20,7 +22,7 @@
 ## 2. 当前任务与频率
 ### 2.1 传感器任务（sensor_task）
 文件：`app/tasks/sensor_task.c`
-- SC7A20：**100 Hz** 采样（10 ms）
+- SC7A20：**10 Hz** 采样（100 ms）
 - SHT40：**1 Hz** 采样（1000 ms）
 - SHT40 采用两段式事件：
   - 第一步发送测量命令
@@ -101,6 +103,8 @@ python scripts/serial_reader.py --port COM8 --baud 115200 --encoding utf-8 --onc
 
 ## 6. 注意事项
 - 本工程文本文件统一建议使用 **UTF-8**。
+- 在使用终端工具或其他自动化工具前，必须先确保输入与输出均为 **UTF-8** 编码（包括命令输出、日志、脚本读写文件）。
+- PowerShell 推荐先执行：`chcp 65001`、`[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)`、`[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。
 - 若终端显示乱码，请确认终端编码与文件编码一致。
 - OLED 寻址模式切换后，建议重新上电并观察一段时间，确认显示稳定。
 

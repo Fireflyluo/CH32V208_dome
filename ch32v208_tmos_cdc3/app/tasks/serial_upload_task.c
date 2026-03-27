@@ -21,6 +21,7 @@
  * @version V1.0.0
  * @date    2022/06/16
  */
+
 #include "serial_upload_task.h"
 
 #include "log_print.h"

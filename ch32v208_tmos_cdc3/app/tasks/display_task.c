@@ -1,4 +1,29 @@
-﻿#include "display_task.h"
+/**
+ * @file    display_task.c
+ * @brief   OLED显示任务实现文件
+ * @details 本文件实现了基于TMOS的OLED显示任务，主要功能包括：
+ *          - 初始化OLED显示屏
+ *          - 周期性（2Hz）刷新传感器数据显示
+ *          - 格式化显示加速度计三轴数据（mg单位）
+ *          - 显示温度和湿度信息
+ *          - 处理传感器未就绪状态的提示显示
+ *          
+ *          显示格式：
+ *          - 第0行：AX:±xxxxx mg
+ *          - 第16行：AY:±xxxxx mg  
+ *          - 第32行：AZ:±xxxxx mg
+ *          - 第48行：T±xxx°C Hxxx%
+ *          
+ *          任务事件：
+ *          - DISPLAY_EVT_INIT: 初始化事件，执行OLED初始化
+ *          - DISPLAY_EVT_REFRESH: 刷新事件，更新显示内容
+ *
+ * @author  WCH (南京沁恒微电子股份有限公司)
+ * @version V1.0.0
+ * @date    2022/06/16
+ */
+
+#include "display_task.h"
 
 #include "OLED.h"
 #include "log_print.h"
