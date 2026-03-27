@@ -1,7 +1,6 @@
 #include "i2c_bus_arbiter.h"
 #include "board.h"
 
-// #include <errno.h>
 #include <string.h>
 
 /**

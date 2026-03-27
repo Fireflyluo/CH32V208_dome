@@ -114,9 +114,20 @@ static int oled_submit_commands(const uint8_t *cmds, uint16_t len)
     req.rbuf = NULL;
     req.len = len;
     req.mode_hint = I2C_MODE_IT;
-    req.prio = I2C_BUS_PRIO_HIGH;
+    req.prio = I2C_BUS_PRIO_LOW;
     req.timeout_ms = OLED_I2C_REQ_TIMEOUT_MS;
     return i2c_bus_submit_sync(&req);
+}
+
+static int oled_reassert_horizontal_state(void)
+{
+    static const uint8_t cmds[] = {
+        0x20, 0x00, /* Horizontal Addressing Mode */
+        0x2E,       /* Deactivate scroll */
+        0xD3, 0x00, /* Display offset = 0 */
+        0x40        /* Display start line = 0 */
+    };
+    return oled_submit_commands(cmds, (uint16_t)sizeof(cmds));
 }
 
 static int oled_set_cursor_checked(uint8_t Page, uint8_t X)
@@ -128,7 +139,12 @@ static int oled_set_cursor_checked(uint8_t Page, uint8_t X)
     cmds[2] = (uint8_t)(0x00U | (X & 0x0FU));
     return oled_submit_commands(cmds, 3U);
 }
-
+/**
+ * 提交数据写入命令
+ * @param Data 数据指针
+ * @param Count 数据长度
+ * @return 0 成功，其他 失败
+ */
 static int oled_write_data_checked(uint8_t *Data, uint16_t Count)
 {
     static uint8_t s_oled_dma_chunk[1U + (I2C_MAX_WRITE_LEN - 1U)];
@@ -190,6 +206,11 @@ static void oled_refresh_area_pages(uint8_t x, uint8_t page_start, uint8_t page_
     uint8_t page;
     uint16_t bytes_total;
     static uint8_t s_oled_area_buf[OLED_FRAME_BYTES];
+
+    if (oled_reassert_horizontal_state() != 0)
+    {
+        return;
+    }
 
     cmd_window[0] = 0x21;
     cmd_window[1] = x;
@@ -382,7 +403,6 @@ void OLED_WriteData(uint8_t *Data, uint16_t Count)
     (void)oled_write_data_checked(Data, Count);
 }
 
-
 /*********************通信协议*/
 
 /*硬件配置*********************/
@@ -409,8 +429,8 @@ void OLED_Init(void)
     OLED_WriteCommand(0xD3); // 设置显示偏移
     OLED_WriteCommand(0x00); // 0x00~0x7F
 
-    OLED_WriteCommand(0x20);              // 设置内存寻址模式
-    OLED_WriteCommand(OLED_ADDR_MODE);    // 0x00:水平寻址, 0x02:页寻址
+    OLED_WriteCommand(0x20);           // 设置内存寻址模式
+    OLED_WriteCommand(OLED_ADDR_MODE); // 0x00:水平寻址, 0x02:页寻址
 
     OLED_WriteCommand(0x40); // 设置显示开始行，0x40~0x7F
 
@@ -1715,6 +1735,3 @@ void OLED_DrawArc(uint8_t X, uint8_t Y, uint8_t Radius, int16_t StartAngle, int1
 
 /*****************江协科技|版权所有****************/
 /*****************jiangxiekeji.com*****************/
-
-
-
