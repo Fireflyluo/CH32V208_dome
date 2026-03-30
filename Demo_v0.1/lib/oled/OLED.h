@@ -12,7 +12,7 @@
 #define OLED_ADDR_MODE_PAGE       2u
 
 #ifndef OLED_ADDR_MODE
-#define OLED_ADDR_MODE OLED_ADDR_MODE_HORIZONTAL
+#define OLED_ADDR_MODE OLED_ADDR_MODE_PAGE
 #endif
 
 /* 字体大小 */

@@ -128,6 +128,11 @@ python scripts/protocol_host_tester.py --port COM4 --send-params --query-count 6
 python scripts/protocol_host_tester.py --port COM4 --query-count 10
 ```
 
+若偶发超时，建议增加启动等待与重读次数：
+```bash
+python scripts/protocol_host_tester.py --port COM4 --send-params --query-count 10 --startup-delay 1.0 --read-retries 2 --read-retry-gap 0.08
+```
+
 ## 6. 目录概览（当前）
 - `app/`：应用入口与任务
 - `bsp/`：板级初始化、驱动、I2C 仲裁、USB CDC
