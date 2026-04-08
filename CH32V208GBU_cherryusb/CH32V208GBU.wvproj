@@ -1,5 +1,6 @@
 {
 	"version": "1.0",
+	"hasAllParsed": true,
 	"isNormalMRSProject": true,
 	"basic": {
 		"chipInfo": {
@@ -9,6 +10,7 @@
 			"rtos": "NoneOS",
 			"mcu": "CH32V208GBU",
 			"description": "",
+			"tempratureScope": "",
 			"artifactType": "executable",
 			"link": "WCH-Link",
 			"peripheral_version": "",
@@ -120,7 +122,6 @@
 					"${project}/cherryUSB/demo/winusb1.0_template.c",
 					"${project}/cherryUSB/demo/winusb2.0_cdc_template.c",
 					"${project}/cherryUSB/demo/winusb2.0_template.c",
-					"${project}/cherryUSB/port/fsdev",
 					"${project}/cherryUSB/port/ch32/ch32hs",
 					"${project}/sdk/Peripheral/inc/ch32v20x_usb.h",
 					"${project}/cherryUSB/core/usbh_core.c",
@@ -132,7 +133,10 @@
 					"${project}/cherryUSB/class/cdc/usbh_cdc_ncm.c",
 					"${project}/cherryUSB/class/cdc/usbh_cdc_ncm.h",
 					"${project}/cherryUSB/core/usbotg_core.c",
-					"${project}/cherryUSB/core/usbotg_core.h"
+					"${project}/cherryUSB/core/usbotg_core.h",
+					"${project}/cherryUSB/port/ch32",
+					"${project}/cherryUSB/port/fsdev/usb_glue_st.c",
+					"${project}/cherryUSB/demo"
 				],
 				"optimization": {
 					"level": "none",
@@ -152,6 +156,7 @@
 					"code_generation_without_hardware_floating": false,
 					"use_pipelines": false,
 					"show_caret_indicating_the_column": false,
+					"calling_convention_variant": false,
 					"other_optimization_flags": ""
 				},
 				"warnings": {
@@ -220,14 +225,10 @@
 							"${project}/sdk/Debug",
 							"${project}/sdk/Peripheral/inc",
 							"${project}/User",
-							"${project}/User/UART",
-							"${project}/User/USBLIB/CONFIG",
-							"${project}/User/USBLIB/USB-Driver/inc",
 							"${project}/cherryUSB",
 							"${project}/cherryUSB/class/cdc",
 							"${project}/cherryUSB/common",
 							"${project}/cherryUSB/core",
-							"${project}/cherryUSB/port/ch32/ch32fs",
 							"${project}/cherryUSB/port/fsdev"
 						],
 						"include_system_paths": [],
@@ -358,7 +359,8 @@
 					}
 				},
 				"archiver": {
-					"archiver_flags": "-r"
+					"archiver_flags": "-r",
+					"libOutputPrefix": "lib"
 				},
 				"createFlash": {
 					"enabled": true,
@@ -399,6 +401,7 @@
 					"extra_compressed_extension": true,
 					"bit_extension": false,
 					"multiplication_subset_of_the_M_extension": false,
+					"vector_cryptography_extensions": "",
 					"integer_ABI": "ilp32",
 					"floating_point_ABI": "none",
 					"tuning": "default",

@@ -8,6 +8,7 @@ MCU=CH32V208GBU
 Link=WCH-Link
 PeripheralVersion=
 Description=
+TempratureScope=
 ArtifactType=executable
 Mcu Type=CH32V20x
 Address=0x08000000
