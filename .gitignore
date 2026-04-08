@@ -1,9 +1,8 @@
-# Local AI/tooling folders
-.codex/
-.mrs/
-.xmake/
+# Local AI/tooling folders (any depth)
+**/.codex/
+**/.mrs/
+**/.xmake/
 
-# Build output folders
-build/
-obj/
-
+# Build output folders (any depth)
+**/build/
+**/obj/
