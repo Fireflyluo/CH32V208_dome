@@ -21,5 +21,8 @@
             "task": "clean",
             "tooltip": "清理项目"
         }
+    ],
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/.vscode"
     ]
 }

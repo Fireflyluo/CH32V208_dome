@@ -1,0 +1,33 @@
+{
+    "files.encoding": "utf8",
+    "files.autoGuessEncoding": false,
+    "terminal.integrated.env.windows": {
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8"
+    },
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "$(package) Build",
+            "task": "build",
+            "tooltip": "Build firmware"
+        },
+        {
+            "label": "$(zap) Flash",
+            "task": "flash",
+            "tooltip": "Flash firmware with WCH-Link"
+        },
+        {
+            "label": "$(terminal) COM X",
+            "task": "serial monitor CDC(auto)",
+            "tooltip": "Open COM9 serial monitor"
+        },
+        {
+            "label": "$(trash) Clean",
+            "task": "clean",
+            "tooltip": "Clean build outputs"
+        }
+    ],
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/.vscode"
+    ]
+}

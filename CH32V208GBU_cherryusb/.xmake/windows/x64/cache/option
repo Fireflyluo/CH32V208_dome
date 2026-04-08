@@ -1,0 +1,59 @@
+{
+    wch_toolchain_root = {
+        showmenu = true,
+        __sourceinfo_showmenu = { },
+        __scriptdir = [[D:\Desktop\ch32\CH32V208GBU_cherryusb]],
+        description = "WCH toolchain root directory",
+        __sourceinfo_default = {
+            ["E:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain"] = {
+                file = [[.\xmake.lua]],
+                line = 21
+            }
+        },
+        default = "E:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain",
+        __sourceinfo_description = {
+            ["WCH toolchain root directory"] = {
+                file = [[.\xmake.lua]],
+                line = 23
+            }
+        }
+    },
+    wch_gcc_ver = {
+        showmenu = true,
+        default = "auto",
+        __sourceinfo_values = {
+            ["12"] = {
+                file = [[.\xmake.lua]],
+                line = 16
+            },
+            auto = {
+                file = [[.\xmake.lua]],
+                line = 16
+            },
+            ["15"] = {
+                file = [[.\xmake.lua]],
+                line = 16
+            }
+        },
+        values = {
+            "auto",
+            "12",
+            "15"
+        },
+        __scriptdir = [[D:\Desktop\ch32\CH32V208GBU_cherryusb]],
+        description = "Select WCH RISC-V GCC toolchain version",
+        __sourceinfo_default = {
+            auto = {
+                file = [[.\xmake.lua]],
+                line = 14
+            }
+        },
+        __sourceinfo_description = {
+            ["Select WCH RISC-V GCC toolchain version"] = {
+                file = [[.\xmake.lua]],
+                line = 17
+            }
+        },
+        __sourceinfo_showmenu = { }
+    }
+}

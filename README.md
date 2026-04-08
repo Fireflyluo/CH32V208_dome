@@ -73,7 +73,8 @@
 - **2026-2-20**: 驱动优化
   - sc7a20驱动增加异步接口和示例
   - 修改工程结构和文档描述
-
+- **2026-4-8**: cherryusb(CDC ACM) 移植
+  - USBLIB 路径（旧 USB Device 内核 / PMA 结构）
 ## 联系方式
 
 - 作者: Fireflyluo

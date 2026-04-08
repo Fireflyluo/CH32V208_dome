@@ -1,0 +1,128 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "xmake f -p cross -a riscv -m debug -y; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; xmake"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ]
+        },
+        {
+            "label": "flash",
+            "type": "process",
+            "command": "E:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/OpenOCD/OpenOCD/bin/openocd.exe",
+            "args": [
+                "-s",
+                ".",
+                "-f",
+                "tools/wch-interface.cfg",
+                "-c",
+                "program build/cross/riscv/debug/CH32V208GBU.elf verify",
+                "-c",
+                "reset run",
+                "-c",
+                "exit"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "build and flash",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build",
+                "flash"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Write-Host 'Cleaning xmake build...'; xmake c; Remove-Item -Recurse -Force -ErrorAction SilentlyContinue build,.xmake"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "clear": true
+            }
+        },
+        {
+            "label": "serial monitor CDC(auto)",
+            "type": "process",
+            "command": "python",
+            "args": [
+                "scripts/serial_reader.py",
+                "--auto",
+                "--vid",
+                "1A86",
+                "--pid",
+                "FE0C",
+                "--baud",
+                "115200",
+                "--encoding",
+                "utf-8"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "serial monitor COM3 (WCH-Link)",
+            "type": "process",
+            "command": "python",
+            "args": [
+                "scripts/serial_reader.py",
+                "--port",
+                "COM3",
+                "--baud",
+                "115200",
+                "--encoding",
+                "utf-8"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "cdc echo test CDC(auto)",
+            "type": "process",
+            "command": "python",
+            "args": [
+                "scripts/cdc_echo_test.py",
+                "--auto",
+                "--vid",
+                "1A86",
+                "--pid",
+                "FE0C",
+                "--baud",
+                "115200",
+                "--message",
+                "hello_cherryusb"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

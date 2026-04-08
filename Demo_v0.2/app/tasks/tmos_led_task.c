@@ -8,14 +8,18 @@
 #define LED_TASK_TICK_MS 100u
 
 #define LED_DISCONN_ON_TICK 1u
-#define LED_DISCONN_CYCLE_TICK 10u
+#define LED_DISCONN_CYCLE_TICK 20u
 
 #define LED_CONN_TOGGLE_TICK 2u
+/* 连续若干个LED tick都没有收到新包，则判定链路掉线 */
+#define LED_LINK_RX_HOLD_TICK 8u
 
 static tmosTaskID s_led_task_id = INVALID_TASK_ID;
 static uint8_t s_led_is_on = 0u;
 static uint8_t s_connected = 0u;
 static uint8_t s_tick_in_cycle = 0u;
+static uint32_t s_last_rx_cnt = 0u;
+static uint8_t s_no_rx_tick = LED_LINK_RX_HOLD_TICK;
 
 static tmosEvents led_task_process_event(tmosTaskID task_id, tmosEvents events);
 
@@ -51,7 +55,27 @@ static void led_update_link_state(void)
     rf_task_status_t st;
 
     rf_task_get_status(&st);
-    s_connected = (uint8_t)(((st.rf_inited != 0u) && (st.synced != 0u)) ? 1u : 0u);
+    if ((st.rf_inited == 0u) || (st.synced == 0u))
+    {
+        s_connected = 0u;
+        s_no_rx_tick = LED_LINK_RX_HOLD_TICK;
+        s_last_rx_cnt = st.rx_cnt;
+        return;
+    }
+
+    if (st.rx_cnt != s_last_rx_cnt)
+    {
+        s_last_rx_cnt = st.rx_cnt;
+        s_no_rx_tick = 0u;
+        s_connected = 1u;
+        return;
+    }
+
+    if (s_no_rx_tick < 0xFFu)
+    {
+        s_no_rx_tick++;
+    }
+    s_connected = (uint8_t)((s_no_rx_tick < LED_LINK_RX_HOLD_TICK) ? 1u : 0u);
 }
 
 void led_task_init(void)
@@ -72,6 +96,8 @@ void led_task_init(void)
     s_led_is_on = 0u;
     s_connected = 0u;
     s_tick_in_cycle = 0u;
+    s_last_rx_cnt = 0u;
+    s_no_rx_tick = LED_LINK_RX_HOLD_TICK;
 
     tmos_set_event(s_led_task_id, LED_EVT_INIT);
 }

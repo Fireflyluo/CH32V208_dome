@@ -23,6 +23,91 @@
 9. `protocol_task_init()`
 10. `while(1) { TMOS_SystemProcess(); }`
 
+## 1.1 业务流程图（系统视角）
+```mermaid
+flowchart TD
+    A[上电/复位] --> B[board_init<br/>I2C + USB CDC + 定时器 + GPIO]
+    B --> C[WCHBLE_Init + HAL_Init]
+    C --> D[注册 TMOS 任务<br/>sensor/display/serial/rf/led/protocol]
+    D --> E[主循环<br/>TMOS_SystemProcess]
+
+    E --> F{TMOS 事件分发}
+
+    F -->|SENSOR_EVT_ACCEL 100ms<br/>SHT_CMD 1000ms + READ 延时5ms| G[sensor_task]
+    G --> G1[更新传感器快照 snapshot]
+
+    F -->|PROTOCOL_EVT_SAMPLE 20ms| H[protocol_task 采样]
+    G1 --> H
+    H --> H1[写入样本环形队列]
+
+    F -->|PROTOCOL_EVT_POLL 20ms| I[protocol_task 协议处理]
+    I --> I1[处理主机 P/S/E<br/>输出 q/n/m/i/h]
+    H1 --> I
+
+    F -->|DISPLAY_EVT_RENDER 400ms<br/>DISPLAY_EVT_FLUSH 20ms| J[display_task]
+    G1 --> J
+    I --> J
+    J --> J1[OLED 分片刷新]
+
+    F -->|SERIAL_EVT_UPLOAD 1000ms| K[serial_upload_task]
+    G1 --> K
+    K --> K1[USB CDC 日志上报]
+
+    F -->|RF_EVT_POLL 5ms| L[rf_task]
+    G1 --> L
+    L --> L1[tg_step 非阻塞轮询<br/>RF 收发状态更新]
+
+    F -->|LED_EVT_TICK 100ms| M[tmos_led_task]
+    L1 --> M
+    M --> M1[按链路状态切换闪烁模式]
+
+    J1 --> E
+    K1 --> E
+    I1 --> E
+    L1 --> E
+    M1 --> E
+```
+
+## 1.2 协议交互时序图（主机业务流程）
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Host as 上位机/主机脚本
+    participant CDC as USB CDC
+    participant PT as protocol_task
+    participant RB as 样本队列
+
+    Host->>CDC: 发送 P（参数下发）
+    CDC->>PT: 完整帧入栈并解析
+    PT->>PT: parse_param_data + protocol_apply_params<br/>更新采样间隔/阈值并清空历史缓存
+    PT-->>CDC: 回复 q（参数确认）
+
+    loop 查询阶段（主机周期发送 S）
+        Host->>CDC: 发送 S
+        CDC->>PT: MSG_QUERY
+        alt 样本数 == 0
+            PT-->>CDC: 回复 n（无数据）
+        else 样本数 < 16 且未激活上传
+            PT-->>CDC: 回复 m（准备中）
+        else 样本充足或上传进行中
+            PT->>RB: 取样并构建上传分片
+            alt 还有后续分片
+                PT-->>CDC: 回复 i（中间片）
+            else 最后一片
+                PT-->>CDC: 回复 h（最后片）
+            end
+        end
+    end
+
+    Host->>CDC: 发送 E（重发请求）
+    CDC->>PT: MSG_REPEAT_QUERY
+    alt 已缓存最近上报帧
+        PT-->>CDC: 重发最近 n/m/i/h（消息号不变）
+    else 无可重发内容
+        PT-->>CDC: 回复 n
+    end
+```
+
 ## 2. 当前任务与频率
 ### 2.1 传感器任务（sensor_task）
 文件：`app/tasks/sensor_task.c`

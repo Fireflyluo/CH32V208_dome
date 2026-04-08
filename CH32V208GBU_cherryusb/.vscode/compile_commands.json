@@ -1,0 +1,151 @@
+[
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\User\\Main.c.o", "User\\Main.c"],
+  "file": "User\\Main.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\User\\ch32v20x_it.c.o", "User\\ch32v20x_it.c"],
+  "file": "User\\ch32v20x_it.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\User\\system_ch32v20x.c.o", "User\\system_ch32v20x.c"],
+  "file": "User\\system_ch32v20x.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\User\\usb_cdc_app.c.o", "User\\usb_cdc_app.c"],
+  "file": "User\\usb_cdc_app.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Core\\core_riscv.c.o", "sdk\\Core\\core_riscv.c"],
+  "file": "sdk\\Core\\core_riscv.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Debug\\debug.c.o", "sdk\\Debug\\debug.c"],
+  "file": "sdk\\Debug\\debug.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_adc.c.o", "sdk\\Peripheral\\src\\ch32v20x_adc.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_adc.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_bkp.c.o", "sdk\\Peripheral\\src\\ch32v20x_bkp.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_bkp.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_can.c.o", "sdk\\Peripheral\\src\\ch32v20x_can.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_can.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_crc.c.o", "sdk\\Peripheral\\src\\ch32v20x_crc.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_crc.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_dbgmcu.c.o", "sdk\\Peripheral\\src\\ch32v20x_dbgmcu.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_dbgmcu.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_dma.c.o", "sdk\\Peripheral\\src\\ch32v20x_dma.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_dma.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_exti.c.o", "sdk\\Peripheral\\src\\ch32v20x_exti.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_exti.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_flash.c.o", "sdk\\Peripheral\\src\\ch32v20x_flash.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_flash.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_gpio.c.o", "sdk\\Peripheral\\src\\ch32v20x_gpio.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_gpio.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_i2c.c.o", "sdk\\Peripheral\\src\\ch32v20x_i2c.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_i2c.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_iwdg.c.o", "sdk\\Peripheral\\src\\ch32v20x_iwdg.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_iwdg.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_misc.c.o", "sdk\\Peripheral\\src\\ch32v20x_misc.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_misc.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_opa.c.o", "sdk\\Peripheral\\src\\ch32v20x_opa.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_opa.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_pwr.c.o", "sdk\\Peripheral\\src\\ch32v20x_pwr.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_pwr.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_rcc.c.o", "sdk\\Peripheral\\src\\ch32v20x_rcc.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_rcc.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_rtc.c.o", "sdk\\Peripheral\\src\\ch32v20x_rtc.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_rtc.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_spi.c.o", "sdk\\Peripheral\\src\\ch32v20x_spi.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_spi.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_tim.c.o", "sdk\\Peripheral\\src\\ch32v20x_tim.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_tim.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_usart.c.o", "sdk\\Peripheral\\src\\ch32v20x_usart.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_usart.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Peripheral\\src\\ch32v20x_wwdg.c.o", "sdk\\Peripheral\\src\\ch32v20x_wwdg.c"],
+  "file": "sdk\\Peripheral\\src\\ch32v20x_wwdg.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\cherryUSB\\core\\usbd_core.c.o", "cherryUSB\\core\\usbd_core.c"],
+  "file": "cherryUSB\\core\\usbd_core.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\cherryUSB\\class\\cdc\\usbd_cdc_acm.c.o", "cherryUSB\\class\\cdc\\usbd_cdc_acm.c"],
+  "file": "cherryUSB\\class\\cdc\\usbd_cdc_acm.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-Wunused", "-Wuninitialized", "-fmax-errors=20", "-g", "-O0", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\cherryUSB\\port\\fsdev\\usb_dc_fsdev.c.o", "cherryUSB\\port\\fsdev\\usb_dc_fsdev.c"],
+  "file": "cherryUSB\\port\\fsdev\\usb_dc_fsdev.c"
+},
+{
+  "directory": "D:\\Desktop\\ch32\\CH32V208GBU_cherryusb",
+  "arguments": ["E:\\APP\\MRS2\\MounRiver_Studio2\\resources\\app\\resources\\win32\\components\\WCH\\Toolchain\\RISC-V Embedded GCC12\\bin\\riscv-wch-elf-gcc.exe", "-c", "-O0", "-std=gnu17", "-Isdk\\Core", "-Isdk\\Debug", "-Isdk\\Peripheral\\inc", "-IUser", "-IcherryUSB", "-IcherryUSB\\class\\cdc", "-IcherryUSB\\common", "-IcherryUSB\\core", "-IcherryUSB\\port\\fsdev", "-DCH32V20x_D8W", "-DDEBUG=2", "-DUSB_BASE=0x40005C00", "-x", "assembler-with-cpp", "-march=rv32imacxw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore", "-fmessage-length=0", "-fsigned-char", "-ffunction-sections", "-fdata-sections", "-fno-common", "-fmax-errors=20", "-ID:\\Desktop\\ch32\\CH32V208GBU_cherryusb\\sdk\\Startup", "-g", "-o", "build\\.objs\\CH32V208GBU\\cross\\riscv\\debug\\sdk\\Startup\\startup_ch32v20x_D8W.S.o", "sdk\\Startup\\startup_ch32v20x_D8W.S"],
+  "file": "sdk\\Startup\\startup_ch32v20x_D8W.S"
+}]
