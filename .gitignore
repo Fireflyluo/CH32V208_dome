@@ -2,6 +2,9 @@
 **/.codex/
 **/.mrs/
 **/.xmake/
+**/mrs/
+**/cache/
+**/eide/
 
 # Build output folders (any depth)
 **/build/
