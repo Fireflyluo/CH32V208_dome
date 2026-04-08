@@ -30,7 +30,10 @@
 │      ├─ eide                          // eide工程
 │      ├─ MR2                           // MR2工程
 │      └─ xmmake_cmake                  // cmake/xmake 工程
-└─ch32v208_tmos_cdc                     // tmos cdc 模板
+├─ch32v208_tmos                         // tmos 模板工程
+├─cherryUSB_CDC_ACM                     // cherryusb cdc 模板
+│ ch32v208_tmos_cdc                     // tmos cdc 模板
+└─Demo_v0.1                             // 简单完整模板工程
 ```
 
 ## 开发环境
