@@ -23,6 +23,16 @@
 				"parentLogicPath": "",
 				"type": "file",
 				"name": "*.wvproj"
+			},
+			{
+				"parentLogicPath": "tools",
+				"type": "file",
+				"name": "wch-interface-index0.cfg"
+			},
+			{
+				"name": "wch-interface-index1.cfg",
+				"parentLogicPath": "tools",
+				"type": "file"
 			}
 		],
 		"projectName": "CH32V208GBU",
