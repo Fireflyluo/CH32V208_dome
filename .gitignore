@@ -1,0 +1,9 @@
+# Local AI/tooling folders
+.codex/
+.mrs/
+.xmake/
+
+# Build output folders
+build/
+obj/
+
