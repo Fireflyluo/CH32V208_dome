@@ -17,7 +17,7 @@
  *          - I2C_TASK_EVT_PUMP: I2C总线泵送事件，用于驱动仲裁器
  *          - I2C_TASK_MSG_SUBMIT_REQ: 消息类型，表示I2C请求提交
  *
- * @author  WCH (南京沁恒微电子股份有限公司)
+ * @author  fireflyluo
  * @version V1.0.0
  * @date    2022/06/16
  */

@@ -10,9 +10,7 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": [
-                "$msCompile"
-            ]
+            "problemMatcher": []
         },
         {
             "label": "flash",

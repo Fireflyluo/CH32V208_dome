@@ -1,19 +1,27 @@
 /**
  * @file    sensor_task.c
- * @brief   浼犳劅鍣ㄩ噰闆嗕换鍔★細SC7A20(ODR 400Hz锛屼换鍔¤鍑虹害333Hz) + SHT40(1Hz锛屼袱娈靛紡) + 纰版挒浣嶇Щ绠楁硶
- * @details 鏈枃浠跺疄鐜颁簡鍩轰簬TMOS鐨勫浼犳劅鍣ㄦ暟鎹噰闆嗕换鍔★紝涓昏鍔熻兘鍖呮嫭锛? *          - SC7A20鍔犻€熷害璁″垵濮嬪寲鍜岄珮棰戞暟鎹噰闆? *          - SHT40娓╂箍搴︿紶鎰熷櫒鍒濆鍖栧拰1Hz鏁版嵁閲囬泦锛堜袱娈靛紡锛氬彂鍛戒护+璇荤粨鏋滐級
- *          - 浼犳劅鍣ㄦ暟鎹揩鐓х鐞嗭紙绾跨▼瀹夊叏鐨剆eqlock鏈哄埗锛? *          - 浼犳劅鍣ㄧ姸鎬佺洃鎺у拰閿欒缁熻
- *          - 鑷姩閲嶈瘯鏈哄埗澶勭悊浼犳劅鍣ㄥ垵濮嬪寲澶辫触
- *          - 纰版挒浜嬩欢妫€娴嬩笌浣嶇Щ璁＄畻锛坕mpact_displacement 绠楁硶锛? *
- *          閲囨牱绛栫暐锛? *          - 鍔犻€熷害璁★細TMOS浠诲姟3ms璇诲嚭锛堢害333Hz锛夛紝SC7A20鍐呴儴ODR=400Hz
- *          - 娓╂箍搴︿紶鎰熷櫒锛?Hz閲囨牱锛?绉掗棿闅旓級锛岄噰鐢ㄤ袱娈靛紡閬垮厤闃诲
- *          - 缁熻淇℃伅锛氭瘡绉掓洿鏂伴噰鏍烽鐜囧拰閿欒璁℃暟
+ * @brief   传感器采集任务：SC7A20(ODR 400Hz，任务读出约400Hz) + SHT40(1Hz，两段式) + 碰撞位移算法
+ * @details 本文档实现了基于TMOS的多传感器数据采集任务，主要功能包括：
+ *          - SC7A20加速度计初始化和高频数据采集
+ *          - SHT40温湿度传感器初始化和1Hz数据采集（两段式：发命令+读结果）
+ *          - 传感器数据快照管理（线程安全的seqlock机制）
+ *          - 传感器状态监测和错误统计
+ *          - 自动重试机制处理传感器初始化失败
+ *          - 碰撞事件检测与位移计算（impact_displacement 算法）
  *
- *          浠诲姟浜嬩欢锛? *          - SENSOR_EVT_INIT: 鍒濆鍖栦簨浠讹紝灏濊瘯鍒濆鍖栦紶鎰熷櫒
- *          - SENSOR_EVT_ACCEL: 鍔犻€熷害璁￠噰鏍蜂簨浠? *          - SENSOR_EVT_SHT_CMD: SHT40鍙戦€佹祴閲忓懡浠や簨浠? *          - SENSOR_EVT_SHT_READ: SHT40璇诲彇娴嬮噺缁撴灉浜嬩欢
- *          - SENSOR_EVT_STATS: 缁熻淇℃伅鏇存柊浜嬩欢
+ *          采样策略：
+ *          - 加速度计：TMOS任务3ms读出（约400Hz），SC7A20内部ODR=400Hz
+ *          - 温湿度传感器：1Hz采样（1秒间隔），采用两段式避免阻塞
+ *          - 统计信息：每秒更新采样频率和错误计数
  *
- * @author  WCH (鍗椾含娌佹亽寰數瀛愯偂浠芥湁闄愬叕鍙?
+ *          任务事件：
+ *          - SENSOR_EVT_INIT: 初始化事件，尝试初始化传感器
+ *          - SENSOR_EVT_ACCEL: 加速度计采样事件
+ *          - SENSOR_EVT_SHT_CMD: SHT40发送测量命令事件
+ *          - SENSOR_EVT_SHT_READ: SHT40读取测量结果事件
+ *          - SENSOR_EVT_STATS: 统计信息更新事件
+ *
+ * @author fireflyluo
  * @version V1.0.0
  * @date    2022/06/16
  */
@@ -40,7 +48,7 @@
 #define SENSOR_EVT_STATS (0x0001u << 3)
 #define SENSOR_EVT_SHT_READ (0x0001u << 4)
 
-/* 閲囨牱涓庣粺璁″懆鏈?*/
+/* 采样与统计周期 */
 #define ACCEL_SAMPLE_MS 3u
 #define ACCEL_POLL_MS 3u
 #define SHT_SAMPLE_MS 1000u
@@ -78,11 +86,11 @@ static uint16_t s_accel_fifo_fail_streak = 0u;
 static uint16_t s_accel_samples_window = 0u;
 static uint16_t s_sht_samples_window = 0u;
 
-/* 纰版挒浣嶇Щ绠楁硶鐩稿叧 */
+/* 碰撞位移算法相关 */
 enum
 {
-    IMPACT_RING_SIZE = 512,  /* Ring buffer size (~1.5s @ 333Hz) */
-    IMPACT_PRE_SAMPLES = 80, /* Pre-window for baseline */
+    IMPACT_RING_SIZE = 512,  /* 环形缓冲区大小 (~1.5s @ 333Hz) */
+    IMPACT_PRE_SAMPLES = 80, /* 基准窗口的样本数 */
     IMPACT_GRAVITY_EMA_TAU_MS = 500,
     IMPACT_ALGO_MAX_DT_MS = 35,
     IMPACT_ALGO_MAX_EVENT_MS = 700,
@@ -105,38 +113,38 @@ enum
 
 typedef enum
 {
-    IMPACT_TRIG_STATE_IDLE = 0,
-    IMPACT_TRIG_STATE_ARMED,
-    IMPACT_TRIG_STATE_ACTIVE,
-    IMPACT_TRIG_STATE_RELEASED,
-    IMPACT_TRIG_STATE_COOLDOWN,
+    IMPACT_TRIG_STATE_IDLE = 0,      ///< 空闲状态
+    IMPACT_TRIG_STATE_ARMED,         ///< 预备状态
+    IMPACT_TRIG_STATE_ACTIVE,        ///< 激活状态
+    IMPACT_TRIG_STATE_RELEASED,      ///< 释放状态
+    IMPACT_TRIG_STATE_COOLDOWN,      ///< 冷却状态
 } impact_trigger_state_t;
 
 typedef struct
 {
-    uint16_t trigger_high_mg;
-    uint16_t release_low_mg;
-    uint16_t trigger_hold_samples;
-    uint16_t release_hold_samples;
-    uint32_t trigger_hold_ms;
-    uint32_t sample_period_ms;
-    uint32_t release_hold_ms;
-    uint32_t cooldown_ms;
+    uint16_t trigger_high_mg;        ///< 触发高阈值(mg)
+    uint16_t release_low_mg;         ///< 释放低阈值(mg)
+    uint16_t trigger_hold_samples;   ///< 触发保持样本数
+    uint16_t release_hold_samples;   ///< 释放保持样本数
+    uint32_t trigger_hold_ms;        ///< 触发保持时间(ms)
+    uint32_t sample_period_ms;       ///< 采样周期(ms)
+    uint32_t release_hold_ms;        ///< 释放保持时间(ms)
+    uint32_t cooldown_ms;            ///< 冷却时间(ms)
 } impact_trigger_cfg_t;
 
 typedef struct
 {
-    impact_disp_sample_t samples[IMPACT_RING_SIZE];
-    uint16_t head;
-    uint16_t count;
-    uint32_t event_id;
-    uint32_t cooldown_until_us;
-    uint16_t trigger_idx;
-    uint16_t peak_dynamic_mg;
-    uint8_t trigger_valid;
-    impact_trigger_state_t state;
-    uint32_t state_enter_us;
-    uint32_t arm_guard_until_us;
+    impact_disp_sample_t samples[IMPACT_RING_SIZE];  ///< 采样数据环形缓冲区
+    uint16_t head;                                   ///< 缓冲区头部索引
+    uint16_t count;                                  ///< 缓冲区中元素数量
+    uint32_t event_id;                               ///< 事件ID
+    uint32_t cooldown_until_us;                      ///< 冷却结束时间(us)
+    uint16_t trigger_idx;                            ///< 触发索引
+    uint16_t peak_dynamic_mg;                        ///< 峰值动态加速度(mg)
+    uint8_t trigger_valid;                           ///< 触发是否有效
+    impact_trigger_state_t state;                    ///< 当前触发状态
+    uint32_t state_enter_us;                         ///< 状态进入时间(us)
+    uint32_t arm_guard_until_us;                     ///< 预备保护截止时间(us)
 } impact_ring_ctx_t;
 
 static impact_ring_ctx_t s_impact_ring = {0};
@@ -153,36 +161,178 @@ static sensor_peak_params_t s_peak_params = {
 };
 static impact_trigger_cfg_t s_trigger_cfg = {0};
 
+/**
+ * @brief  初始化碰撞检测环形缓冲区
+ * @param  reset_event_id  重置事件ID
+ */
 static void impact_ring_init(uint8_t reset_event_id);
+
+/**
+ * @brief  向碰撞检测环形缓冲区推送数据
+ * @param  ax_mg  X轴加速度(mg)
+ * @param  ay_mg  Y轴加速度(mg)
+ * @param  az_mg  Z轴加速度(mg)
+ * @param  ts_us  时间戳(微秒)
+ */
 static void impact_ring_push(int16_t ax_mg, int16_t ay_mg, int16_t az_mg, uint32_t ts_us);
+
+/**
+ * @brief  碰撞检测事件
+ * @param  ax_mg  X轴加速度(mg)
+ * @param  ay_mg  Y轴加速度(mg)
+ * @param  az_mg  Z轴加速度(mg)
+ * @param  ts_us  时间戳(微秒)
+ */
 static void impact_detect_event(int16_t ax_mg, int16_t ay_mg, int16_t az_mg, uint32_t ts_us);
+
+/**
+ * @brief  计算并报告碰撞结果
+ */
 static void impact_compute_and_report(void);
+
+/**
+ * @brief  结束碰撞事件
+ * @param  ts_us   时间戳(微秒)
+ * @param  reason  结束原因
+ */
 static void impact_finish_event(uint32_t ts_us, const char *reason);
+
+/**
+ * @brief  计算环形缓冲区中两点间的距离
+ * @param  start_idx  起始索引
+ * @param  end_idx    结束索引
+ * @return 两点间距离
+ */
 static uint16_t impact_ring_distance(uint16_t start_idx, uint16_t end_idx);
+
+/**
+ * @brief  在环形缓冲区中前进指定步数
+ * @param  idx   当前索引
+ * @param  step  步数
+ * @return 新索引
+ */
 static uint16_t impact_ring_advance(uint16_t idx, uint16_t step);
+
+/**
+ * @brief  将毫米值转换为十分之一毫米
+ * @param  mm  毫米值
+ * @return 十分之一毫米值
+ */
 static int32_t impact_mm_to_tenths(float mm);
+
+/**
+ * @brief  获取整数的绝对值并转换为uint32
+ * @param  v  输入值
+ * @return 绝对值
+ */
 static uint32_t impact_abs_u32_from_i32(int32_t v);
+
+/**
+ * @brief  将12位阈值转换为mg
+ * @param  value_12  12位阈值
+ * @return mg值
+ */
 static uint16_t impact_u12_to_mg(uint16_t value_12);
+
+/**
+ * @brief  将毫秒转换为样本数
+ * @param  ms  毫秒数
+ * @return 样本数
+ */
 static uint16_t impact_ms_to_samples(uint32_t ms);
+
+/**
+ * @brief  将释放样本数转换为算法最小值
+ * @param  release_hold_samples  释放保持样本数
+ * @return 算法最小值
+ */
 static uint16_t impact_release_samples_to_algo_min(uint16_t release_hold_samples);
+
+/**
+ * @brief  计算经过的毫秒数
+ * @param  now_us     当前时间(us)
+ * @param  start_us   开始时间(us)
+ * @return 经过的毫秒数
+ */
 static uint32_t impact_elapsed_ms(uint32_t now_us, uint32_t start_us);
+
+/**
+ * @brief  校验传感器峰值参数
+ * @param  params  参数指针
+ */
 static void sensor_peak_params_sanitize(sensor_peak_params_t *params);
+
+/**
+ * @brief  应用传感器峰值参数
+ * @param  params          参数指针
+ * @param  from_protocol   是否来自协议
+ */
 static void sensor_peak_params_apply(const sensor_peak_params_t *params, uint8_t from_protocol);
 
+/**
+ * @brief  传感器任务事件处理函数
+ * @param  task_id  当前任务ID
+ * @param  events   待处理的事件位图
+ * @return 未处理的事件
+ */
 static tmosEvents sensor_task_process_event(tmosTaskID task_id, tmosEvents events);
+
+/**
+ * @brief  发布传感器就绪状态
+ */
 static void sensor_publish_ready(void);
+
+/**
+ * @brief  尝试初始化SC7A20加速度计
+ * @return 0表示成功，负数表示失败
+ */
 static int sensor_try_init_accel(void);
+
+/**
+ * @brief  尝试初始化SHT40温湿度传感器
+ * @return 0表示成功，-1表示失败
+ */
 static int sensor_try_init_sht(void);
+
 #if SENSOR_ACCEL_USE_FIFO
+/**
+ * @brief  尝试配置加速度计FIFO
+ * @return 0表示成功，非0表示失败
+ */
 static int sensor_try_configure_accel_fifo(void);
 #endif
+
+/**
+ * @brief  采样加速度计数据
+ */
 static void sensor_sample_accel(void);
+
+/**
+ * @brief  处理加速度计采样数据
+ * @param  raw    原始数据
+ * @param  ts_us  时间戳(微秒)
+ */
 static void sensor_process_accel_sample(const sc7a20_vec3i16_t *raw, uint32_t ts_us);
+
+/**
+ * @brief  发送SHT40命令
+ * @return 0表示成功，-1表示失败
+ */
 static int sensor_sht40_send_cmd(void);
+
+/**
+ * @brief  读取SHT40测量结果
+ */
 static void sensor_sht40_read_result(void);
+
+/**
+ * @brief  SHT40延迟适配器函数
+ * @param  ctx  用户上下文
+ * @param  ms   延迟时间(毫秒)
+ */
 static void sensor_sht40_delay_adapter(void *ctx, uint32_t ms);
 
-/* 鏃犻攣蹇収鍐欏叆鏍囪锛氬鏁?鍐欏叆涓紝鍋舵暟=绋冲畾鎬?*/
+/* 无锁快照写入标记：奇数=写入中，偶数=稳定性 */
 static void sensor_snapshot_write_begin(void)
 {
     s_snapshot_seq++;
@@ -194,8 +344,12 @@ static void sensor_snapshot_write_end(void)
 }
 
 /**
- * @brief  鑾峰彇浼犳劅鍣ㄦ暟鎹揩鐓? * @details 浣跨敤seqlock鏈哄埗纭繚璇诲彇鍒颁竴鑷寸殑鏁版嵁蹇収锛? *          閬垮厤鍦ㄥ啓鍏ヨ繃绋嬩腑璇诲彇鍒版挄瑁傜殑鏁版嵁銆? *
- * @param[out] out 鎸囧悜杈撳嚭缂撳啿鍖虹殑鎸囬拡锛岀敤浜庡瓨鍌ㄥ揩鐓ф暟鎹? */
+ * @brief  获取传感器数据快照
+ * @details 使用seqlock机制确保读取一致的数据快照，
+ *          避免在写入过程中读取到混乱的数据。
+ *
+ * @param[out] out 指向输出缓冲区的指针，用于存储快照数据
+ */
 void sensor_task_get_snapshot(sensor_snapshot_t *out)
 {
     uint32_t seq_start;
@@ -206,7 +360,7 @@ void sensor_task_get_snapshot(sensor_snapshot_t *out)
         return;
     }
 
-    do /* seqlock 璇绘硶锛岄伩鍏嶈鍙栧埌鎾曡鏁版嵁 */
+    do /* seqlock 读法，避免读取到脏数据 */
     {
         seq_start = s_snapshot_seq;
         if (seq_start & 1u)
@@ -218,6 +372,10 @@ void sensor_task_get_snapshot(sensor_snapshot_t *out)
     } while (seq_start != seq_end || (seq_end & 1u));
 }
 
+/**
+ * @brief  获取传感器峰值参数
+ * @param  out  输出参数结构体指针
+ */
 void sensor_task_get_peak_params(sensor_peak_params_t *out)
 {
     if (out == NULL)
@@ -227,6 +385,10 @@ void sensor_task_get_peak_params(sensor_peak_params_t *out)
     *out = s_peak_params;
 }
 
+/**
+ * @brief  设置传感器峰值参数
+ * @param  params  参数结构体指针
+ */
 void sensor_task_set_peak_params(const sensor_peak_params_t *params)
 {
     if (params == NULL)
@@ -236,6 +398,10 @@ void sensor_task_set_peak_params(const sensor_peak_params_t *params)
     sensor_peak_params_apply(params, 1u);
 }
 
+/**
+ * @brief  检查碰撞检测是否忙碌
+ * @return 忙碌状态
+ */
 uint8_t sensor_task_impact_busy(void)
 {
     return (uint8_t)((s_impact_ring.state == IMPACT_TRIG_STATE_ARMED ||
@@ -391,8 +557,10 @@ static void sensor_peak_params_apply(const sensor_peak_params_t *params, uint8_t
 }
 
 /**
- * @brief  浼犳劅鍣ㄤ换鍔″垵濮嬪寲鍑芥暟
- * @details 娉ㄥ唽TMOS浼犳劅鍣ㄤ换鍔″苟瑙﹀彂鍒濆鍖栦簨浠躲€? *          濡傛灉浠诲姟宸插瓨鍦ㄦ垨娉ㄥ唽澶辫触锛屽垯鐩存帴杩斿洖銆? */
+ * @brief  传感器任务初始化函数
+ * @details 注册TMOS传感器任务并触发初始化事件。
+ *          如果任务已存在或注册失败，则直接返回。
+ */
 void sensor_task_init(void)
 {
     if (s_sensor_task_id != INVALID_TASK_ID)
@@ -413,9 +581,11 @@ void sensor_task_init(void)
 }
 
 /**
- * @brief  SHT40寤惰繜閫傞厤鍣ㄥ嚱鏁? * @details 涓篠HT40椹卞姩鎻愪緵寤惰繜鍔熻兘锛屼娇鐢℉AL灞傜殑寤舵椂鍑芥暟銆? *
- * @param[in] ctx 鐢ㄦ埛涓婁笅鏂囷紙鏈娇鐢級
- * @param[in] ms 寤惰繜鏃堕棿锛堟绉掞級
+ * @brief  SHT40延迟适配器函数
+ * @details 为SHT40驱动提供延迟功能，使用HAL层的延迟函数。
+ *
+ * @param[in] ctx 用户上下文（未使用）
+ * @param[in] ms  延迟时间（毫秒）
  */
 static void sensor_sht40_delay_adapter(void *ctx, uint32_t ms)
 {
@@ -424,7 +594,9 @@ static void sensor_sht40_delay_adapter(void *ctx, uint32_t ms)
 }
 
 /**
- * @brief  鍙戝竷浼犳劅鍣ㄥ氨缁姸鎬? * @details 鏇存柊蹇収涓殑ready鏍囧織锛岃〃绀鸿嚦灏戞湁涓€涓紶鎰熷櫒宸插氨缁€? */
+ * @brief  发布传感器就绪状态
+ * @details 更新快照中的ready标志，表示至少有一个传感器已就绪。
+ */
 static void sensor_publish_ready(void)
 {
     sensor_snapshot_write_begin();
@@ -433,8 +605,12 @@ static void sensor_publish_ready(void)
 }
 
 /**
- * @brief  灏濊瘯鍒濆鍖朣C7A20鍔犻€熷害璁? * @details 閰嶇疆SC7A20涓?g閲忕▼銆?00Hz閲囨牱鐜囥€侀珮鍒嗚鲸鐜囨ā寮忋€? *          濡傛灉鍒濆鍖栨垚鍔燂紝璁剧疆s_accel_ready鏍囧織骞舵墦鍗版棩蹇椼€? *
- * @return 0琛ㄧず鎴愬姛锛岃礋鏁拌〃绀哄け璐? */
+ * @brief  尝试初始化SC7A20加速度计
+ * @details 配置SC7A20为16g量程、400Hz采样率、高分辨率模式。
+ *          如果初始化成功，设置s_accel_ready标志并打印日志。
+ *
+ * @return 0表示成功，负数表示失败
+ */
 static int sensor_try_init_accel(void)
 {
     int rc;
@@ -446,7 +622,7 @@ static int sensor_try_init_accel(void)
         return 0;
     }
 
-    cfg.range = SC7A20_ACCEL_FS_16G; /* 閲忕▼ 16g */
+    cfg.range = SC7A20_ACCEL_FS_16G; /* 量程 16g */
     cfg.odr = SC7A20_ACCEL_ODR_400HZ;
     cfg.high_resolution = true;
 
@@ -585,15 +761,17 @@ static int sensor_try_configure_accel_fifo(void)
 #endif
 
 /**
- * @brief  灏濊瘯鍒濆鍖朣HT40娓╂箍搴︿紶鎰熷櫒
- * @details 灏濊瘯涓や釜鍙兘鐨処2C鍦板潃锛?x46鍜?x44锛夎繘琛孲HT40鍒濆鍖栥€? *          濡傛灉浠讳竴鍦板潃鍒濆鍖栨垚鍔燂紝璁剧疆s_sht_ready鏍囧織骞舵墦鍗版棩蹇椼€? *
- * @return 0琛ㄧず鎴愬姛锛?1琛ㄧず澶辫触
+ * @brief  尝试初始化SHT40温湿度传感器
+ * @details 尝试两个可能的I2C地址：0x46和0x44，进行SHT40初始化。
+ *          如果任一地址初始化成功，设置s_sht_ready标志并打印日志。
+ *
+ * @return 0表示成功，-1表示失败
  */
 static int sensor_try_init_sht(void)
 {
     int rc;
     uint8_t i;
-    /* 鍏煎涓嶅悓纭欢鐒婃帴鍦板潃 */
+    /* 兼容不同焊接到板子上的地址 */
     static const uint8_t k_addr_try[2] = {0x46u, 0x44u};
 
     if (s_sht_ready != 0u)
@@ -625,7 +803,12 @@ static int sensor_try_init_sht(void)
 }
 
 /**
- * @brief  閲囨牱鍔犻€熷害璁℃暟鎹? * @details 浠嶴C7A20璇诲彇鍘熷涓夎酱鏁版嵁锛屽苟杞崲涓簃g鍗曚綅瀛樺偍鍒板揩鐓т腑銆? */
+ * @brief  处理加速度计采样数据
+ * @details 从SC7A20读取原始三轴数据，并转换为mg单位存储到快照中。
+ * 
+ * @param  raw    原始数据指针
+ * @param  ts_us  时间戳(微秒)
+ */
 static void sensor_process_accel_sample(const sc7a20_vec3i16_t *raw, uint32_t ts_us)
 {
     int32_t ax_mg;
@@ -659,6 +842,9 @@ static void sensor_process_accel_sample(const sc7a20_vec3i16_t *raw, uint32_t ts
     }
 }
 
+/**
+ * @brief  采样加速度计数据
+ */
 static void sensor_sample_accel(void)
 {
     sc7a20_vec3i16_t raw;
@@ -783,13 +969,15 @@ static void sensor_sample_accel(void)
 }
 
 /**
- * @brief  鍙戦€丼HT40娴嬮噺鍛戒护
- * @details 鍚慡HT40鍙戦€佷綆绮惧害瑙﹀彂娴嬮噺鍛戒护锛?xE0锛夈€? *          濡傛灉鍙戦€佸け璐ワ紝澧炲姞閿欒璁℃暟銆? *
- * @return 0琛ㄧず鎴愬姛锛?1琛ㄧず澶辫触
+ * @brief  发送SHT40测量命令
+ * @details 向SHT40发送低精度触发测量命令（0xE0）。
+ *          如果发送失败，增加错误计数。
+ *
+ * @return 0表示成功，-1表示失败
  */
 static int sensor_sht40_send_cmd(void)
 {
-    uint8_t cmd = 0xE0u; /* 浣庣簿搴﹁Е鍙戞祴閲忓懡浠?*/
+    uint8_t cmd = 0xE0u; /* 低精度触发测量命令 */
     i2c_bus_request_t req;
     int rc;
 
@@ -822,9 +1010,10 @@ static int sensor_sht40_send_cmd(void)
 }
 
 /**
- * @brief  璇诲彇SHT40娴嬮噺缁撴灉
- * @details 浠嶴HT40璇诲彇6瀛楄妭鐨勬祴閲忔暟鎹紝瑙ｆ瀽娓╁害鍜屾箍搴﹀€硷紝
- *          骞惰浆鎹负宸ョ▼鍗曚綅锛?.01掳C鍜?.01%RH锛夊瓨鍌ㄥ埌蹇収涓€? */
+ * @brief  读取SHT40测量结果
+ * @details 从SHT40读取6字节的测量数据，解析温度和湿度值，
+ *          并转换为工程单位（0.01°C和0.01%RH）存储到快照中。
+ */
 static void sensor_sht40_read_result(void)
 {
     uint8_t rx[6] = {0};
@@ -861,7 +1050,7 @@ static void sensor_sht40_read_result(void)
         return;
     }
 
-    /* 鎸?SHT40 鏁版嵁鏍煎紡瑙ｆ瀽锛屽苟鎹㈢畻鎴愬伐绋嬪€?*/
+    /* 按SHT40 数据格式解析，并换算成工程值 */
     t_raw = (uint16_t)(((uint16_t)rx[0] << 8) | rx[1]);
     h_raw = (uint16_t)(((uint16_t)rx[3] << 8) | rx[4]);
     t_c = -45.0f + 175.0f * ((float)t_raw / 65535.0f);
@@ -885,14 +1074,17 @@ static void sensor_sht40_read_result(void)
 }
 
 /**
- * @brief  浼犳劅鍣ㄤ换鍔′簨浠跺鐞嗗嚱鏁? * @details 澶勭悊浼犳劅鍣ㄤ换鍔＄殑鍚勭被浜嬩欢锛? *          - SENSOR_EVT_INIT: 鍒濆鍖栦紶鎰熷櫒骞跺惎鍔ㄥ畾鏃跺櫒
- *          - SENSOR_EVT_ACCEL: 閲囨牱鍔犻€熷害璁℃暟鎹? *          - SENSOR_EVT_SHT_CMD: 鍙戦€丼HT40娴嬮噺鍛戒护
- *          - SENSOR_EVT_SHT_READ: 璇诲彇SHT40娴嬮噺缁撴灉
- *          - SENSOR_EVT_STATS: 鏇存柊缁熻淇℃伅
+ * @brief  传感器任务事件处理函数
+ * @details 处理传感器任务的各类事件：
+ *          - SENSOR_EVT_INIT: 初始化传感器并启动定时器
+ *          - SENSOR_EVT_ACCEL: 采样加速度计数据
+ *          - SENSOR_EVT_SHT_CMD: 发送SHT40测量命令
+ *          - SENSOR_EVT_SHT_READ: 读取SHT40测量结果
+ *          - SENSOR_EVT_STATS: 更新统计信息
  *
- * @param[in] task_id 褰撳墠浠诲姟ID
- * @param[in] events 寰呭鐞嗙殑浜嬩欢浣嶅浘
- * @return 鏈鐞嗙殑浜嬩欢
+ * @param[in] task_id  当前任务ID
+ * @param[in] events   待处理的事件位图
+ * @return 未处理的事件
  */
 static tmosEvents sensor_task_process_event(tmosTaskID task_id, tmosEvents events)
 {
@@ -933,7 +1125,7 @@ static tmosEvents sensor_task_process_event(tmosTaskID task_id, tmosEvents event
 
     if (remain & SENSOR_EVT_SHT_CMD)
     {
-        /* 涓ゆ寮忥細鍏堝彂娴嬮噺鍛戒护锛屽欢鏃跺悗鍐嶈缁撴灉锛岄伩鍏嶄换鍔″唴闃诲绛夊緟 */
+        /* 两段式：先发测量命令，延时后再读结果，避免任务内阻塞等待 */
         if (sensor_sht40_send_cmd() == 0)
         {
             tmos_start_task(s_sensor_task_id, SENSOR_EVT_SHT_READ, MS1_TO_SYSTEM_TIME(SHT_MEASURE_DELAY_MS));
@@ -964,7 +1156,7 @@ static tmosEvents sensor_task_process_event(tmosTaskID task_id, tmosEvents event
 }
 
 /* ============================================================================
- * 纰版挒浣嶇Щ绠楁硶闆嗘垚
+ * 碰撞位移算法集成
  * ============================================================================ */
 
 static void impact_ring_init(uint8_t reset_event_id)

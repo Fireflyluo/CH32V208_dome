@@ -1,4 +1,12 @@
-﻿#include "protocol_task.h"
+/**
+ * @file protocol_task.c
+ * @brief 协议任务实现
+ * 
+ * 该文件实现了基于USB CDC的数据协议处理任务，负责接收和发送数据帧，
+ * 并与传感器数据和RF通信进行交互
+ */
+
+#include "protocol_task.h"
 
 #include "board.h"
 #include "data_protocol.h"
@@ -10,106 +18,195 @@
 
 #include <string.h>
 
-#define PROTOCOL_EVT_INIT (0x0001u << 0)
-#define PROTOCOL_EVT_POLL (0x0001u << 1)
-#define PROTOCOL_EVT_SAMPLE (0x0001u << 2)
+#define PROTOCOL_EVT_INIT (0x0001u << 0)    ///< 协议初始化事件
+#define PROTOCOL_EVT_POLL (0x0001u << 1)    ///< 协议轮询事件
+#define PROTOCOL_EVT_SAMPLE (0x0001u << 2)  ///< 协议采样事件
 
-#define PROTOCOL_POLL_MS 20u
-#define PROTOCOL_SAMPLE_TICK_MS 20u
-#define PROTOCOL_DEFAULT_SMP_MS 100u
-#define PROTOCOL_TX_RETRY_MAX 1u
-#define PROTOCOL_TX_RETRY_DELAY_MS 0u
+#define PROTOCOL_POLL_MS 20u                ///< 协议轮询间隔(毫秒)
+#define PROTOCOL_SAMPLE_TICK_MS 20u         ///< 采样滴答间隔(毫秒)
+#define PROTOCOL_DEFAULT_SMP_MS 100u        ///< 默认采样间隔(毫秒)
+#define PROTOCOL_TX_RETRY_MAX 1u            ///< 发送重试最大次数
+#define PROTOCOL_TX_RETRY_DELAY_MS 0u       ///< 发送重试延迟(毫秒)
 
-#define PROTOCOL_RX_BUF_SIZE PROTOCOL_BUFFER_SIZE
-#define PROTOCOL_TX_FRAME_MAX PROTOCOL_MAX_FRAME_LEN
-#define PROTOCOL_SAMPLE_CAPACITY 128u
-#define PROTOCOL_UPLOAD_MAX_ACCEL 120u
+#define PROTOCOL_RX_BUF_SIZE PROTOCOL_BUFFER_SIZE         ///< 接收缓冲区大小
+#define PROTOCOL_TX_FRAME_MAX PROTOCOL_MAX_FRAME_LEN      ///< 发送帧最大长度
+#define PROTOCOL_SAMPLE_CAPACITY 128u                     ///< 采样容量
+#define PROTOCOL_UPLOAD_MAX_ACCEL 120u                    ///< 上传最大加速度数量
 
-#define REPORT_FIRST_ACCEL_CAP 16u
-#define REPORT_NEXT_ACCEL_CAP 16u
+#define REPORT_FIRST_ACCEL_CAP 16u                        ///< 首次报告加速度容量
+#define REPORT_NEXT_ACCEL_CAP 16u                         ///< 后续报告加速度容量
 
-/* Keep 12-bit accel mapping aligned with sensor_task SC7A20 configuration (FS=16g). */
-#define PROTOCOL_ACCEL_FULL_SCALE_MG 16000u
-#define PROTOCOL_DEFAULT_THRESHOLD_HIGH 384u /* ~1.5g @ 16g full-scale */
-#define PROTOCOL_DEFAULT_THRESHOLD_LOW 13u   /* ~0.05g @ 16g full-scale */
+/* 保持12位加速度映射与sensor_task SC7A20配置对齐(FS=16g) */
+#define PROTOCOL_ACCEL_FULL_SCALE_MG 16000u               ///< 加速度满量程(mg)
+#define PROTOCOL_DEFAULT_THRESHOLD_HIGH 384u              ///< 默认高阈值(~1.5g @ 16g满量程)
+#define PROTOCOL_DEFAULT_THRESHOLD_LOW 13u                ///< 默认低阈值(~0.05g @ 16g满量程)
 
+/**
+ * @brief 协议采样数据结构
+ */
 typedef struct
 {
-    uint16_t temperature_12;
-    uint16_t humidity_12;
-    uint16_t accel_12;
+    uint16_t temperature_12;        ///< 12位温度值
+    uint16_t humidity_12;           ///< 12位湿度值
+    uint16_t accel_12;              ///< 12位加速度值
 } protocol_sample_t;
 
+/**
+ * @brief 上传上下文结构
+ */
 typedef struct
 {
-    uint8_t active;
-    uint64_t tag_id;
-    uint8_t start_hour;
-    uint8_t start_minute;
-    uint8_t start_second;
-    uint16_t temp12;
-    uint16_t hum12;
-    uint16_t accel[PROTOCOL_UPLOAD_MAX_ACCEL];
-    uint16_t total_accel;
-    uint16_t cursor;
-    uint32_t chunk_seq;
+    uint8_t active;                 ///< 是否激活
+    uint64_t tag_id;                ///< 标签ID
+    uint8_t start_hour;             ///< 开始小时
+    uint8_t start_minute;           ///< 开始分钟
+    uint8_t start_second;           ///< 开始秒
+    uint16_t temp12;                ///< 12位温度
+    uint16_t hum12;                 ///< 12位湿度
+    uint16_t accel[PROTOCOL_UPLOAD_MAX_ACCEL];  ///< 加速度数组
+    uint16_t total_accel;           ///< 总加速度数
+    uint16_t cursor;                ///< 当前游标位置
+    uint32_t chunk_seq;             ///< 块序列号
 } upload_ctx_t;
 
-static tmosTaskID s_protocol_task_id = INVALID_TASK_ID;
-static char s_rx_buf[PROTOCOL_RX_BUF_SIZE];
-static uint16_t s_rx_len = 0u;
+static tmosTaskID s_protocol_task_id = INVALID_TASK_ID;   ///< 协议任务ID
+static char s_rx_buf[PROTOCOL_RX_BUF_SIZE];               ///< 接收缓冲区
+static uint16_t s_rx_len = 0u;                            ///< 接收数据长度
 
-static uint8_t s_tx_seq = 0u;
-static char s_last_report_frame[PROTOCOL_TX_FRAME_MAX + 2u];
-static uint16_t s_last_report_len = 0u;
-static uint8_t s_last_report_valid = 0u;
-static char s_pending_tx_frame[PROTOCOL_TX_FRAME_MAX + 2u];
-static uint16_t s_pending_tx_len = 0u;
-static uint16_t s_pending_tx_sent = 0u;
-static uint8_t s_pending_tx_valid = 0u;
+static uint8_t s_tx_seq = 0u;                             ///< 发送序列号
+static char s_last_report_frame[PROTOCOL_TX_FRAME_MAX + 2u]; ///< 上次报告帧
+static uint16_t s_last_report_len = 0u;                   ///< 上次报告帧长度
+static uint8_t s_last_report_valid = 0u;                  ///< 上次报告是否有效
+static char s_pending_tx_frame[PROTOCOL_TX_FRAME_MAX + 2u]; ///< 待发送帧
+static uint16_t s_pending_tx_len = 0u;                    ///< 待发送长度
+static uint16_t s_pending_tx_sent = 0u;                   ///< 已发送长度
+static uint8_t s_pending_tx_valid = 0u;                   ///< 待发送是否有效
 
-static upload_ctx_t s_upload;
+static upload_ctx_t s_upload;                              ///< 上传上下文
 
-static ringbuffer_t s_sample_rb;
-static uint8_t s_sample_storage[PROTOCOL_SAMPLE_CAPACITY * sizeof(protocol_sample_t)];
-static uint16_t s_sample_count = 0u;
+static ringbuffer_t s_sample_rb;                          ///< 采样环形缓冲区
+static uint8_t s_sample_storage[PROTOCOL_SAMPLE_CAPACITY * sizeof(protocol_sample_t)];  ///< 采样存储空间
+static uint16_t s_sample_count = 0u;                      ///< 采样计数
 
-static param_data_decoded_t s_last_params;
-static uint8_t s_last_params_valid = 0u;
+static param_data_decoded_t s_last_params;                ///< 最后参数
+static uint8_t s_last_params_valid = 0u;                  ///< 最后参数是否有效
 
-static uint16_t s_cfg_sample_ms = PROTOCOL_DEFAULT_SMP_MS;
+static uint16_t s_cfg_sample_ms = PROTOCOL_DEFAULT_SMP_MS; ///< 配置采样间隔(毫秒)
 
-static uint32_t s_last_sample_tick = 0u;
-static uint16_t s_last_accel12 = 0u;
-static uint8_t s_last_over_threshold = 0u;
+static uint32_t s_last_sample_tick = 0u;                  ///< 上次采样时刻
+static uint16_t s_last_accel12 = 0u;                      ///< 上次12位加速度值
+static uint8_t s_last_over_threshold = 0u;                ///< 上次是否超过阈值
 
-static uint8_t s_last_tx_type = 0u;
-static uint8_t s_last_tx_seq = 0u;
+static uint8_t s_last_tx_type = 0u;                       ///< 上次发送类型
+static uint8_t s_last_tx_seq = 0u;                        ///< 上次发送序列号
 
-static uint16_t s_tx_cnt_n = 0u;
-static uint16_t s_tx_cnt_m = 0u;
-static uint16_t s_tx_cnt_i = 0u;
-static uint16_t s_tx_cnt_h = 0u;
-static uint16_t s_tx_cnt_q = 0u;
+static uint16_t s_tx_cnt_n = 0u;                          ///< N类型发送计数
+static uint16_t s_tx_cnt_m = 0u;                          ///< M类型发送计数
+static uint16_t s_tx_cnt_i = 0u;                          ///< I类型发送计数
+static uint16_t s_tx_cnt_h = 0u;                          ///< H类型发送计数
+static uint16_t s_tx_cnt_q = 0u;                          ///< Q类型发送计数
 
+/**
+ * @brief 协议任务事件处理函数
+ * 
+ * @param task_id 任务ID
+ * @param events 事件掩码
+ * @return 处理后剩余的事件
+ */
 static tmosEvents protocol_task_process_event(tmosTaskID task_id, tmosEvents events);
 
+/**
+ * @brief 获取下一个发送序列号
+ * 
+ * @return 下一个序列号
+ */
 static uint8_t protocol_next_tx_seq(void);
+
+/**
+ * @brief 发送数据帧
+ * 
+ * @param frame 帧数据
+ * @param frame_len 帧长度
+ * @return 成功返回1，失败返回0
+ */
 static uint8_t protocol_send_frame(const char *frame, uint16_t frame_len);
+
+/**
+ * @brief 刷新待发送数据
+ * 
+ * @return 成功返回1，失败返回0
+ */
 static uint8_t protocol_flush_pending_tx(void);
+
+/**
+ * @brief 发送消息
+ * 
+ * @param type 消息类型
+ * @param content 内容
+ * @param content_len 内容长度
+ * @param cache_as_report 是否缓存为报告
+ */
 static void protocol_send_msg(msg_type_t type, const char *content, uint16_t content_len, uint8_t cache_as_report);
+
+/**
+ * @brief 回复NONE消息
+ */
 static void protocol_reply_none(void);
+
+/**
+ * @brief 回复MIDDLE消息
+ */
 static void protocol_reply_middle(void);
+
+/**
+ * @brief 重复上次回复或回复NONE
+ */
 static void protocol_reply_repeat_last_or_none(void);
 
+/**
+ * @brief 轮询接收数据并处理
+ */
 static void protocol_poll_rx_and_process(void);
+
+/**
+ * @brief 处理单个数据帧
+ * 
+ * @param frame 帧数据
+ * @param frame_len 帧长度
+ */
 static void protocol_process_one_frame(const char *frame, uint16_t frame_len);
 
+/**
+ * @brief 将传感器快照转换为12位加速度值
+ * 
+ * @param snap 传感器快照
+ * @return 12位加速度值
+ */
 static uint16_t protocol_snapshot_to_accel12(const sensor_snapshot_t *snap);
+
+/**
+ * @brief 采样一次数据
+ */
 static void protocol_sample_once(void);
+
+/**
+ * @brief 尝试构建上传数据
+ * 
+ * @return 成功返回1，失败返回0
+ */
 static uint8_t protocol_try_build_upload(void);
+
+/**
+ * @brief 发送下一块上传数据
+ */
 static void protocol_send_next_upload_chunk(void);
 
+/**
+ * @brief 协议任务初始化
+ * 
+ * 注册TMOS协议任务并触发初始化事件。
+ * 如果任务已存在或注册失败，则直接返回。
+ */
 void protocol_task_init(void)
 {
     if (s_protocol_task_id != INVALID_TASK_ID)
@@ -155,6 +252,11 @@ void protocol_task_init(void)
     tmos_set_event(s_protocol_task_id, PROTOCOL_EVT_INIT);
 }
 
+/**
+ * @brief 获取协议任务状态
+ * 
+ * @param out 输出状态结构体指针
+ */
 void protocol_task_get_status(protocol_status_t *out)
 {
     sensor_peak_params_t peak_cfg;
@@ -189,6 +291,11 @@ void protocol_task_get_status(protocol_status_t *out)
     out->tx_cnt_q = s_tx_cnt_q;
 }
 
+/**
+ * @brief 获取下一个发送序列号
+ * 
+ * @return 下一个序列号
+ */
 static uint8_t protocol_next_tx_seq(void)
 {
     uint8_t seq = s_tx_seq;
@@ -196,6 +303,13 @@ static uint8_t protocol_next_tx_seq(void)
     return seq;
 }
 
+/**
+ * @brief 发送数据帧
+ * 
+ * @param frame 帧数据
+ * @param frame_len 帧长度
+ * @return 成功返回1，失败返回0
+ */
 static uint8_t protocol_send_frame(const char *frame, uint16_t frame_len)
 {
     uint16_t sent = 0u;
@@ -250,6 +364,11 @@ static uint8_t protocol_send_frame(const char *frame, uint16_t frame_len)
     return 1u;
 }
 
+/**
+ * @brief 刷新待发送数据
+ * 
+ * @return 成功返回1，失败返回0
+ */
 static uint8_t protocol_flush_pending_tx(void)
 {
     uint16_t sent;
@@ -297,6 +416,14 @@ static uint8_t protocol_flush_pending_tx(void)
     return 1u;
 }
 
+/**
+ * @brief 发送消息
+ * 
+ * @param type 消息类型
+ * @param content 内容
+ * @param content_len 内容长度
+ * @param cache_as_report 是否缓存为报告
+ */
 static void protocol_send_msg(msg_type_t type, const char *content, uint16_t content_len, uint8_t cache_as_report)
 {
     char frame[PROTOCOL_TX_FRAME_MAX + 2u];
@@ -340,16 +467,25 @@ static void protocol_send_msg(msg_type_t type, const char *content, uint16_t con
     }
 }
 
+/**
+ * @brief 回复NONE消息
+ */
 static void protocol_reply_none(void)
 {
     protocol_send_msg(MSG_REPORT_NONE, NULL, 0u, 1u);
 }
 
+/**
+ * @brief 回复MIDDLE消息
+ */
 static void protocol_reply_middle(void)
 {
     protocol_send_msg(MSG_REPORT_MIDDLE, NULL, 0u, 1u);
 }
 
+/**
+ * @brief 重复上次回复或回复NONE
+ */
 static void protocol_reply_repeat_last_or_none(void)
 {
     if (s_last_report_valid != 0u && s_last_report_len > 0u)
@@ -361,6 +497,12 @@ static void protocol_reply_repeat_last_or_none(void)
     protocol_reply_none();
 }
 
+/**
+ * @brief 将传感器快照转换为12位加速度值
+ * 
+ * @param snap 传感器快照
+ * @return 12位加速度值
+ */
 static uint16_t protocol_snapshot_to_accel12(const sensor_snapshot_t *snap)
 {
     int32_t ax;
@@ -398,6 +540,11 @@ static uint16_t protocol_snapshot_to_accel12(const sensor_snapshot_t *snap)
     return (uint16_t)((peak_u * 4095u) / full_scale_mg);
 }
 
+/**
+ * @brief 推送协议采样数据到环形缓冲区
+ * 
+ * @param s 采样数据指针
+ */
 static void protocol_sample_push(const protocol_sample_t *s)
 {
     if (s == NULL)
@@ -412,6 +559,12 @@ static void protocol_sample_push(const protocol_sample_t *s)
     }
 }
 
+/**
+ * @brief 从环形缓冲区弹出协议采样数据
+ * 
+ * @param s 采样数据指针
+ * @return 成功返回1，失败返回0
+ */
 static uint8_t protocol_sample_pop(protocol_sample_t *s)
 {
     if (s == NULL)
@@ -431,6 +584,9 @@ static uint8_t protocol_sample_pop(protocol_sample_t *s)
     return 1u;
 }
 
+/**
+ * @brief 采样一次数据
+ */
 static void protocol_sample_once(void)
 {
     sensor_snapshot_t snap;
@@ -462,6 +618,11 @@ static void protocol_sample_once(void)
     protocol_sample_push(&s);
 }
 
+/**
+ * @brief 尝试构建上传数据
+ * 
+ * @return 成功返回1，失败返回0
+ */
 static uint8_t protocol_try_build_upload(void)
 {
     protocol_sample_t s;
@@ -509,6 +670,9 @@ static uint8_t protocol_try_build_upload(void)
     return 1u;
 }
 
+/**
+ * @brief 发送下一块上传数据
+ */
 static void protocol_send_next_upload_chunk(void)
 {
     report_data_decoded_t rep;
@@ -594,6 +758,11 @@ static void protocol_send_next_upload_chunk(void)
     }
 }
 
+/**
+ * @brief 应用参数设置
+ * 
+ * @param p 参数数据指针
+ */
 static void protocol_apply_params(const param_data_decoded_t *p)
 {
     sensor_peak_params_t peak_cfg;
@@ -629,6 +798,12 @@ static void protocol_apply_params(const param_data_decoded_t *p)
     s_last_report_valid = 0u;
 }
 
+/**
+ * @brief 处理单个数据帧
+ * 
+ * @param frame 帧数据
+ * @param frame_len 帧长度
+ */
 static void protocol_process_one_frame(const char *frame, uint16_t frame_len)
 {
     msg_type_t type = MSG_UNKNOWN;
@@ -712,6 +887,9 @@ static void protocol_process_one_frame(const char *frame, uint16_t frame_len)
     }
 }
 
+/**
+ * @brief 轮询接收数据并处理
+ */
 static void protocol_poll_rx_and_process(void)
 {
     uint8_t chunk[CDC_MAX_PACKET_SIZE];
@@ -778,6 +956,18 @@ static void protocol_poll_rx_and_process(void)
     }
 }
 
+/**
+ * @brief 协议任务事件处理函数
+ * 
+ * 处理协议任务的各类事件：
+ * - PROTOCOL_EVT_INIT: 初始化协议任务
+ * - PROTOCOL_EVT_POLL: 轮询接收数据并处理
+ * - PROTOCOL_EVT_SAMPLE: 采样传感器数据
+ * 
+ * @param task_id  当前任务ID
+ * @param events   待处理的事件位图
+ * @return 未处理的事件
+ */
 static tmosEvents protocol_task_process_event(tmosTaskID task_id, tmosEvents events)
 {
     (void)task_id;

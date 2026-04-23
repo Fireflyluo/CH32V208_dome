@@ -17,9 +17,9 @@
  *          3. 调用sc7a20_init()或sc7a20_init_with_config()进行初始化
  *          4. 使用读取函数获取加速度数据
  *
- * @author  WCH (南京沁恒微电子股份有限公司)
+ * @author 
  * @version V1.0.0
- * @date    2022/06/16
+ * @date    
  */
 
 #ifndef SC7A20_NEW_H

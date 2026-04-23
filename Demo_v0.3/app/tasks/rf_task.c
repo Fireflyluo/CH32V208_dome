@@ -1,3 +1,10 @@
+/**
+ * @file rf_task.c
+ * @brief RF(射频)任务实现
+ * 
+ * 该文件实现了基于AROS-RF库的射频通信任务，负责与传感器数据的集成和传输
+ */
+
 #include "rf_task.h"
 
 #include "HAL.h"
@@ -10,22 +17,35 @@
 
 #include <string.h>
 
-#define RF_EVT_INIT (0x0001u << 0)
-#define RF_EVT_POLL (0x0001u << 1)
+#define RF_EVT_INIT (0x0001u << 0)    ///< RF初始化事件
+#define RF_EVT_POLL (0x0001u << 1)    ///< RF轮询事件
 
-#define RF_POLL_MS      5u
-#define RF_PAYLOAD_TYPE 0xA1u
+#define RF_POLL_MS      5u            ///< RF轮询间隔(毫秒)
+#define RF_PAYLOAD_TYPE 0xA1u         ///< 负载数据类型标识
 
 #ifndef RF_TG_ID
-#define RF_TG_ID 0u
+#define RF_TG_ID 0u                   ///< 默认TG ID
 #endif
 
-static tmosTaskID s_rf_task_id = INVALID_TASK_ID;
-static uint8_t s_tg_id = (uint8_t)RF_TG_ID;
-static rf_task_status_t s_status = {0};
+static tmosTaskID s_rf_task_id = INVALID_TASK_ID;  ///< RF任务ID
+static uint8_t s_tg_id = (uint8_t)RF_TG_ID;       ///< 当前TG ID
+static rf_task_status_t s_status = {0};            ///< RF任务状态
 
+/**
+ * @brief RF任务事件处理函数
+ * 
+ * @param task_id 任务ID
+ * @param events 事件掩码
+ * @return 处理后剩余的事件
+ */
 static tmosEvents rf_task_process_event(tmosTaskID task_id, tmosEvents events);
 
+/**
+ * @brief 将32位整数限制在16位有符号整数范围内
+ * 
+ * @param v 输入值
+ * @return 限制后的16位整数值
+ */
 static int16_t rf_clamp_i16(int32_t v)
 {
     if (v > 32767)
@@ -39,12 +59,24 @@ static int16_t rf_clamp_i16(int32_t v)
     return (int16_t)v;
 }
 
+/**
+ * @brief 将16位值存入字节数组(大端序)
+ * 
+ * @param dst 目标字节数组
+ * @param v 要存储的值
+ */
 static void rf_put_u16(uint8_t *dst, uint16_t v)
 {
     dst[0] = (uint8_t)((v >> 8) & 0xFFu);
     dst[1] = (uint8_t)(v & 0xFFu);
 }
 
+/**
+ * @brief 将32位值存入字节数组(大端序)
+ * 
+ * @param dst 目标字节数组
+ * @param v 要存储的值
+ */
 static void rf_put_u32(uint8_t *dst, uint32_t v)
 {
     dst[0] = (uint8_t)((v >> 24) & 0xFFu);
@@ -53,6 +85,12 @@ static void rf_put_u32(uint8_t *dst, uint32_t v)
     dst[3] = (uint8_t)(v & 0xFFu);
 }
 
+/**
+ * @brief 验证并规范化TG ID
+ * 
+ * @param tg_id 输入的TG ID
+ * @return 规范化后的TG ID
+ */
 static uint8_t rf_task_sanitize_tg_id(uint8_t tg_id)
 {
     if (tg_id > TG_MAX_ID)
@@ -62,19 +100,25 @@ static uint8_t rf_task_sanitize_tg_id(uint8_t tg_id)
     return tg_id;
 }
 
-/* Fill tag.c MSG_DAT(24B):
+/**
+ * @brief 填充标签数据
+ * 
+ * 填充tag.c MSG_DAT(24B):
  * [0]=type [1]=ready
  * [2..15]=ax/ay/az/temp/rh/accel_hz/sht_hz (7 x int16/u16)
  * [16..19]=sht_ok_cnt [20..23]=sht_err_cnt
+ * 
+ * @param dat 输出数据缓冲区
+ * @return 成功返回1，失败返回0
  */
 static int rf_task_fill_tag_data(uint8_t *dat)
 {
-    sensor_snapshot_t snap;
-    int16_t ax;
-    int16_t ay;
-    int16_t az;
-    int16_t t;
-    uint16_t rh;
+    sensor_snapshot_t snap;   ///< 传感器快照
+    int16_t ax;              ///< X轴加速度
+    int16_t ay;              ///< Y轴加速度
+    int16_t az;              ///< Z轴加速度
+    int16_t t;               ///< 温度
+    uint16_t rh;             ///< 湿度
 
     if (dat == NULL)
     {
@@ -108,6 +152,9 @@ static int rf_task_fill_tag_data(uint8_t *dat)
     return 1;
 }
 
+/**
+ * @brief 同步RF任务状态
+ */
 static void rf_task_sync_status(void)
 {
     tg_runtime_status_t tg_st;
@@ -121,6 +168,12 @@ static void rf_task_sync_status(void)
     s_status.last_rx_tc = tg_st.last_rx_tc;
 }
 
+/**
+ * @brief RF任务初始化
+ * 
+ * 注册TMOS RF任务并触发初始化事件。
+ * 如果任务已存在或注册失败，则直接返回。
+ */
 void rf_task_init(void)
 {
     if (s_rf_task_id != INVALID_TASK_ID)
@@ -141,6 +194,11 @@ void rf_task_init(void)
     tmos_set_event(s_rf_task_id, RF_EVT_INIT);
 }
 
+/**
+ * @brief 设置TG ID
+ * 
+ * @param tg_id 新的TG ID
+ */
 void rf_task_set_tg_id(uint8_t tg_id)
 {
     uint8_t next = rf_task_sanitize_tg_id(tg_id);
@@ -159,11 +217,21 @@ void rf_task_set_tg_id(uint8_t tg_id)
     LOG_PRINT("rf tg_id updated: %u\r\n", (unsigned)s_tg_id);
 }
 
+/**
+ * @brief 获取当前TG ID
+ * 
+ * @return 当前TG ID
+ */
 uint8_t rf_task_get_tg_id(void)
 {
     return s_tg_id;
 }
 
+/**
+ * @brief 获取RF任务状态
+ * 
+ * @param out 输出状态结构体指针
+ */
 void rf_task_get_status(rf_task_status_t *out)
 {
     if (out == NULL)
@@ -173,28 +241,39 @@ void rf_task_get_status(rf_task_status_t *out)
     *out = s_status;
 }
 
+/**
+ * @brief RF任务事件处理函数
+ * 
+ * 处理RF任务的各类事件：
+ * - RF_EVT_INIT: 初始化RF模块和TAG
+ * - RF_EVT_POLL: 轮询RF状态并同步
+ * 
+ * @param task_id  当前任务ID
+ * @param events   待处理的事件位图
+ * @return 未处理的事件
+ */
 static tmosEvents rf_task_process_event(tmosTaskID task_id, tmosEvents events)
 {
     (void)task_id;
 
     if (events & RF_EVT_INIT)
     {
-        RF_RoleInit();
-        arf_Init();
-        tg_init(s_tg_id);
-        tg_set_newdatfunc(rf_task_fill_tag_data);
-        s_status.rf_inited = 1u;
-        rf_task_sync_status();
+        RF_RoleInit();                                    // 初始化RF角色
+        arf_Init();                                       // 初始化AROS RF
+        tg_init(s_tg_id);                                 // 初始化TG
+        tg_set_newdatfunc(rf_task_fill_tag_data);         // 设置数据填充回调
+        s_status.rf_inited = 1u;                          // 标记RF已初始化
+        rf_task_sync_status();                            // 同步RF状态
 
-        tmos_start_reload_task(s_rf_task_id, RF_EVT_POLL, MS1_TO_SYSTEM_TIME(RF_POLL_MS));
+        tmos_start_reload_task(s_rf_task_id, RF_EVT_POLL, MS1_TO_SYSTEM_TIME(RF_POLL_MS));  // 启动轮询定时器
         LOG_PRINT("rf tag-sm started: tg_id=%u\r\n", (unsigned)s_tg_id);
         return (events ^ RF_EVT_INIT);
     }
 
     if (events & RF_EVT_POLL)
     {
-        tg_step();
-        rf_task_sync_status();
+        tg_step();                   // 执行TG状态机步骤
+        rf_task_sync_status();       // 同步RF状态
         return (events ^ RF_EVT_POLL);
     }
 
