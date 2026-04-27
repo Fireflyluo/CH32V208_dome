@@ -27,12 +27,15 @@
 │      └─ ....
 ├─CH32V208GBU_ble                       // ble 临时模板
 ├─project_templete                      // 模板工程
-│      ├─ eide                          // eide工程
-│      ├─ MR2                           // MR2工程
+│      ├─ eide                            // eide工程
+│      ├─ MR2                             // MR2工程
 │      └─ xmmake_cmake                  // cmake/xmake 工程
-├─tmos project                            // 使用 tmos 的模板工程
+├─tmos project                          // 使用 tmos 的模板工程
 ├─cherryUSB_CDC_ACM                     // cherryusb 移植模板（CDC ACM示例）
 ├─USBLIB_TMOS                           // 使用官方usb库的tmos工程
+│      ├─ basic                           // 基础模板
+│      ├─ complex                         // MR2工程 
+│      └─ standard                        // cmake/xmake工程
 └─Demo_v0.x                             // 简单完整模板工程
 ```
 
@@ -57,10 +60,7 @@
 - [x] usb cdc 虚拟串口
 - [x] cherryUSB CDC 串口通信
 - [x] 完整2.4G_rf+usb_CDC+i2c+tmos的demo 
-## 待实现功能
 
-- [ ] SPI通信示例
-- [ ] 更多外设驱动...
 
 ## 使用说明
 
@@ -80,7 +80,7 @@
   - USBLIB 路径（旧 USB Device 内核 / PMA 结构）
 - **2026-4-23**: 增加2.4G射频以及射频协议的dome
 - **2026-4-23**: 增加一个加速度碰撞检测和位移估算dome
-
+- **2026-4-27**: 增加一个2.4G射频自组网协议的dome
 ## 联系方式
 
 - 作者: Fireflyluo

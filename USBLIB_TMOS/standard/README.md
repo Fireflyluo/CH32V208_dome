@@ -4,6 +4,25 @@
 
 这是一个基于 CH32V208 微控制器的嵌入式开发项目，集成了 TMOS（Tiny Multi-task Operating System）操作系统和 USB CDC（Communication Device Class）功能。该项目主要用作 CH32V208 学习记录和驱动示例，整合了多种外设和传感器，为用户提供了一个完整的开发验证平台。
 
+## 工程能力
+
+### 应用层功能 (app/)
+- **主程序入口** ([main.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/standard/app/main.c))：系统初始化流程，包括板级初始化、BLE初始化、HAL初始化、传感器任务、显示任务和串口上传任务初始化
+- **中断处理** ([ch32v20x_it.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/standard/app/ch32v20x_it.c))：系统中断向量表和中断服务函数
+- **系统配置** ([system_ch32v20x.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/standard/app/system_ch32v20x.c))：系统时钟配置和底层初始化
+- **外设驱动** ([peripheral.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/standard/app/peripheral.c))：基础外设操作函数
+
+### 当前任务 (app/tasks/)
+- **LED任务** ([tmos_led_task.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/standard/app/tasks/tmos_led_task.c))：管理LED指示灯的状态和闪烁模式，响应来自其他模块的事件，控制LED的开启、关闭和闪烁
+
+### 支持的硬件功能
+- ✅ **LED控制**: 通过GPIO实现LED指示灯控制
+- ✅ **I2C通信**: 实现I2C总线通信及设备扫描功能
+- ✅ **USB CDC 串口通信**: 支持虚拟串口通信
+- ✅ **USB CDC**: 虚拟串口功能
+- ✅ **传感器集成**: 支持加速度计和温湿度传感器
+
+
 ## 硬件资源配置
 
 ### 主控芯片
@@ -76,8 +95,7 @@
 - ✅ **USB CDC 串口通信**: 支持虚拟串口通信
 - ✅ **USB CDC**: 虚拟串口功能
 - ✅ **传感器集成**: 支持加速度计和温湿度传感器
-
-
+- ✅ **BLE通信**: 支持蓝牙低功耗通信
 
 ### 待实现功能
 - ❏ **SPI通信**: SPI接口通信示例
@@ -100,7 +118,7 @@
 
 - 工程文本文件统一使用 UTF-8 编码。
 - 在 VS Code 中已通过 `.editorconfig` 和 `.vscode/settings.json` 固化 UTF-8 配置。
-- 若使用 PowerShell 查看文件内容，建议显式使用 `Get-Content -Encoding utf8`，避免因终端默认编码导致“看起来像乱码”的显示问题。
+- 若使用 PowerShell 查看文件内容，建议显式使用 `Get-Content -Encoding utf8`，避免因终端默认编码导致"看起来像乱码"的显示问题。
 
 ## 系统初始化流程
 

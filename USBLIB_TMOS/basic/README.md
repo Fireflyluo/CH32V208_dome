@@ -4,6 +4,25 @@
 
 这是一个基于tmos使用官方usblib库的基础工程，核心使用 TMOS 事件驱动框架和 USB CDC（Communication Device Class）功能。做了一些简单的使用示例。支持MR2、eide和xmake_cmake。
 
+## 工程能力
+
+### 应用层功能 (app/)
+- **主程序入口** ([main.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/basic/app/main.c))：系统初始化流程，包括板级初始化、TMOS系统启动等
+- **中断处理** ([ch32v20x_it.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/basic/ch32v20x_it.c))：系统中断向量表和中断服务函数
+- **系统配置** ([system_ch32v20x.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/basic/app/system_ch32v20x.c))：系统时钟配置和底层初始化
+- **外设驱动** ([peripheral.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/basic/app/peripheral.c))：基础外设操作函数
+
+### 当前任务 (无专门任务模块)
+- 该基础版本未实现专门的任务模块，主要功能集中在主循环中实现
+- 提供TMOS框架基础，为后续扩展任务功能奠定基础
+
+### 支持的硬件功能
+- ✅ **LED控制**: 通过GPIO实现LED指示灯控制
+- ✅ **I2C通信**: 实现I2C总线通信及设备扫描功能
+- ✅ **串口通信**: 支持UART通信
+- ✅ **USB CDC**: 虚拟串口功能
+- ✅ **传感器集成**: 支持加速度计和温湿度传感器
+
 ## 硬件资源配置
 
 ### 主控芯片

@@ -1,4 +1,4 @@
-﻿# CH32V208 TMOS CDC 工程说明
+# CH32V208 TMOS CDC 工程说明
 
 ## 1. 项目简介
 本工程基于 **CH32V208**，使用 **TMOS** 进行任务调度，当前已实现：
@@ -18,6 +18,21 @@
 5. `display_task_init()`
 6. `serial_upload_task_init()`
 7. `while(1) { TMOS_SystemProcess(); }`
+
+## 工程能力
+
+### 应用层功能 (app/)
+- **主程序入口** ([main.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/main.c))：系统初始化流程，包括板级初始化、BLE初始化、HAL初始化、传感器任务、显示任务和串口上传任务初始化
+- **中断处理** ([ch32v20x_it.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/ch32v20x_it.c))：系统中断向量表和中断服务函数，处理各种外设中断
+- **系统配置** ([system_ch32v20x.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/system_ch32v20x.c))：系统时钟配置和底层初始化
+- **外设驱动** ([peripheral.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/peripheral.c))：基础外设操作函数
+
+### 当前任务 (app/tasks/)
+- **传感器任务** ([sensor_task.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/tasks/sensor_task.c))：负责SC7A20三轴加速度计（10Hz采样）和SHT40温湿度传感器（1Hz采样）的数据采集，使用两段式事件处理SHT40测量过程，并通过快照结构共享数据给其他任务
+- **显示任务** ([display_task.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/tasks/display_task.c))：控制OLED显示屏，以2Hz频率刷新显示AX/AY/AZ加速度值、温度和湿度数据
+- **串口上报任务** ([serial_upload_task.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/tasks/serial_upload_task.c))：每秒通过USB CDC上报最近的传感器数据和统计信息（如accel_hz/sht_hz/sht_ok/sht_err/ready等）
+- **I2C请求任务** ([i2c_request_task.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/tasks/i2c_request_task.c))：管理I2C总线请求，通过仲裁机制协调多个设备的访问
+- **LED任务** ([tmos_led_task.c](file:///d:/Desktop/ch32/0.CH32V208_dome/USBLIB_TMOS/complex/app/tasks/tmos_led_task.c))：控制LED指示灯的状态和闪烁模式，响应来自其他模块的事件
 
 ## 2. 当前任务与频率
 ### 2.1 传感器任务（sensor_task）
@@ -44,6 +59,17 @@
   - 加速度数据
   - 温湿度数据
   - 统计信息（accel_hz/sht_hz/sht_ok/sht_err/ready）
+
+### 2.4 I2C请求任务（i2c_request_task）
+文件：`app/tasks/i2c_request_task.c`
+- 管理I2C总线访问请求
+- 协调OLED、SC7A20、SHT40等设备的访问时序
+- 实现总线仲裁机制，防止多设备冲突
+
+### 2.5 LED任务（tmos_led_task）
+文件：`app/tasks/tmos_led_task.c`
+- 控制LED指示灯的亮灭和闪烁模式
+- 响应系统事件，反馈系统工作状态
 
 ## 3. I2C 与 OLED 说明
 ### 3.1 I2C 架构
