@@ -1,0 +1,28 @@
+{
+    "files.encoding": "utf8",
+    "files.autoGuessEncoding": false,
+    "terminal.integrated.env.windows": {
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8"
+    },
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "$(package) Build",
+            "task": "build",
+            "tooltip": "编译项目"
+        },
+        {
+            "label": "$(zap) Flash",
+            "task": "flash",
+            "tooltip": "烧录程序"
+        },
+        {
+            "label": "$(trash) Clean",
+            "task": "clean",
+            "tooltip": "清理项目"
+        }
+    ],
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/.vscode"
+    ]
+}
