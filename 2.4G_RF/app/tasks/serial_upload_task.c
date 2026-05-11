@@ -23,11 +23,14 @@
  */
 #include "serial_upload_task.h"
 
+#include "board.h"
 #include "i2c_bus_arbiter.h"
 #include "log_print.h"
 #include "ad_hoc_task.h"
 #include "sensor_task.h"
+#include "usb_cdc.h"
 #include "wchble.h"
+#include <string.h>
 
 #define SERIAL_EVT_INIT   (0x0001u << 0)
 #define SERIAL_EVT_UPLOAD (0x0001u << 1)
@@ -36,11 +39,18 @@
 #define SERIAL_UPLOAD_MS 200u
 #define SERIAL_STAT_MS 1000u
 #define SERIAL_STAT_DIV (SERIAL_STAT_MS / SERIAL_UPLOAD_MS)
+#define SERIAL_CMD_BUF_SIZE 96u
+#define SERIAL_CMD_RESET_TOKEN "GW2RST"
+#define SERIAL_CMD_RESET_ACK "GW2RST:OK\r\n"
 
 static tmosTaskID s_serial_task_id = INVALID_TASK_ID;
 static uint16_t s_stat_div_cnt = 0u;
+static char s_cmd_buf[SERIAL_CMD_BUF_SIZE];
+static uint16_t s_cmd_len = 0u;
 
 static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvents events);
+static void serial_poll_usb_command(void);
+static uint8_t serial_match_reset_cmd(const char *buf, uint16_t len);
 
 /**
  * @brief  串口上传任务初始化函数
@@ -87,11 +97,14 @@ static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvent
     {
         tmos_start_reload_task(s_serial_task_id, SERIAL_EVT_UPLOAD, MS1_TO_SYSTEM_TIME(SERIAL_UPLOAD_MS));
         s_stat_div_cnt = 0u;
+        s_cmd_len = 0u;
         return (events ^ SERIAL_EVT_INIT);
     }
 
     if (events & SERIAL_EVT_UPLOAD)
     {
+        serial_poll_usb_command();
+
         /* 读取最近一次传感器结果并格式化输出 */
         sensor_task_get_snapshot(&snap);
         t_abs = (snap.temp_centi_c >= 0) ? snap.temp_centi_c : -snap.temp_centi_c;
@@ -125,10 +138,14 @@ static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvent
                       (unsigned long)adhoc_st.node_err_cnt,
                       (unsigned long)adhoc_st.tx_err_cnt,
                       (unsigned long)adhoc_st.rx_err_cnt);
-            LOG_PRINT("adhoc sm st=%u lvl=%u retry=%u up_gw=%u up_no=%u up_id=%lu up_age=%lums gw_start=%u gw_lock=%u gw_left=%lums net_act=%u net_closed=%u net_left=%lums\r\n",
+            LOG_PRINT("adhoc sm st=%u lvl=%u retry=%u rpk=%u rex=%lu lrex=%u lrex_age=%lums up_gw=%u up_no=%u up_id=%lu up_age=%lums gw_start=%u gw_lock=%u gw_left=%lums net_act=%u net_closed=%u net_left=%lums\r\n",
                       (unsigned int)adhoc_st.sm_state,
                       (unsigned int)adhoc_st.sm_joined_level,
                       (unsigned int)adhoc_st.sm_retry_count,
+                      (unsigned int)adhoc_st.sm_retry_peak,
+                      (unsigned long)adhoc_st.sm_retry_exhausted_count,
+                      (unsigned int)adhoc_st.sm_last_retry_exhausted,
+                      (unsigned long)adhoc_st.sm_last_retry_exhausted_age_ms,
                       (unsigned int)adhoc_st.sm_upstream_gateway_no,
                       (unsigned int)adhoc_st.sm_upstream_no,
                       (unsigned long)adhoc_st.sm_upstream_id,
@@ -180,4 +197,84 @@ static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvent
     }
 
     return 0;
+}
+
+static uint8_t serial_match_reset_cmd(const char *buf, uint16_t len)
+{
+    static const char token[] = SERIAL_CMD_RESET_TOKEN;
+    const uint16_t token_len = (uint16_t)(sizeof(token) - 1u);
+    uint16_t idx;
+
+    if (len < token_len)
+    {
+        return 0u;
+    }
+
+    for (idx = 0u; idx + token_len <= len; idx++)
+    {
+        uint16_t next = (uint16_t)(idx + token_len);
+        if (memcmp(&buf[idx], token, token_len) != 0)
+        {
+            continue;
+        }
+        if (idx != 0u && buf[idx - 1u] != '\r' && buf[idx - 1u] != '\n')
+        {
+            continue;
+        }
+        if (next < len &&
+            buf[next] != '\r' &&
+            buf[next] != '\n' &&
+            buf[next] != ' ' &&
+            buf[next] != '\t')
+        {
+            continue;
+        }
+        return 1u;
+    }
+
+    return 0u;
+}
+
+static void serial_poll_usb_command(void)
+{
+    uint8_t chunk[CDC_MAX_PACKET_SIZE];
+    uint16_t n;
+
+    for (;;)
+    {
+        n = CDC_ReceiveData(chunk, sizeof(chunk));
+        if (n == 0u)
+        {
+            break;
+        }
+        if ((uint16_t)(s_cmd_len + n) > (uint16_t)sizeof(s_cmd_buf))
+        {
+            s_cmd_len = 0u;
+        }
+        memcpy(&s_cmd_buf[s_cmd_len], chunk, n);
+        s_cmd_len = (uint16_t)(s_cmd_len + n);
+    }
+
+    if (s_cmd_len == 0u)
+    {
+        return;
+    }
+
+    if (serial_match_reset_cmd(s_cmd_buf, s_cmd_len) == 0u)
+    {
+        if (s_cmd_len >= (uint16_t)sizeof(s_cmd_buf))
+        {
+            s_cmd_len = 0u;
+        }
+        return;
+    }
+
+    {
+        char ack[] = SERIAL_CMD_RESET_ACK;
+        (void)CDC_SendData((uint8_t *)ack, (uint16_t)(sizeof(ack) - 1u));
+    }
+    LOG_PRINT("usb cmd reset accepted\r\n");
+    s_cmd_len = 0u;
+    HAL_Delay(20);
+    NVIC_SystemReset();
 }

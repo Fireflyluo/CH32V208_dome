@@ -19,6 +19,11 @@ static void adhoc_sender_raw_split(uint64_t raw, adhoc_sender_t *sender)
     sender->node_id = (uint32_t)(raw & ADHOC_SENDER_NODE_MAX);
 }
 
+static uint32_t adhoc_seconds_from_us(uint32_t now_us)
+{
+    return now_us / 1000000u;
+}
+
 uint8_t adhoc_frame_header_make(uint8_t msg_class, uint8_t gateway_no, uint8_t slot_high4)
 {
     uint8_t header = 0u;
@@ -135,6 +140,57 @@ int adhoc_payload_id_unpack(const uint8_t in[4], adhoc_payload_id_t *packed_id)
     return 1;
 }
 
+uint32_t adhoc_lmt_a_from_us(uint32_t now_us)
+{
+    return adhoc_seconds_from_us(now_us);
+}
+
+uint32_t adhoc_lmt_d_from_us(uint32_t now_us)
+{
+    return adhoc_seconds_from_us(now_us) & 0x00FFFFFFu;
+}
+
+void adhoc_u24_be_write(uint32_t value, uint8_t out[3])
+{
+    if (out == 0)
+    {
+        return;
+    }
+    out[0] = (uint8_t)((value >> 16) & 0xFFu);
+    out[1] = (uint8_t)((value >> 8) & 0xFFu);
+    out[2] = (uint8_t)(value & 0xFFu);
+}
+
+uint32_t adhoc_u24_be_read(const uint8_t in[3])
+{
+    if (in == 0)
+    {
+        return 0u;
+    }
+    return ((uint32_t)in[0] << 16) | ((uint32_t)in[1] << 8) | (uint32_t)in[2];
+}
+
+void adhoc_u32_be_write(uint32_t value, uint8_t out[4])
+{
+    if (out == 0)
+    {
+        return;
+    }
+    out[0] = (uint8_t)((value >> 24) & 0xFFu);
+    out[1] = (uint8_t)((value >> 16) & 0xFFu);
+    out[2] = (uint8_t)((value >> 8) & 0xFFu);
+    out[3] = (uint8_t)(value & 0xFFu);
+}
+
+uint32_t adhoc_u32_be_read(const uint8_t in[4])
+{
+    if (in == 0)
+    {
+        return 0u;
+    }
+    return ((uint32_t)in[0] << 24) | ((uint32_t)in[1] << 16) | ((uint32_t)in[2] << 8) | (uint32_t)in[3];
+}
+
 int adhoc_frame_build(const adhoc_frame_fields_t *fields, uint8_t out_frame[ADHOC_FRAME_SIZE])
 {
     uint8_t sender_bytes[ADHOC_FRAME_SENDER_LEN];
@@ -155,7 +211,7 @@ int adhoc_frame_build(const adhoc_frame_fields_t *fields, uint8_t out_frame[ADHO
     out_frame[ADHOC_FRAME_IDX_HEAD] = adhoc_frame_header_make(fields->msg_class, fields->gateway_no, fields->slot_high4);
     out_frame[ADHOC_FRAME_IDX_LEVEL] = fields->level;
     memcpy(&out_frame[ADHOC_FRAME_IDX_SENDER], sender_bytes, ADHOC_FRAME_SENDER_LEN);
-    memcpy(&out_frame[ADHOC_FRAME_IDX_PAYLOAD], fields->payload, ADHOC_FRAME_PAYLOAD_LEN);
+    memcpy(&out_frame[ADHOC_FRAME_IDX_CONTENT], fields->content, ADHOC_FRAME_CONTENT_LEN);
     out_frame[ADHOC_FRAME_IDX_CRC] = 0u;
     adhoc_crc8_write_frame(out_frame);
     return 1;
@@ -179,7 +235,7 @@ int adhoc_frame_parse(const uint8_t frame[ADHOC_FRAME_SIZE], adhoc_frame_fields_
         return 0;
     }
 
-    memcpy(out_fields->payload, &frame[ADHOC_FRAME_IDX_PAYLOAD], ADHOC_FRAME_PAYLOAD_LEN);
+    memcpy(out_fields->content, &frame[ADHOC_FRAME_IDX_CONTENT], ADHOC_FRAME_CONTENT_LEN);
     out_fields->crc8 = frame[ADHOC_FRAME_IDX_CRC];
     return 1;
 }

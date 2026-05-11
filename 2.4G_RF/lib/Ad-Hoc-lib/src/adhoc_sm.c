@@ -2,6 +2,10 @@
 
 #include <string.h>
 
+#ifndef ADHOC_TEST_DROP_JOIN_CONFIRM
+#define ADHOC_TEST_DROP_JOIN_CONFIRM 0u
+#endif
+
 static void adhoc_sm_candidate_clear(adhoc_sm_candidate_t *candidate)
 {
     if (candidate == 0)
@@ -555,23 +559,37 @@ static int adhoc_sm_sender_matches_level(uint8_t upstream_level, uint32_t sender
     return sender_id >= ADHOC_SM_BEACON_ID_MIN ? 1 : 0;
 }
 
-static int adhoc_sm_payload_has_confirm_self(const uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN], uint32_t self_node_id, uint8_t expect_flag)
+static uint8_t adhoc_sm_content_id_offset(uint8_t slot_idx)
+{
+    return (uint8_t)(ADHOC_A_CONFIRM_PAYLOAD_OFFSET + slot_idx * ADHOC_REPLY_ITEM_ENCODED_LEN);
+}
+
+static void adhoc_sm_content_write_lmt_a(uint8_t content[ADHOC_FRAME_CONTENT_LEN], uint32_t now_us)
+{
+    if (content == 0)
+    {
+        return;
+    }
+    adhoc_u32_be_write(adhoc_lmt_a_from_us(now_us), &content[0]);
+}
+
+static int adhoc_sm_content_has_confirm_self(const uint8_t content[ADHOC_FRAME_CONTENT_LEN], uint32_t self_node_id)
 {
     uint8_t index;
     adhoc_payload_id_t packed_id;
 
-    if (payload == 0 || self_node_id == 0u)
+    if (content == 0 || self_node_id == 0u)
     {
         return 0;
     }
 
-    for (index = 0u; index < 6u; ++index)
+    for (index = 0u; index < ADHOC_REPLY_MAX_PER_FRAME; ++index)
     {
-        if (!adhoc_payload_id_unpack(&payload[index * 4u], &packed_id))
+        if (!adhoc_payload_id_unpack(&content[adhoc_sm_content_id_offset(index)], &packed_id))
         {
             continue;
         }
-        if (packed_id.id_flag == expect_flag && packed_id.node_id == self_node_id)
+        if (packed_id.id_flag == ADHOC_PAYLOAD_ID_FLAG_JOIN_CONFIRM && packed_id.node_id == self_node_id)
         {
             return 1;
         }
@@ -579,20 +597,20 @@ static int adhoc_sm_payload_has_confirm_self(const uint8_t payload[ADHOC_FRAME_P
     return 0;
 }
 
-static int adhoc_sm_payload_has_target_flag_range(const uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN], uint32_t target_id,
+static int adhoc_sm_content_has_target_flag_range(const uint8_t content[ADHOC_FRAME_CONTENT_LEN], uint32_t target_id,
                                                   uint8_t flag_min, uint8_t flag_max)
 {
     uint8_t index;
     adhoc_payload_id_t packed_id;
 
-    if (payload == 0 || target_id == 0u || flag_min > flag_max || flag_max > ADHOC_PAYLOAD_ID_FLAG_MAX)
+    if (content == 0 || target_id == 0u || flag_min > flag_max || flag_max > ADHOC_PAYLOAD_ID_FLAG_MAX)
     {
         return 0;
     }
 
     for (index = 0u; index < ADHOC_REPLY_MAX_PER_FRAME; ++index)
     {
-        if (!adhoc_payload_id_unpack(&payload[index * 4u], &packed_id))
+        if (!adhoc_payload_id_unpack(&content[adhoc_sm_content_id_offset(index)], &packed_id))
         {
             continue;
         }
@@ -604,44 +622,18 @@ static int adhoc_sm_payload_has_target_flag_range(const uint8_t payload[ADHOC_FR
     return 0;
 }
 
-static int adhoc_sm_payload_find_target_flag(const uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN], uint32_t target_id,
-                                             uint8_t flag_min, uint8_t flag_max, uint8_t *out_flag)
-{
-    uint8_t index;
-    adhoc_payload_id_t packed_id;
-
-    if (payload == 0 || target_id == 0u || flag_min > flag_max || flag_max > ADHOC_PAYLOAD_ID_FLAG_MAX || out_flag == 0)
-    {
-        return 0;
-    }
-
-    for (index = 0u; index < ADHOC_REPLY_MAX_PER_FRAME; ++index)
-    {
-        if (!adhoc_payload_id_unpack(&payload[index * 4u], &packed_id))
-        {
-            continue;
-        }
-        if (packed_id.node_id == target_id && packed_id.id_flag >= flag_min && packed_id.id_flag <= flag_max)
-        {
-            *out_flag = packed_id.id_flag;
-            return 1;
-        }
-    }
-    return 0;
-}
-
-static int adhoc_sm_payload_write_id(uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN], uint8_t slot_idx,
+static int adhoc_sm_content_write_id(uint8_t content[ADHOC_FRAME_CONTENT_LEN], uint8_t slot_idx,
                                      uint8_t id_flag, uint32_t node_id)
 {
     adhoc_payload_id_t packed_id;
 
-    if (payload == 0 || slot_idx >= ADHOC_REPLY_MAX_PER_FRAME)
+    if (content == 0 || slot_idx >= ADHOC_REPLY_MAX_PER_FRAME)
     {
         return 0;
     }
     packed_id.id_flag = id_flag;
     packed_id.node_id = node_id;
-    return adhoc_payload_id_pack(packed_id, &payload[slot_idx * 4u]);
+    return adhoc_payload_id_pack(packed_id, &content[adhoc_sm_content_id_offset(slot_idx)]);
 }
 
 static int adhoc_sm_is_unconfirmed_state(adhoc_sm_state_t state)
@@ -675,10 +667,8 @@ static int adhoc_sm_event_is_current_upstream(const adhoc_sm_t *sm, const adhoc_
     return event->level + 1u == sm->joined_level ? 1 : 0;
 }
 
-static int adhoc_sm_emit_join_response(adhoc_sm_t *sm, uint8_t slot_seed, adhoc_frame_fields_t *out_fields)
+static int adhoc_sm_emit_join_response(adhoc_sm_t *sm, uint8_t slot_seed, uint32_t now_us, adhoc_frame_fields_t *out_fields)
 {
-    uint8_t confirm_payload[ADHOC_FRAME_PAYLOAD_LEN];
-    uint8_t used_ids = 0u;
     adhoc_payload_id_t packed_id;
 
     if (sm == 0 || out_fields == 0 || sm->upstream_id == 0u || sm->joined_level == 0u)
@@ -693,28 +683,24 @@ static int adhoc_sm_emit_join_response(adhoc_sm_t *sm, uint8_t slot_seed, adhoc_
     out_fields->level = sm->joined_level;
     out_fields->sender.domain_id = sm->cfg.domain_id;
     out_fields->sender.node_id = sm->cfg.node_id;
+    adhoc_sm_content_write_lmt_a(out_fields->content, now_us);
     packed_id.id_flag = sm->upstream_no;
     packed_id.node_id = sm->upstream_id;
-    if (!adhoc_payload_id_pack(packed_id, &out_fields->payload[0]))
+    if (!adhoc_payload_id_pack(packed_id, &out_fields->content[ADHOC_A_CONFIRM_PAYLOAD_OFFSET]))
     {
         return 0;
     }
-    if (!adhoc_reply_list_build_confirm_payload(&sm->downlink_confirm_list, confirm_payload,
-                                                ADHOC_REPLY_MAX_PER_FRAME - 1u, &used_ids))
+    if (!adhoc_reply_list_build_confirm_payload(&sm->downlink_confirm_list, out_fields->content,
+                                                (uint8_t)(ADHOC_A_CONFIRM_PAYLOAD_OFFSET + ADHOC_REPLY_ITEM_ENCODED_LEN),
+                                                ADHOC_REPLY_MAX_PER_FRAME - 1u, 0))
     {
         return 0;
-    }
-    if (used_ids != 0u)
-    {
-        memcpy(&out_fields->payload[4], confirm_payload, used_ids * 4u);
     }
     return 1;
 }
 
-static int adhoc_sm_emit_level_beacon(adhoc_sm_t *sm, uint8_t slot_seed, adhoc_frame_fields_t *out_fields)
+static int adhoc_sm_emit_level_beacon(adhoc_sm_t *sm, uint8_t slot_seed, uint32_t now_us, adhoc_frame_fields_t *out_fields)
 {
-    uint8_t used_ids = 0u;
-
     if (sm == 0 || out_fields == 0 || sm->upstream_id == 0u || sm->joined_level == 0u)
     {
         return 0;
@@ -727,19 +713,21 @@ static int adhoc_sm_emit_level_beacon(adhoc_sm_t *sm, uint8_t slot_seed, adhoc_f
     out_fields->level = sm->joined_level;
     out_fields->sender.domain_id = sm->cfg.domain_id;
     out_fields->sender.node_id = sm->cfg.node_id;
-    if (!adhoc_reply_list_build_confirm_payload(&sm->downlink_confirm_list, out_fields->payload,
-                                                ADHOC_REPLY_MAX_PER_FRAME, &used_ids))
+    adhoc_sm_content_write_lmt_a(out_fields->content, now_us);
+    if (!adhoc_sm_content_write_id(out_fields->content, 0u, ADHOC_PAYLOAD_ID_FLAG_UPSTREAM_CONFIRMED, sm->upstream_id))
     {
         return 0;
     }
-    if (used_ids == 0u && !adhoc_sm_payload_write_id(out_fields->payload, 0u, 6u, sm->upstream_id))
+    if (!adhoc_reply_list_build_confirm_payload(&sm->downlink_confirm_list, out_fields->content,
+                                                (uint8_t)(ADHOC_A_CONFIRM_PAYLOAD_OFFSET + ADHOC_REPLY_ITEM_ENCODED_LEN),
+                                                ADHOC_REPLY_MAX_PER_FRAME - 1u, 0))
     {
         return 0;
     }
     return 1;
 }
 
-static int adhoc_sm_emit_gateway_beacon(adhoc_sm_t *sm, adhoc_frame_fields_t *out_fields)
+static int adhoc_sm_emit_gateway_beacon(adhoc_sm_t *sm, uint32_t now_us, adhoc_frame_fields_t *out_fields)
 {
     if (sm == 0 || out_fields == 0)
     {
@@ -753,7 +741,9 @@ static int adhoc_sm_emit_gateway_beacon(adhoc_sm_t *sm, adhoc_frame_fields_t *ou
     out_fields->level = 0u;
     out_fields->sender.domain_id = sm->cfg.domain_id;
     out_fields->sender.node_id = sm->cfg.node_id;
-    if (!adhoc_reply_list_build_confirm_payload(&sm->downlink_confirm_list, out_fields->payload,
+    adhoc_sm_content_write_lmt_a(out_fields->content, now_us);
+    if (!adhoc_reply_list_build_confirm_payload(&sm->downlink_confirm_list, out_fields->content,
+                                                ADHOC_A_CONFIRM_PAYLOAD_OFFSET,
                                                 ADHOC_REPLY_MAX_PER_FRAME, 0))
     {
         return 0;
@@ -907,8 +897,6 @@ adhoc_sm_rx_result_t adhoc_sm_on_rx(adhoc_sm_t *sm, const adhoc_sm_rx_event_t *e
 {
     uint8_t signal_rank;
     uint8_t join_level;
-    uint8_t matched_flag;
-    adhoc_payload_id_t child_reply_id;
 
     if (sm == 0 || event == 0 || sm->inited == 0u)
     {
@@ -932,17 +920,21 @@ adhoc_sm_rx_result_t adhoc_sm_on_rx(adhoc_sm_t *sm, const adhoc_sm_rx_event_t *e
         {
             return ADHOC_SM_RX_IGNORED;
         }
-        if (adhoc_sm_payload_find_target_flag(event->payload, sm->cfg.node_id, 0u, 5u, &matched_flag))
+        if (adhoc_sm_content_has_target_flag_range(event->content, sm->cfg.node_id,
+                                                   ADHOC_PAYLOAD_ID_FLAG_BIND_MIN, ADHOC_PAYLOAD_ID_FLAG_BIND_MAX))
         {
-            child_reply_id.id_flag = matched_flag;
-            child_reply_id.node_id = event->sender.node_id;
-            if (!adhoc_reply_list_push_unique(&sm->downlink_confirm_list, child_reply_id))
+#if ADHOC_TEST_DROP_JOIN_CONFIRM
+            return ADHOC_SM_RX_ACCEPTED;
+#endif
+            if (!adhoc_reply_list_push_confirm_unique(&sm->downlink_confirm_list, event->sender.node_id))
             {
                 return ADHOC_SM_RX_IGNORED;
             }
             return ADHOC_SM_RX_ACCEPTED;
         }
-        if (adhoc_sm_payload_has_target_flag_range(event->payload, sm->cfg.node_id, 6u, 6u))
+        if (adhoc_sm_content_has_target_flag_range(event->content, sm->cfg.node_id,
+                                                   ADHOC_PAYLOAD_ID_FLAG_UPSTREAM_CONFIRMED,
+                                                   ADHOC_PAYLOAD_ID_FLAG_UPSTREAM_CONFIRMED))
         {
             return ADHOC_SM_RX_ACCEPTED;
         }
@@ -959,17 +951,18 @@ adhoc_sm_rx_result_t adhoc_sm_on_rx(adhoc_sm_t *sm, const adhoc_sm_rx_event_t *e
         event->gateway_no == sm->upstream_gateway_no &&
         adhoc_sm_sender_matches_level(event->level, event->sender.node_id))
     {
-        if (adhoc_sm_payload_find_target_flag(event->payload, sm->cfg.node_id, 0u, 5u, &matched_flag))
+        if (adhoc_sm_content_has_target_flag_range(event->content, sm->cfg.node_id,
+                                                   ADHOC_PAYLOAD_ID_FLAG_BIND_MIN, ADHOC_PAYLOAD_ID_FLAG_BIND_MAX))
         {
-            child_reply_id.id_flag = matched_flag;
-            child_reply_id.node_id = event->sender.node_id;
-            if (!adhoc_reply_list_push_unique(&sm->downlink_confirm_list, child_reply_id))
+            if (!adhoc_reply_list_push_confirm_unique(&sm->downlink_confirm_list, event->sender.node_id))
             {
                 return ADHOC_SM_RX_IGNORED;
             }
             return ADHOC_SM_RX_ACCEPTED;
         }
-        if (adhoc_sm_payload_has_target_flag_range(event->payload, sm->cfg.node_id, 6u, 6u))
+        if (adhoc_sm_content_has_target_flag_range(event->content, sm->cfg.node_id,
+                                                   ADHOC_PAYLOAD_ID_FLAG_UPSTREAM_CONFIRMED,
+                                                   ADHOC_PAYLOAD_ID_FLAG_UPSTREAM_CONFIRMED))
         {
             return ADHOC_SM_RX_ACCEPTED;
         }
@@ -980,7 +973,7 @@ adhoc_sm_rx_result_t adhoc_sm_on_rx(adhoc_sm_t *sm, const adhoc_sm_rx_event_t *e
         event->gateway_no == sm->upstream_gateway_no &&
         event->sender.node_id == sm->upstream_id &&
         event->level + 1u == sm->joined_level &&
-        adhoc_sm_payload_has_confirm_self(event->payload, sm->cfg.node_id, sm->upstream_no))
+        adhoc_sm_content_has_confirm_self(event->content, sm->cfg.node_id))
     {
         adhoc_sm_enter_cn(sm, event->ts_us);
         return ADHOC_SM_RX_STATE_CHANGED;
@@ -1060,7 +1053,7 @@ int adhoc_sm_poll(adhoc_sm_t *sm, uint32_t now_us, adhoc_frame_fields_t *out_fie
         {
             return 1;
         }
-        if (out_fields == 0 || !adhoc_sm_emit_gateway_beacon(sm, out_fields))
+        if (out_fields == 0 || !adhoc_sm_emit_gateway_beacon(sm, now_us, out_fields))
         {
             return 0;
         }
@@ -1114,7 +1107,7 @@ int adhoc_sm_poll(adhoc_sm_t *sm, uint32_t now_us, adhoc_frame_fields_t *out_fie
             adhoc_sm_enter_st1(sm);
             return 1;
         }
-        if (out_fields == 0 || !adhoc_sm_emit_join_response(sm, sm->retry_count, out_fields))
+        if (out_fields == 0 || !adhoc_sm_emit_join_response(sm, sm->retry_count, now_us, out_fields))
         {
             return 0;
         }
@@ -1156,7 +1149,7 @@ int adhoc_sm_poll(adhoc_sm_t *sm, uint32_t now_us, adhoc_frame_fields_t *out_fie
             return 1;
         }
         cycle_idx = adhoc_sm_cycle_index(now_us, sm->cfg.t5_us);
-        if (out_fields == 0 || !adhoc_sm_emit_level_beacon(sm, (uint8_t)(cycle_idx & 0x0Fu), out_fields))
+        if (out_fields == 0 || !adhoc_sm_emit_level_beacon(sm, (uint8_t)(cycle_idx & 0x0Fu), now_us, out_fields))
         {
             return 0;
         }

@@ -42,6 +42,18 @@ option("rf_tg_id")
     set_description("RF tg_id for this firmware image (0..20)")
 option_end()
 
+option("adhoc_gateway2_tg_id")
+    set_default("255")
+    set_showmenu(true)
+    set_description("Second gateway rf_tg_id for 2GW test (0..20, 255=disabled)")
+option_end()
+
+option("adhoc_gateway2_no")
+    set_default("1")
+    set_showmenu(true)
+    set_description("Second gateway gateway_no for 2GW test (0..7)")
+option_end()
+
 -- ============================================================================
 -- 工具链路径配置
 -- ============================================================================
@@ -51,12 +63,29 @@ local toolchain_root = "e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/wi
 local selected_ver = get_config("wch_gcc_ver") or "15"      -- 获取用户选择的GCC版本
 local log_print_cfg = tostring(get_config("log_print") or "true")  -- 获取日志输出配置
 local rf_tg_id_cfg = tonumber(get_config("rf_tg_id") or "0") or 0
+local adhoc_gateway2_tg_id_cfg = tonumber(get_config("adhoc_gateway2_tg_id") or "255") or 255
+local adhoc_gateway2_no_cfg = tonumber(get_config("adhoc_gateway2_no") or "1") or 1
 local toolchain_path = nil
 
 if rf_tg_id_cfg < 0 then
     rf_tg_id_cfg = 0
 elseif rf_tg_id_cfg > 20 then
     rf_tg_id_cfg = 20
+end
+
+if adhoc_gateway2_tg_id_cfg < 0 then
+    adhoc_gateway2_tg_id_cfg = 255
+elseif adhoc_gateway2_tg_id_cfg > 255 then
+    adhoc_gateway2_tg_id_cfg = 255
+end
+if adhoc_gateway2_tg_id_cfg > 20 and adhoc_gateway2_tg_id_cfg ~= 255 then
+    adhoc_gateway2_tg_id_cfg = 255
+end
+
+if adhoc_gateway2_no_cfg < 0 then
+    adhoc_gateway2_no_cfg = 0
+elseif adhoc_gateway2_no_cfg > 7 then
+    adhoc_gateway2_no_cfg = 7
 end
 
 -- 根据选择的版本确定工具链路径
@@ -301,6 +330,9 @@ target("CH32V208GBU_Templete")
     end
     add_defines("ARF_USE_EXTERNAL_MEM_BUF=1")
     add_defines("RF_TG_ID=" .. tostring(rf_tg_id_cfg))
+    add_defines("ADHOC_TASK_GATEWAY_PRIMARY_TG_ID=0")
+    add_defines("ADHOC_TASK_GATEWAY_SECONDARY_TG_ID=" .. tostring(adhoc_gateway2_tg_id_cfg))
+    add_defines("ADHOC_TASK_GATEWAY_SECONDARY_NO=" .. tostring(adhoc_gateway2_no_cfg))
     add_defines("ADHOC_ENABLE=1")
     
     -- ============================================================================

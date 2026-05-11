@@ -254,7 +254,7 @@ adhoc_rc_t adhoc_node_on_rx(void *node, const adhoc_frame_t *rx)
         event.gateway_no = parsed.gateway_no;
         event.level = parsed.level;
         event.sender = parsed.sender;
-        memcpy(event.payload, parsed.payload, sizeof(event.payload));
+        memcpy(event.content, parsed.content, sizeof(event.content));
         event.rssi = rx->rssi;
         event.ts_us = rx->ts_us;
         (void)adhoc_sm_on_rx(&ctx->sm, &event);
@@ -284,7 +284,7 @@ adhoc_rc_t adhoc_node_poll(void *node, uint32_t now_us)
 
     if (ctx->link_ops != NULL && ctx->link_ops->start_rx != NULL)
     {
-        if (ctx->link_ops->start_rx(ctx->link_ctx) != 0)
+        if (ctx->link_ops->start_rx(ctx->link_ctx) != ADHOC_LINK_OK)
         {
             return ADHOC_ESTATE;
         }
@@ -394,11 +394,12 @@ adhoc_rc_t adhoc_node_fetch_tx(void *node, adhoc_frame_t *tx)
     return ADHOC_OK;
 }
 
-adhoc_rc_t adhoc_node_submit_data(void *node, uint8_t source_id_flag, uint16_t seq_no,
+adhoc_rc_t adhoc_node_submit_data(void *node, uint8_t source_id_flag, uint32_t lmt_d,
                                   const uint8_t user[ADHOC_DATA_USER_LEN], uint32_t now_us)
 {
     adhoc_node_ctx_t *ctx = adhoc_cast(node);
     adhoc_sm_snapshot_t snapshot;
+    uint32_t submit_lmt_d;
 
     if (ctx == NULL || user == NULL)
     {
@@ -424,7 +425,8 @@ adhoc_rc_t adhoc_node_submit_data(void *node, uint8_t source_id_flag, uint16_t s
         return ADHOC_ESTATE;
     }
 
-    if (!adhoc_data_plane_submit_source_data(&ctx->data_plane, source_id_flag, seq_no, user,
+    submit_lmt_d = lmt_d == 0u ? adhoc_lmt_d_from_us(now_us) : (lmt_d & ADHOC_DATA_LMT_D_MAX);
+    if (!adhoc_data_plane_submit_source_data(&ctx->data_plane, source_id_flag, submit_lmt_d, user,
                                              snapshot.joined_level, snapshot.upstream_gateway_no, now_us))
     {
         return ADHOC_EBUSY;
@@ -465,7 +467,7 @@ adhoc_rc_t adhoc_node_fetch_data_tx_report(void *node, adhoc_node_data_tx_report
     }
     out_report->source_id_flag = report.item.source.id_flag;
     out_report->source_node_id = report.item.source.node_id;
-    out_report->seq_no = report.item.seq_no;
+    out_report->lmt_d = report.item.lmt_d;
     out_report->retry_count = report.retry_count;
     return ADHOC_OK;
 }

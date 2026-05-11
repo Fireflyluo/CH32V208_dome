@@ -1,120 +1,112 @@
-# Ad-Hoc-lib 使用说明（v0.1）
+# Ad-Hoc-lib 使用说明
 
-本文档说明 `Ad-Hoc-lib` 在当前工程中的推荐接入方式，以及当前实现边界。
+本文提供可直接迁移到其他工程的最小接入流程。协议语义请同时参考：
 
-## 1. 设计目标
+- `protocol-design.md`
+- `software-architecture.md`
+- `porting-guide.md`
 
-- 协议层独立于具体射频驱动。
-- 链路层只负责“收一帧 / 发一帧 / 提供时间与随机数”。
-- 任务层负责周期驱动、角色配置、观测与业务数据注入。
+## 1. 接入前提
 
-## 2. 典型接入结构
+- 已实现 `adhoc_link_ops_t`（见 `porting-guide.md`）
+- 已准备静态内存用于 `adhoc_node`
+- 应用任务具备周期调度能力（建议固定轮询节拍）
 
-当前工程采用以下调用链：
+## 2. 初始化
 
-`ad_hoc_task -> adhoc_node -> adhoc_sm / adhoc_data_plane -> adhoc_link_ops_t -> adhoc_link_aros -> AROS-RF-LIB`
+### 2.1 组装配置 `adhoc_cfg_t`
 
-其中：
+- `domain_id`：组网域（0..2047）
+- `node_id`：节点 ID（29bit，且非 0）
+- `gateway_no`：网关编号（0..7）
+- `t1_us ~ t4_us`：基础时序参数
+- `retry_max`：重试上限（建议 `30` 起步）
+- `network_window_us`：组网时间窗（建议 `30000000`）
+- `regroup_interval_us`：重组网周期（`0` 表示关闭）
 
-- `adhoc_node` 是应用层唯一入口。
-- `adhoc_sm` 负责组网类 `A` 帧。
-- `adhoc_data_plane` 负责数据类 `D` 帧。
-- `adhoc_link_ops_t` 是协议层与链路层的边界。
+### 2.2 初始化步骤
 
-## 3. 初始化步骤
+```c
+uint8_t node_mem[1024]; // 示例容量，实际以 adhoc_node_required_size() 为准
+uint32_t need = adhoc_node_required_size();
 
-1. 准备 `adhoc_cfg_t`
-   - `domain_id`：域号
-   - `node_id`：本节点 ID
-   - `gateway_no`：网关编号
-    - `t1_us ~ t4_us`：基础时间参数
-   - `retry_max`：未确认态/数据面重试上限
-   - `network_window_us`：网关组网时间窗，当前默认建议 `30000000`
-   - `regroup_interval_us`：重组网本地计时，`0` 表示关闭
-2. 准备一块静态内存，大小取自 `adhoc_node_required_size()`
-3. 准备链路操作表 `adhoc_link_ops_t`
-4. 调用 `adhoc_node_init()`
-5. 角色切换：
-   - 网关：`adhoc_node_set_role(..., ADHOC_ROLE_GATEWAY)`
-   - 信标：`adhoc_node_set_role(..., ADHOC_ROLE_BEACON)`
+if (sizeof(node_mem) < need) {
+    // 提前报错，避免初始化失败
+}
+adhoc_node_init(node_mem, sizeof(node_mem), &cfg, &link_ops, link_ctx);
+adhoc_node_set_role(node_mem, ADHOC_ROLE_GATEWAY /* or ADHOC_ROLE_BEACON */);
+```
 
-## 4. 周期驱动建议
+建议：启动时校验 `sizeof(node_mem) >= need`，避免后续硬故障。
 
-每个任务周期建议按以下顺序执行：
+## 3. 主循环推荐顺序
 
-1. 链路层轮询接收；若得到完整 `32B` 帧，则调用 `adhoc_node_on_rx()`
-2. 以当前时间调用 `adhoc_node_poll(now_us)`
-3. 若 `adhoc_node_fetch_tx()` 返回成功，则将该帧交给链路层发送
-4. 信标业务需要上报时，调用 `adhoc_node_submit_data()`
-5. 周期读取 `adhoc_node_fetch_data_tx_report()`，更新业务统计或日志
-6. 若需要运行态观测，可周期调用 `adhoc_node_get_runtime_status()`，读取 `state/joined_level/upstream_no/upstream_last_seen_us/gateway_network_end_us/network_lock_end_us`
+下面顺序是可工作的最小闭环：
 
-## 5. 当前已具备能力
+1. `adhoc_node_poll(node, now_us)`：推进状态机与调度发送
+2. `adhoc_node_fetch_tx(node, &tx)`：拉取待发帧
+3. `link_ops.tx(...)`：下发到射频链路
+4. `link_ops.poll_rx(...)`：轮询接收完整帧
+5. `adhoc_node_on_rx(node, &rx)`：喂给协议栈
+6. `adhoc_node_fetch_data_tx_report(...)`：拉取上报结果
 
-- 固定 `32B` 帧编解码与 `CRC8`
-- `T5/T6/n/m` 时序关系校验
-- `ST1/U1/UN/C1/CN` 组网状态机
-- 网关 `A V=0` 周期发射与 `T2` 收集窗口
-- 网关组网时间窗控制：默认 `30s` 到期后停止 `A V=0`
-- 组网确认列表（最多 `6` 条）
-- 轻量邻居表 `Top-K Cache`（当前 `K=6`），用于多网关候选缓存与优选
-- 信标侧“方向结束时刻继承”：首次观测某个上行方向时记录本地 `network_end_us`，确认后到期自动锁定停发
-- 上级失效释放：若在组网窗口未结束前连续 `3*T5` 未再收到当前上级 `A` 帧，则显式回退 `ST1`
-- `D` 帧、`ID+No` 去重、网关 ACK（最多 `4` 条）
-- 数据面按 `source.node_id + No` 做去重/ACK 命中，不把转发中会变化的 `id_flag` 纳入唯一键
-- `source_id_flag` 的最小转发约束：原发数据首跳改写为“再转发上级编号”，转发数据需命中当前可再转发上级编号
-- 已支持“监听确认”：监听到同一 `source.node_id + No` 的上级转发/再转发后停止本条继续重发
-- 转发 `D` 帧使用当前组网状态同步得到的 `joined_level/upstream_gateway_no/upstream_no`
-- `upstream_no` 由状态机内的上级编号绑定表（`0..5`）分配，不再在数据面固定为 `0`
-- 组网 `A` 帧确认按请求 `Flag(0..5)` 定向回填，`Flag=6` 请求仅忽略，未确认节点仅在命中自身且 `Flag=N` 一致时转确认
-- 锁定后仅处理与当前 `upstream_gateway_no` 一致的下级组网请求
-- 本地重组网计时接口 `regroup_interval_us`（当前工程默认关闭）
-- 信标侧数据转发、重试与结果回传
-- CH32V208 `port` 封装（时间/随机/临界区）
+注意：
 
-## 6. 当前未完成项
+- `adhoc_node_poll` 不会主动读取链路接收缓冲，`on_rx` 必须由应用层显式调用。
+- 建议应用层维护 TX/RX 预算，避免单次循环阻塞。
 
-以下仍需按设计文档继续推进：
+## 4. 信标数据上报
 
-- 全网统一绝对结束时刻的显式传播（当前为“首次观测方向”的本地时间）
-- 重组网全局对齐策略（当前仅有本地计时骨架）
-- `docs/t07任务约束` 中“`A` 帧前 4B 注入 Epoch”方案与当前 `6` 条确认载荷布局冲突，当前仅保留为协议演进候选项
-- `source_id_flag` 的多上级编号完整转发语义
-- 多网关方向锁定释放闭环
+仅信标角色可提交数据：
 
-因此，现阶段更适合把本库视作“最小可联调协议基线”，而不是最终完整协议实现。
+```c
+adhoc_node_submit_data(node, source_id_flag, lmt_d, user17, now_us);
+```
 
-## 7. 当前工程中的最小业务约定
+- `source_id_flag`：0..7（通常业务先从 `0` 起步）
+- `lmt_d=0`：库内自动按 `now_us` 生成
+- `user` 长度固定 `17B`
 
-在 `2.4G_RF` 工程当前主路径中：
+## 5. 发送结果回传
 
-- 只有信标角色主动调用 `adhoc_node_submit_data()`
-- `source_id_flag` 当前固定为 `0`
-- `upstream_no` 当前由状态机根据 `Top-K Cache + 绑定表(0..5)` 分配，应用层不再直接指定上级编号
-- `user[18]` 由 `sensor_task` 快照编码生成
-- `OLED/串口/LED` 统一读取 `ad_hoc_task` 状态进行观测
+通过 `adhoc_node_fetch_data_tx_report` 获取结果：
 
-这部分是当前工程联调约定，不应替代协议规范本身。
+- `ADHOC_NODE_DATA_TX_REPORT_ACKED`
+- `ADHOC_NODE_DATA_TX_REPORT_RETRY_EXHAUSTED`
+- `ADHOC_NODE_DATA_TX_REPORT_NONE`
 
-## 8. 调试与板测建议
+建议把 `source_node_id + lmt_d + retry_count` 记录到业务日志，便于板测复盘。
 
-- 当前工程已将 `adhoc_node_get_runtime_status()` 同步到串口 `adhoc sm ...` 日志，建议优先观察：
-  - `st/lvl/retry`：当前状态机状态、级别与重试次数
-  - `up_gw/up_no/up_age`：已选方向与上级最近存活时间
-  - `gw_start/gw_lock/gw_left`：网关组网窗口是否启动、是否关闭、剩余时间
-  - `net_act/net_closed/net_left`：信标方向锁定是否激活、是否到期关闭、剩余时间
-- 当前已完成的单板验证（`2026-04-26`）：
-  - 条件：`1` 块板、网关角色、串口 `COM8/115200`
-  - 现象：`gw_left` 倒计时约 `30s` 后归零，`gw_lock` 由 `0` 变 `1`
-  - 现象：`gw_lock=1` 后 `tx` 与链路层发送请求计数停止增长
-  - 结论：网关侧 `T07`“时间窗到期停发 `A V=0`”已经具备硬件证据
-- 当前已完成的双板验证（`2026-04-26`）：
-  - 条件：板1为网关、板2为 `RF_TG_ID=1` 信标，仅观测板2 `COM3/115200`
-  - 现象：板2从 `ST1` 进入 `C1`（`st=3`、`lvl=1`、`up_id=1`、`net_act=1`）
-  - 现象：`adhoc data ack` 从 `4` 增长到 `11`，说明最小入网与数据 ACK 闭环已跑通
-  - 现象：随后板2又回退到 `ST1`（`up_id=0`、`net_act=0`）
-  - 结论：可确认“最小入网 + 数据 ACK”主路径成立；回退与 `3*T5` 上级失效逻辑一致，但仍建议下一轮同步观察板1状态
-- 仍待后续双板/多板验证：
-  - 信标方向结束时刻到期后的锁定停发
-  - 连续 `3*T5` 上级失效后的显式回退 `ST1` 直接触发原因（需与板1侧状态同步复核）
-  - 多网关取舍后的方向锁定与释放
+## 6. 运行态观测
+
+通过 `adhoc_node_get_runtime_status` 可读取：
+
+- 组网状态：`state/joined_level/retry_count`
+- 上级信息：`upstream_id/upstream_no/upstream_gateway_no/upstream_last_seen_us`
+- 网关窗口：`gateway_network_started/gateway_network_locked/gateway_network_end_us`
+- 信标锁定：`network_lock_active/network_lock_closed/network_lock_end_us`
+
+## 7. 常见问题
+
+1) `adhoc_node_on_rx` 经常返回非法：
+
+- 检查是否严格为 `32B` 帧
+- 检查 CRC 与域号是否一致
+- 检查时隙奇偶是否匹配
+
+2) `submit_data` 失败：
+
+- 当前是否为信标角色
+- 是否已完成入网（`joined_level != 0`）
+- TX 队列是否已满（会返回忙）
+
+3) 网关一直发包不停止：
+
+- 检查 `network_window_us` 是否为 `0` 或配置异常
+- 通过 `gateway_network_locked` 判断是否已到窗尾
+
+## 8. 在本仓库中的参考实现
+
+- 协议任务示例：`app/tasks/ad_hoc_task.c`
+- 链路适配示例：`app/adapters/adhoc_link_aros.c`
+- CH32 端口示例：`lib/Ad-Hoc-lib/port/ch32v208/`

@@ -13,6 +13,10 @@ typedef struct
     uint8_t sm_state;
     uint8_t sm_joined_level;
     uint8_t sm_retry_count;
+    uint8_t sm_retry_peak;
+    uint32_t sm_retry_exhausted_count;
+    uint8_t sm_last_retry_exhausted;
+    uint32_t sm_last_retry_exhausted_age_ms;
     uint8_t sm_upstream_gateway_no;
     uint8_t sm_upstream_no;
     uint32_t sm_upstream_id;
@@ -31,14 +35,14 @@ typedef struct
     uint32_t tx_report_acked;
     uint32_t tx_report_retry_exhausted;
     uint8_t last_tx_report_code;
-    uint16_t last_tx_report_seq;
+    uint32_t last_tx_report_lmt_d;
     uint8_t last_tx_report_retry;
     uint32_t data_submit_try;
     uint32_t data_submit_ok;
     uint32_t data_submit_busy;
     uint32_t data_submit_state_skip;
     uint32_t data_submit_fail;
-    uint16_t last_data_submit_seq;
+    uint32_t last_data_submit_lmt_d;
     uint32_t link_init_cnt;
     uint32_t link_start_rx_cnt;
     uint32_t link_start_rx_err_cnt;

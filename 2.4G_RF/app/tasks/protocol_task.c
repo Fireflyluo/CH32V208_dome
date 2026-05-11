@@ -18,6 +18,9 @@
 
 #include <string.h>
 
+#define PROTOCOL_CMD_RESET_TOKEN "GW2RST"
+#define PROTOCOL_CMD_RESET_ACK "GW2RST:OK\r\n"
+
 #define PROTOCOL_EVT_INIT (0x0001u << 0)    ///< 协议初始化事件
 #define PROTOCOL_EVT_POLL (0x0001u << 1)    ///< 协议轮询事件
 #define PROTOCOL_EVT_SAMPLE (0x0001u << 2)  ///< 协议采样事件
@@ -497,6 +500,79 @@ static void protocol_reply_repeat_last_or_none(void)
     protocol_reply_none();
 }
 
+static uint8_t protocol_find_reset_cmd(const char *buf, uint16_t len, uint16_t *pos_out, uint16_t *cmd_len_out)
+{
+    static const char token[] = PROTOCOL_CMD_RESET_TOKEN;
+    uint16_t token_len = (uint16_t)(sizeof(token) - 1u);
+    uint16_t index;
+    uint16_t remain;
+    uint16_t cmd_len;
+    char tail_ch;
+
+    if (buf == NULL || pos_out == NULL || cmd_len_out == NULL || len < token_len)
+    {
+        return 0u;
+    }
+
+    for (index = 0u; index <= (uint16_t)(len - token_len); ++index)
+    {
+        if (memcmp(&buf[index], token, token_len) != 0)
+        {
+            continue;
+        }
+
+        remain = (uint16_t)(len - (uint16_t)(index + token_len));
+        cmd_len = token_len;
+        if (remain > 0u)
+        {
+            tail_ch = buf[(uint16_t)(index + token_len)];
+            if (tail_ch == '\r' || tail_ch == '\n')
+            {
+                cmd_len = (uint16_t)(cmd_len + 1u);
+                if (tail_ch == '\r' && remain >= 2u && buf[(uint16_t)(index + token_len + 1u)] == '\n')
+                {
+                    cmd_len = (uint16_t)(cmd_len + 1u);
+                }
+            }
+            else
+            {
+                continue;
+            }
+        }
+
+        *pos_out = index;
+        *cmd_len_out = cmd_len;
+        return 1u;
+    }
+
+    return 0u;
+}
+
+static uint8_t protocol_try_handle_text_command(void)
+{
+    uint16_t pos = 0u;
+    uint16_t cmd_len = 0u;
+    static const char ack[] = PROTOCOL_CMD_RESET_ACK;
+
+    if (s_rx_len == 0u)
+    {
+        return 0u;
+    }
+
+    if (protocol_find_reset_cmd(s_rx_buf, s_rx_len, &pos, &cmd_len) == 0u)
+    {
+        return 0u;
+    }
+
+    (void)pos;
+    (void)cmd_len;
+    (void)CDC_SendData((uint8_t *)ack, (uint16_t)(sizeof(ack) - 1u));
+    LOG_PRINT("protocol cmd: GW2RST -> system reset\r\n");
+    HAL_Delay(20u);
+    NVIC_SystemReset();
+    return 1u;
+}
+
 /**
  * @brief 将传感器快照转换为12位加速度值
  * 
@@ -912,6 +988,11 @@ static void protocol_poll_rx_and_process(void)
 
         memcpy(&s_rx_buf[s_rx_len], chunk, n);
         s_rx_len = (uint16_t)(s_rx_len + n);
+    }
+
+    if (protocol_try_handle_text_command() != 0u)
+    {
+        return;
     }
 
     while (is_frame_complete(s_rx_buf, s_rx_len, &frame_start, &frame_end))

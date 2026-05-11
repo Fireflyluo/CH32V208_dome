@@ -2,17 +2,6 @@
 
 #include <string.h>
 
-static uint16_t adhoc_u16_be_read(const uint8_t in[2])
-{
-    return (uint16_t)(((uint16_t)in[0] << 8) | in[1]);
-}
-
-static void adhoc_u16_be_write(uint16_t value, uint8_t out[2])
-{
-    out[0] = (uint8_t)((value >> 8) & 0xFFu);
-    out[1] = (uint8_t)(value & 0xFFu);
-}
-
 static uint32_t adhoc_us_to_ms(uint32_t ts_us)
 {
     return ts_us / 1000u;
@@ -32,17 +21,21 @@ static int adhoc_data_ack_item_valid(const adhoc_data_ack_item_t *item)
     {
         return 0;
     }
+    if (item->lmt_d > ADHOC_DATA_LMT_D_MAX)
+    {
+        return 0;
+    }
     return 1;
 }
 
-static int adhoc_data_source_key_equal(const adhoc_payload_id_t *left_source, uint16_t left_seq,
-                                       const adhoc_payload_id_t *right_source, uint16_t right_seq)
+static int adhoc_data_source_key_equal(const adhoc_payload_id_t *left_source, uint32_t left_lmt_d,
+                                       const adhoc_payload_id_t *right_source, uint32_t right_lmt_d)
 {
     if (left_source == 0 || right_source == 0)
     {
         return 0;
     }
-    return left_source->node_id == right_source->node_id && left_seq == right_seq ? 1 : 0;
+    return left_source->node_id == right_source->node_id && left_lmt_d == right_lmt_d ? 1 : 0;
 }
 
 static uint8_t adhoc_data_local_upstream_no(const adhoc_data_plane_t *plane)
@@ -85,6 +78,10 @@ static int adhoc_data_msg_valid(const adhoc_data_msg_t *msg)
     {
         return 0;
     }
+    if (msg->lmt_d > ADHOC_DATA_LMT_D_MAX)
+    {
+        return 0;
+    }
     return 1;
 }
 
@@ -94,7 +91,7 @@ static int adhoc_data_ack_item_equal(const adhoc_data_ack_item_t *left, const ad
     {
         return 0;
     }
-    return adhoc_data_source_key_equal(&left->source, left->seq_no, &right->source, right->seq_no);
+    return adhoc_data_source_key_equal(&left->source, left->lmt_d, &right->source, right->lmt_d);
 }
 
 static int adhoc_data_ack_queue_contains(const adhoc_data_plane_t *plane, const adhoc_data_ack_item_t *item)
@@ -171,7 +168,7 @@ static int adhoc_data_tx_msg_equal(const adhoc_data_msg_t *left, const adhoc_dat
     {
         return 0;
     }
-    return adhoc_data_source_key_equal(&left->source, left->seq_no, &right->source, right->seq_no);
+    return adhoc_data_source_key_equal(&left->source, left->lmt_d, &right->source, right->lmt_d);
 }
 
 static int adhoc_data_tx_entry_due(const adhoc_data_tx_entry_t *entry, uint32_t now_us)
@@ -301,10 +298,10 @@ static uint8_t adhoc_data_tx_queue_remove_by_ack(adhoc_data_plane_t *plane, cons
         {
             continue;
         }
-        if (adhoc_data_source_key_equal(&entry->msg.source, entry->msg.seq_no, &item->source, item->seq_no))
+        if (adhoc_data_source_key_equal(&entry->msg.source, entry->msg.lmt_d, &item->source, item->lmt_d))
         {
             report_item.source = entry->msg.source;
-            report_item.seq_no = entry->msg.seq_no;
+            report_item.lmt_d = entry->msg.lmt_d;
             adhoc_data_tx_report_push(plane, ADHOC_DATA_TX_REPORT_ACKED, &report_item, entry->retry_count);
             memset(entry, 0, sizeof(*entry));
             removed++;
@@ -332,10 +329,10 @@ static uint8_t adhoc_data_tx_queue_remove_by_forward(adhoc_data_plane_t *plane, 
         {
             continue;
         }
-        if (adhoc_data_source_key_equal(&entry->msg.source, entry->msg.seq_no, &msg->source, msg->seq_no))
+        if (adhoc_data_source_key_equal(&entry->msg.source, entry->msg.lmt_d, &msg->source, msg->lmt_d))
         {
             report_item.source = entry->msg.source;
-            report_item.seq_no = entry->msg.seq_no;
+            report_item.lmt_d = entry->msg.lmt_d;
             adhoc_data_tx_report_push(plane, ADHOC_DATA_TX_REPORT_ACKED, &report_item, entry->retry_count);
             memset(entry, 0, sizeof(*entry));
             removed++;
@@ -392,7 +389,7 @@ static void adhoc_data_tx_entry_after_emit(adhoc_data_plane_t *plane, adhoc_data
     if (entry->retry_count >= plane->cfg.tx_retry_max)
     {
         item.source = entry->msg.source;
-        item.seq_no = entry->msg.seq_no;
+        item.lmt_d = entry->msg.lmt_d;
         adhoc_data_tx_report_push(plane, ADHOC_DATA_TX_REPORT_RETRY_EXHAUSTED, &item, entry->retry_count);
         memset(entry, 0, sizeof(*entry));
         return;
@@ -461,7 +458,7 @@ static int adhoc_data_dedup_is_duplicate(const adhoc_data_plane_t *plane, const 
         {
             continue;
         }
-        if (!adhoc_data_source_key_equal(&entry->source, entry->seq_no, &msg->source, msg->seq_no))
+        if (!adhoc_data_source_key_equal(&entry->source, entry->lmt_d, &msg->source, msg->lmt_d))
         {
             continue;
         }
@@ -517,13 +514,13 @@ static void adhoc_data_dedup_store(adhoc_data_plane_t *plane, const adhoc_data_m
     }
     plane->dedup[target].used = 1u;
     plane->dedup[target].source = msg->source;
-    plane->dedup[target].seq_no = msg->seq_no;
+    plane->dedup[target].lmt_d = msg->lmt_d;
     plane->dedup[target].last_seen_ms = now_ms;
 }
 
-int adhoc_data_msg_pack(const adhoc_data_msg_t *msg, uint8_t payload_out[ADHOC_FRAME_PAYLOAD_LEN])
+int adhoc_data_msg_pack(const adhoc_data_msg_t *msg, uint8_t content_out[ADHOC_FRAME_CONTENT_LEN])
 {
-    if (msg == 0 || payload_out == 0)
+    if (msg == 0 || content_out == 0)
     {
         return 0;
     }
@@ -532,42 +529,42 @@ int adhoc_data_msg_pack(const adhoc_data_msg_t *msg, uint8_t payload_out[ADHOC_F
         return 0;
     }
 
-    memset(payload_out, 0, ADHOC_FRAME_PAYLOAD_LEN);
-    if (!adhoc_payload_id_pack(msg->source, &payload_out[0]))
+    memset(content_out, 0, ADHOC_FRAME_CONTENT_LEN);
+    adhoc_u24_be_write(msg->lmt_d, &content_out[0]);
+    if (!adhoc_payload_id_pack(msg->source, &content_out[3]))
     {
         return 0;
     }
-    adhoc_u16_be_write(msg->seq_no, &payload_out[4]);
-    memcpy(&payload_out[6], msg->user, ADHOC_DATA_MSG_USER_LEN);
+    memcpy(&content_out[7], msg->user, ADHOC_DATA_MSG_USER_LEN);
     return 1;
 }
 
-int adhoc_data_msg_unpack(const uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN], adhoc_data_msg_t *msg_out)
+int adhoc_data_msg_unpack(const uint8_t content[ADHOC_FRAME_CONTENT_LEN], adhoc_data_msg_t *msg_out)
 {
-    if (payload == 0 || msg_out == 0)
+    if (content == 0 || msg_out == 0)
     {
         return 0;
     }
-    if (!adhoc_payload_id_unpack(&payload[0], &msg_out->source))
+    msg_out->lmt_d = adhoc_u24_be_read(&content[0]);
+    if (!adhoc_payload_id_unpack(&content[3], &msg_out->source))
     {
         return 0;
     }
-    msg_out->seq_no = adhoc_u16_be_read(&payload[4]);
-    memcpy(msg_out->user, &payload[6], ADHOC_DATA_MSG_USER_LEN);
+    memcpy(msg_out->user, &content[7], ADHOC_DATA_MSG_USER_LEN);
     return 1;
 }
 
 int adhoc_data_ack_payload_pack(const adhoc_data_ack_item_t *items, uint8_t item_count,
-                                uint8_t payload_out[ADHOC_FRAME_PAYLOAD_LEN])
+                                uint8_t content_out[ADHOC_FRAME_CONTENT_LEN])
 {
     uint8_t index;
     uint8_t limit;
 
-    if (payload_out == 0)
+    if (content_out == 0)
     {
         return 0;
     }
-    memset(payload_out, 0, ADHOC_FRAME_PAYLOAD_LEN);
+    memset(content_out, 0, ADHOC_FRAME_CONTENT_LEN);
     if (items == 0 && item_count != 0u)
     {
         return 0;
@@ -580,16 +577,16 @@ int adhoc_data_ack_payload_pack(const adhoc_data_ack_item_t *items, uint8_t item
         {
             return 0;
         }
-        if (!adhoc_payload_id_pack(items[index].source, &payload_out[index * 6u]))
+        if (!adhoc_payload_id_pack(items[index].source, &content_out[index * 7u]))
         {
             return 0;
         }
-        adhoc_u16_be_write(items[index].seq_no, &payload_out[index * 6u + 4u]);
+        adhoc_u24_be_write(items[index].lmt_d, &content_out[index * 7u + 4u]);
     }
     return 1;
 }
 
-int adhoc_data_ack_payload_unpack(const uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN],
+int adhoc_data_ack_payload_unpack(const uint8_t content[ADHOC_FRAME_CONTENT_LEN],
                                   adhoc_data_ack_item_t items_out[ADHOC_DATA_ACK_MAX_PER_FRAME],
                                   uint8_t *item_count_out)
 {
@@ -597,7 +594,7 @@ int adhoc_data_ack_payload_unpack(const uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN]
     uint8_t count = 0u;
     adhoc_data_ack_item_t item;
 
-    if (payload == 0 || items_out == 0)
+    if (content == 0 || items_out == 0)
     {
         return 0;
     }
@@ -605,11 +602,11 @@ int adhoc_data_ack_payload_unpack(const uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN]
 
     for (index = 0u; index < ADHOC_DATA_ACK_MAX_PER_FRAME; ++index)
     {
-        if (!adhoc_payload_id_unpack(&payload[index * 6u], &item.source))
+        if (!adhoc_payload_id_unpack(&content[index * 7u], &item.source))
         {
             continue;
         }
-        item.seq_no = adhoc_u16_be_read(&payload[index * 6u + 4u]);
+        item.lmt_d = adhoc_u24_be_read(&content[index * 7u + 4u]);
         if (!adhoc_data_ack_item_valid(&item))
         {
             continue;
@@ -739,7 +736,7 @@ void adhoc_data_plane_reset(adhoc_data_plane_t *plane)
     memset(plane->last_rx_acks, 0, sizeof(plane->last_rx_acks));
 }
 
-int adhoc_data_plane_submit_source_data(adhoc_data_plane_t *plane, uint8_t source_id_flag, uint16_t seq_no,
+int adhoc_data_plane_submit_source_data(adhoc_data_plane_t *plane, uint8_t source_id_flag, uint32_t lmt_d,
                                         const uint8_t user[ADHOC_DATA_MSG_USER_LEN], uint8_t level, uint8_t gateway_no,
                                         uint32_t now_us)
 {
@@ -761,7 +758,7 @@ int adhoc_data_plane_submit_source_data(adhoc_data_plane_t *plane, uint8_t sourc
     memset(&msg, 0, sizeof(msg));
     msg.source.id_flag = source_id_flag;
     msg.source.node_id = plane->cfg.node_id;
-    msg.seq_no = seq_no;
+    msg.lmt_d = lmt_d & ADHOC_DATA_LMT_D_MAX;
     memcpy(msg.user, user, ADHOC_DATA_MSG_USER_LEN);
     return adhoc_data_tx_queue_push_unique(plane, &msg, level, gateway_no, now_us);
 }
@@ -802,7 +799,7 @@ adhoc_data_rx_result_t adhoc_data_plane_on_rx(adhoc_data_plane_t *plane, const a
     now_ms = adhoc_us_to_ms(ts_us);
     if (fields->level == 0u && fields->sender.node_id <= ADHOC_DATA_GATEWAY_ID_MAX)
     {
-        if (!adhoc_data_ack_payload_unpack(fields->payload, ack_items, &ack_count))
+        if (!adhoc_data_ack_payload_unpack(fields->content, ack_items, &ack_count))
         {
             return ADHOC_DATA_RX_IGNORED;
         }
@@ -820,7 +817,7 @@ adhoc_data_rx_result_t adhoc_data_plane_on_rx(adhoc_data_plane_t *plane, const a
         return ADHOC_DATA_RX_ACK;
     }
 
-    if (!adhoc_data_msg_unpack(fields->payload, &data_msg))
+    if (!adhoc_data_msg_unpack(fields->content, &data_msg))
     {
         return ADHOC_DATA_RX_IGNORED;
     }
@@ -844,7 +841,7 @@ adhoc_data_rx_result_t adhoc_data_plane_on_rx(adhoc_data_plane_t *plane, const a
     if (plane->role_gateway != 0u)
     {
         ack_item.source = data_msg.source;
-        ack_item.seq_no = data_msg.seq_no;
+        ack_item.lmt_d = data_msg.lmt_d;
         (void)adhoc_data_ack_queue_push_unique(plane, &ack_item);
         if (plane->next_ack_tx_us == 0u)
         {
@@ -901,7 +898,7 @@ int adhoc_data_plane_poll_gateway_ack(adhoc_data_plane_t *plane, uint32_t now_us
         }
         count++;
     }
-    if (!adhoc_data_ack_payload_pack(items, count, out_fields->payload))
+    if (!adhoc_data_ack_payload_pack(items, count, out_fields->content))
     {
         return 0;
     }
@@ -948,7 +945,7 @@ int adhoc_data_plane_poll_forward_tx(adhoc_data_plane_t *plane, uint32_t now_us,
     out_fields->level = entry->level;
     out_fields->sender.domain_id = plane->cfg.domain_id;
     out_fields->sender.node_id = plane->cfg.node_id;
-    if (!adhoc_data_msg_pack(&entry->msg, out_fields->payload))
+    if (!adhoc_data_msg_pack(&entry->msg, out_fields->content))
     {
         return 0;
     }

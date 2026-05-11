@@ -1,0 +1,45 @@
+start=2026-05-07T16:41:56.340247
+[gw2 0.000] * 
+[gw1 0.061] u[gw2 0.061] uplink ax=414 ay=54 az=820 mg, t=36.12C rh=22.52%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=310 sht_err=0 ready=1[gw1 0.091] plink ax=-875 ay=-117 az=-382 mg, t=34.26C rh=25.96%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=430 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1 tx=610 rx=1318 node_err=0 tx_err=0 rx_err=97
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=0 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms[gw2 0.091] 
+adhoc stat role=GW init=1 node=1000002 tx=481 rx=0 node_err=0 tx_err=0 rx_err=0
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxs[gw1 0.122]  net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=85998 skip=233 tx=610/671 busy=61 fail=0 rx=1415/87413 empty=85998 err=0 rssi=-47 tc=43925
+uplink i2c q=0/1 run=0 ok=200669 err=646 to=1 rec=1 aw=0ms ae=1ms mw=1ms me=50ms
+[gw2 0.122] tart=61998 skip=119 tx=481/481 busy=0 fail=0 rx=0/61998 empty=61998 err=0 rssi=0 tc=0
+uplink i2c q=0/1 run=0 ok=124747 err=9976 to=2 rec=2 aw=0ms ae=0ms mw=1ms me=50ms
+[gw2 0.274] uplink ax=406 ay=46 az=867 mg, t=36.12C rh=22.52%
+[gw1 0.304] uplink ax=-867 ay=-101 az=-382 mg, t=34.26C rh=25.96%
+[gw2 0.456] uplink ax=421 ay=7 az=906 mg, t=36.12C rh=22.52%
+[gw1 0.487] uplink ax=-867 ay=-125 az=-390 mg, t=34.26C rh=25.96%
+[gw1 0.669] uplink ax=-867 ay=-117 az=-390 mg, t=34.26C rh=25.96%
+[gw2 0.669] uplink ax=398 ay=23 az=875 mg, t=36.12C rh=22.52%
+[gw1 0.851] * 
+[gw2 0.851] uplink ax=414 ay=31[gw1 0.881] uplink ax=-867 ay=-101 az=-390 mg, t=34.26C rh=26.16%
+[gw2 0.881]  az=882 mg, t=36.12C rh=22.52%
+[ACT 1.003] GW1 reset via OpenOCD
+[gw2 1.003] * 
+[gw2 1.054] uplink ax=398 ay=31 az=898 mg,[gw2 1.084]  t=36.14C rh=22.99%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=311 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=481 rx=0 node_err=0 tx_err=0 rx_err=0
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_lef[gw2 1.115] t=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=62198 skip=119 tx=481/481 busy=0 fail=0 rx=0/62198 empty=62198 err=0 rssi=0 tc=0
+uplink i2c q=0/1 run=0 ok=125149 err=10008 to=2 rec=2 aw=0ms ae=0ms mw=1ms me=50ms
+[gw2 1.267] uplink ax=414 ay=23 az=906 mg, t=36.14C rh=22.99%
+[gw2 1.449] u[gw1 1.479] t role=Ghoc sm st=1 _id=0 up_age=0ms gw_stx=0 lrex=0 lrex_age=0mIMPACT params[BOOT]: T1=6ms T2=100ms T3=15ms T4=800ms H=320(12[gw2 1.479] plink ax=414 ay=39 az=937 mg, t=36.14C rh=22.99%
+[gw1 1.510] 50mg) L=48(188mg)
+IMPACT map: t1=2 samp t3=5 samp algo_rel_min=3 sample_ms=100ms
+SC7A20 FIFO cfg ok: FM=2 FTH=4 FIFO_MODE=0 DMA_POLICY=2
+SC7A20 init ok (16g, 400Hz, fifo=1), accel_poll=3ms impact cfg rate=333Hz H=1250mg L=188mg T1=6ms T3=15ms T4=800ms rel_cnt=3 gra[gw1 1.541] v_ema=500ms max_dt=35ms max_evt=700ms
+SHT40 init ok at 0x46
+sensor task started: accel_poll=3ms sample_base=3ms, sht40=1Hz
+[ACT 1.602] GW2 reset cmd on COM11
+[COM11 1.663] b'GW2RST:OK\r\n'
+[gw2 1.663] usb cmd reset accepted

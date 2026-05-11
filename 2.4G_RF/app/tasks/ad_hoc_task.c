@@ -14,11 +14,19 @@
 #define AD_HOC_POLL_MS 5u
 #define AD_HOC_RX_BUDGET_PER_POLL 8u
 #define AD_HOC_TX_BUDGET_PER_POLL 8u
+#define AD_HOC_TX_HOLD_RETRY_MAX 60u
 #define AD_HOC_DATA_PUSH_MS 1000u
 #define AD_HOC_SENSOR_PAYLOAD_TYPE 0xA1u
 #define AD_HOC_SOURCE_ID_FLAG 0u
 #define AD_HOC_NETWORK_WINDOW_US 30000000u
 #define AD_HOC_REGROUP_INTERVAL_US 0u
+#define AD_HOC_SM_STATE_ST1 1u
+#define AD_HOC_SM_STATE_U1 2u
+#define AD_HOC_SM_STATE_UN 4u
+
+#ifndef ADHOC_TASK_GATEWAY_T2_US_OVERRIDE
+#define ADHOC_TASK_GATEWAY_T2_US_OVERRIDE 0u
+#endif
 
 #ifndef RF_TG_ID
 #define RF_TG_ID 0u
@@ -32,6 +40,18 @@
 #define ADHOC_TASK_GATEWAY_NO 0u
 #endif
 
+#ifndef ADHOC_TASK_GATEWAY_PRIMARY_TG_ID
+#define ADHOC_TASK_GATEWAY_PRIMARY_TG_ID 0u
+#endif
+
+#ifndef ADHOC_TASK_GATEWAY_SECONDARY_TG_ID
+#define ADHOC_TASK_GATEWAY_SECONDARY_TG_ID 0xFFu
+#endif
+
+#ifndef ADHOC_TASK_GATEWAY_SECONDARY_NO
+#define ADHOC_TASK_GATEWAY_SECONDARY_NO 1u
+#endif
+
 #ifndef ADHOC_TASK_NODE_MEM_CAP
 #define ADHOC_TASK_NODE_MEM_CAP 4096u
 #endif
@@ -42,7 +62,13 @@ static adhoc_link_aros_ctx_t s_link_ctx;
 static const adhoc_link_ops_t *s_link_ops = 0;
 static ad_hoc_task_status_t s_status = {0};
 static uint32_t s_last_data_push_ms = 0u;
-static uint16_t s_data_seq = 0u;
+static adhoc_frame_t s_tx_hold_frame;
+static uint8_t s_tx_hold_valid = 0u;
+static uint8_t s_tx_hold_retry_cnt = 0u;
+static uint8_t s_retry_max_cfg = 30u;
+static uint8_t s_prev_sm_state = 0u;
+static uint8_t s_prev_sm_retry_count = 0u;
+static uint32_t s_last_retry_exhausted_us = 0u;
 
 static tmosEvents ad_hoc_task_process_event(tmosTaskID task_id, tmosEvents events);
 static void ad_hoc_task_sync_link_status(void);
@@ -96,8 +122,6 @@ static void ad_hoc_build_sensor_payload(const sensor_snapshot_t *snap, uint8_t o
     ad_hoc_put_u16(&out_user[10], rh);
     ad_hoc_put_u16(&out_user[12], snap->accel_hz);
     ad_hoc_put_u16(&out_user[14], snap->sht_hz);
-    out_user[16] = (uint8_t)(snap->sht_ok_cnt & 0xFFu);
-    out_user[17] = (uint8_t)(snap->sht_err_cnt & 0xFFu);
 }
 
 static void ad_hoc_task_try_submit_sensor_data(uint32_t now_us)
@@ -105,6 +129,7 @@ static void ad_hoc_task_try_submit_sensor_data(uint32_t now_us)
     sensor_snapshot_t snap;
     uint8_t user[ADHOC_DATA_USER_LEN];
     uint32_t now_ms;
+    uint32_t lmt_d;
     adhoc_rc_t rc;
 
     if (s_status.inited == 0u || s_status.role_gateway != 0u)
@@ -127,13 +152,13 @@ static void ad_hoc_task_try_submit_sensor_data(uint32_t now_us)
     }
 
     ad_hoc_build_sensor_payload(&snap, user);
+    lmt_d = (now_us / 1000000u) & 0x00FFFFFFu;
     s_status.data_submit_try++;
-    rc = adhoc_node_submit_data(s_node_mem, AD_HOC_SOURCE_ID_FLAG, s_data_seq, user, now_us);
+    rc = adhoc_node_submit_data(s_node_mem, AD_HOC_SOURCE_ID_FLAG, lmt_d, user, now_us);
     if (rc == ADHOC_OK)
     {
         s_status.data_submit_ok++;
-        s_status.last_data_submit_seq = s_data_seq;
-        s_data_seq++;
+        s_status.last_data_submit_lmt_d = lmt_d;
     }
     else if (rc == ADHOC_EBUSY)
     {
@@ -149,9 +174,28 @@ static void ad_hoc_task_try_submit_sensor_data(uint32_t now_us)
     }
 }
 
-static uint8_t ad_hoc_task_is_gateway(uint8_t tg_id)
+static uint8_t ad_hoc_task_resolve_gateway(uint8_t tg_id, uint8_t *out_gateway_no)
 {
-    return tg_id == 0u ? 1u : 0u;
+    if (out_gateway_no == 0)
+    {
+        return 0u;
+    }
+
+    if (tg_id == (uint8_t)ADHOC_TASK_GATEWAY_PRIMARY_TG_ID)
+    {
+        *out_gateway_no = (uint8_t)(ADHOC_TASK_GATEWAY_NO & 0x07u);
+        return 1u;
+    }
+
+    if ((uint8_t)ADHOC_TASK_GATEWAY_SECONDARY_TG_ID <= 20u &&
+        tg_id == (uint8_t)ADHOC_TASK_GATEWAY_SECONDARY_TG_ID)
+    {
+        *out_gateway_no = (uint8_t)(ADHOC_TASK_GATEWAY_SECONDARY_NO & 0x07u);
+        return 1u;
+    }
+
+    *out_gateway_no = (uint8_t)(ADHOC_TASK_GATEWAY_NO & 0x07u);
+    return 0u;
 }
 
 static uint32_t ad_hoc_task_node_id_from_tg(uint8_t tg_id)
@@ -172,34 +216,60 @@ static void ad_hoc_task_drain_tx(void)
 {
     adhoc_frame_t tx_frame;
     adhoc_rc_t rc;
+    int tx_rc;
     uint8_t budget = AD_HOC_TX_BUDGET_PER_POLL;
+
+    if (s_link_ops == 0 || s_link_ops->tx == 0)
+    {
+        s_status.tx_err_cnt++;
+        return;
+    }
 
     while (budget > 0u)
     {
-        rc = adhoc_node_fetch_tx(s_node_mem, &tx_frame);
-        if (rc == ADHOC_ENOFRAME)
+        if (s_tx_hold_valid == 0u)
         {
-            return;
+            rc = adhoc_node_fetch_tx(s_node_mem, &tx_frame);
+            if (rc == ADHOC_ENOFRAME)
+            {
+                return;
+            }
+            if (rc != ADHOC_OK)
+            {
+                s_status.node_err_cnt++;
+                return;
+            }
+            s_tx_hold_frame = tx_frame;
+            s_tx_hold_valid = 1u;
+            s_tx_hold_retry_cnt = 0u;
         }
-        if (rc != ADHOC_OK)
-        {
-            s_status.node_err_cnt++;
-            return;
-        }
-        if (s_link_ops == 0 || s_link_ops->tx == 0)
-        {
-            s_status.tx_err_cnt++;
-            return;
-        }
-        if (s_link_ops->tx(&s_link_ctx, tx_frame.bytes, tx_frame.len) == 0)
+
+        tx_rc = s_link_ops->tx(&s_link_ctx, s_tx_hold_frame.bytes, s_tx_hold_frame.len);
+        if (tx_rc == ADHOC_LINK_OK)
         {
             s_status.tx_cnt++;
+            memset(&s_tx_hold_frame, 0, sizeof(s_tx_hold_frame));
+            s_tx_hold_valid = 0u;
+            s_tx_hold_retry_cnt = 0u;
+            budget--;
+            continue;
         }
-        else
+
+        if (tx_rc == ADHOC_LINK_EBUSY)
         {
-            s_status.tx_err_cnt++;
             return;
         }
+
+        s_status.tx_err_cnt++;
+        if (s_tx_hold_retry_cnt < AD_HOC_TX_HOLD_RETRY_MAX)
+        {
+            s_tx_hold_retry_cnt++;
+            return;
+        }
+
+        memset(&s_tx_hold_frame, 0, sizeof(s_tx_hold_frame));
+        s_tx_hold_valid = 0u;
+        s_tx_hold_retry_cnt = 0u;
         budget--;
     }
 }
@@ -223,11 +293,11 @@ static void ad_hoc_task_drain_rx(void)
         rx_len = (uint16_t)sizeof(rx_buf);
         rssi = 0;
         poll_rc = s_link_ops->poll_rx(&s_link_ctx, rx_buf, &rx_len, &rssi);
-        if (poll_rc == 1)
+        if (poll_rc == ADHOC_LINK_RX_EMPTY)
         {
             return;
         }
-        if (poll_rc != 0)
+        if (poll_rc != ADHOC_LINK_OK)
         {
             s_status.rx_err_cnt++;
             return;
@@ -268,7 +338,7 @@ static void ad_hoc_task_drain_tx_reports(void)
             return;
         }
         s_status.last_tx_report_code = report.code;
-        s_status.last_tx_report_seq = report.seq_no;
+        s_status.last_tx_report_lmt_d = report.lmt_d;
         s_status.last_tx_report_retry = report.retry_count;
         if (report.code == ADHOC_NODE_DATA_TX_REPORT_ACKED)
         {
@@ -309,6 +379,8 @@ static void ad_hoc_task_sync_runtime_status(uint32_t now_us)
 {
     adhoc_node_runtime_status_t runtime_st;
     uint32_t left_us;
+    uint8_t prev_state;
+    uint8_t prev_retry_count;
 
     memset(&runtime_st, 0, sizeof(runtime_st));
     if (adhoc_node_get_runtime_status(s_node_mem, &runtime_st) != ADHOC_OK)
@@ -316,9 +388,27 @@ static void ad_hoc_task_sync_runtime_status(uint32_t now_us)
         return;
     }
 
+    prev_state = s_prev_sm_state;
+    prev_retry_count = s_prev_sm_retry_count;
+
     s_status.sm_state = runtime_st.state;
     s_status.sm_joined_level = runtime_st.joined_level;
     s_status.sm_retry_count = runtime_st.retry_count;
+    if (runtime_st.retry_count > s_status.sm_retry_peak)
+    {
+        s_status.sm_retry_peak = runtime_st.retry_count;
+    }
+    if ((prev_state == AD_HOC_SM_STATE_U1 || prev_state == AD_HOC_SM_STATE_UN) &&
+        prev_retry_count >= s_retry_max_cfg &&
+        runtime_st.state == AD_HOC_SM_STATE_ST1 &&
+        runtime_st.retry_count == 0u)
+    {
+        s_status.sm_retry_exhausted_count++;
+        s_status.sm_last_retry_exhausted = prev_retry_count;
+        s_last_retry_exhausted_us = now_us;
+    }
+    s_prev_sm_state = runtime_st.state;
+    s_prev_sm_retry_count = runtime_st.retry_count;
     s_status.sm_upstream_gateway_no = runtime_st.upstream_gateway_no;
     s_status.sm_upstream_no = runtime_st.upstream_no;
     s_status.sm_upstream_id = runtime_st.upstream_id;
@@ -355,6 +445,15 @@ static void ad_hoc_task_sync_runtime_status(uint32_t now_us)
     {
         s_status.sm_network_lock_left_ms = 0u;
     }
+
+    if (s_last_retry_exhausted_us != 0u && now_us >= s_last_retry_exhausted_us)
+    {
+        s_status.sm_last_retry_exhausted_age_ms = (now_us - s_last_retry_exhausted_us) / 1000u;
+    }
+    else
+    {
+        s_status.sm_last_retry_exhausted_age_ms = 0u;
+    }
 }
 
 void ad_hoc_task_init(void)
@@ -373,7 +472,13 @@ void ad_hoc_task_init(void)
 
     memset(&s_status, 0, sizeof(s_status));
     s_last_data_push_ms = 0u;
-    s_data_seq = 0u;
+    memset(&s_tx_hold_frame, 0, sizeof(s_tx_hold_frame));
+    s_tx_hold_valid = 0u;
+    s_tx_hold_retry_cnt = 0u;
+    s_retry_max_cfg = 30u;
+    s_prev_sm_state = 0u;
+    s_prev_sm_retry_count = 0u;
+    s_last_retry_exhausted_us = 0u;
     tmos_set_event(s_ad_hoc_task_id, AD_HOC_EVT_INIT);
 }
 
@@ -390,6 +495,7 @@ static tmosEvents ad_hoc_task_process_event(tmosTaskID task_id, tmosEvents event
 {
     adhoc_cfg_t cfg;
     uint8_t role_gateway;
+    uint8_t gateway_no;
     uint32_t node_mem_required;
     uint32_t now_us;
     adhoc_rc_t rc;
@@ -408,17 +514,21 @@ static tmosEvents ad_hoc_task_process_event(tmosTaskID task_id, tmosEvents event
         }
 
         memset(&cfg, 0, sizeof(cfg));
-        role_gateway = ad_hoc_task_is_gateway((uint8_t)RF_TG_ID);
+        gateway_no = (uint8_t)ADHOC_TASK_GATEWAY_NO;
+        role_gateway = ad_hoc_task_resolve_gateway((uint8_t)RF_TG_ID, &gateway_no);
         cfg.domain_id = (uint16_t)ADHOC_TASK_DOMAIN_ID;
-        cfg.gateway_no = (uint8_t)ADHOC_TASK_GATEWAY_NO;
+        cfg.gateway_no = gateway_no;
         cfg.node_id = ad_hoc_task_node_id_from_tg((uint8_t)RF_TG_ID);
         cfg.t1_us = 2500u;
-        cfg.t2_us = 57500u;
+        cfg.t2_us = (role_gateway != 0u && ADHOC_TASK_GATEWAY_T2_US_OVERRIDE != 0u)
+                        ? (uint32_t)ADHOC_TASK_GATEWAY_T2_US_OVERRIDE
+                        : 57500u;
         cfg.t3_us = 62500u;
         cfg.t4_us = 1937500u;
         cfg.retry_max = 30u;
         cfg.network_window_us = AD_HOC_NETWORK_WINDOW_US;
         cfg.regroup_interval_us = AD_HOC_REGROUP_INTERVAL_US;
+        s_retry_max_cfg = cfg.retry_max;
 
         node_mem_required = adhoc_node_required_size();
         if (node_mem_required > (uint32_t)sizeof(s_node_mem))
@@ -451,11 +561,21 @@ static tmosEvents ad_hoc_task_process_event(tmosTaskID task_id, tmosEvents event
         ad_hoc_task_sync_link_status();
 
         tmos_start_reload_task(s_ad_hoc_task_id, AD_HOC_EVT_POLL, MS1_TO_SYSTEM_TIME(AD_HOC_POLL_MS));
+        LOG_PRINT("ad_hoc role map: tg=%u gw0_tg=%u gw1_tg=%u gw1_no=%u\r\n",
+                  (unsigned)RF_TG_ID,
+                  (unsigned)ADHOC_TASK_GATEWAY_PRIMARY_TG_ID,
+                  (unsigned)ADHOC_TASK_GATEWAY_SECONDARY_TG_ID,
+                  (unsigned)(ADHOC_TASK_GATEWAY_SECONDARY_NO & 0x07u));
         LOG_PRINT("ad_hoc task started: role=%s domain=%u node=%lu gw_no=%u\r\n",
                   role_gateway != 0u ? "GW" : "BCN",
                   (unsigned)cfg.domain_id,
                   (unsigned long)cfg.node_id,
                   (unsigned)cfg.gateway_no);
+        if (role_gateway != 0u && ADHOC_TASK_GATEWAY_T2_US_OVERRIDE != 0u)
+        {
+            LOG_PRINT("ad_hoc test cfg: gateway t2 override=%luus (retry probe)\r\n",
+                      (unsigned long)cfg.t2_us);
+        }
         return (events ^ AD_HOC_EVT_INIT);
     }
 

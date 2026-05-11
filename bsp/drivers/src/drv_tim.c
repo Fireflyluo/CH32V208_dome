@@ -48,6 +48,23 @@ uint32_t drv_tim_get_tick_ms(void)
     return g_tim2_tick_ms;
 }
 
+uint64_t drv_tim_get_time_us(void)
+{
+    uint32_t ms_a;
+    uint32_t ms_b;
+    uint32_t cnt;
+
+    /* Double-read to avoid race across TIM2 update interrupt boundary. */
+    do
+    {
+        ms_a = g_tim2_tick_ms;
+        cnt = TIM_GetCounter(TIM2);
+        ms_b = g_tim2_tick_ms;
+    } while (ms_a != ms_b);
+
+    return ((uint64_t)ms_a * 1000ULL) + (uint64_t)cnt;
+}
+
 void drv_tim_delay_ms(uint32_t ms)
 {
     uint32_t start = drv_tim_get_tick_ms();

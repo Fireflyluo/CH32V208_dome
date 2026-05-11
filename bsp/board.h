@@ -1,10 +1,7 @@
-/**
+﻿/**
  ******************************************************************************
- * @file    board.c
- * @brief   Board specific initialization
- ******************************************************************************
- * @note    本文件内定义与具体开发板以及芯片外设相关的初始化代码
- *
+ * @file    board.h
+ * @brief   板级初始化与时间基准接口声明
  ******************************************************************************
  */
 #ifndef __BOARD_H
@@ -12,11 +9,11 @@
 
 #include "debug.h"
 
+/* HAL 依赖的系统时间接口 */
 uint32_t HAL_GetTick(void);
 void HAL_Delay(uint32_t ms);
+
+/* 板级统一初始化入口 */
 void board_init(void);
-void IIC_Init(uint32_t bound, uint16_t address);
-uint8_t I2C_Master_Receive_Polling(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, uint16_t size);
-uint8_t I2C_Master_Transmit_Polling(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, uint16_t size);
-uint8_t I2C_Scan(I2C_TypeDef *I2Cx, uint8_t print);
+
 #endif /* __BOARD_H */

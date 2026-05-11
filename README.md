@@ -19,13 +19,10 @@
 ## 项目结构
 
 ```c
-├─bsp\ch32_drivers                     // ch32v208 板级驱动  
-│      ├─ drv_gpio.c
-│      ├─ drv_i2c.c
-│      ├─ drv_uart.c
-│      ├─ usb_cdc.c
-│      └─ ....
-├─CH32V208GBU_ble                       // ble 临时模板
+├─bsp                                   // ch32v208 板级驱动  
+│  ├─ bus                               // 硬件抽象层
+│  ├─ drivers                           // 硬件抽象层
+│  └─ board.c                           // 板级初始化
 ├─project_templete                      // 模板工程
 │      ├─ eide                            // eide工程
 │      ├─ MR2                             // MR2工程
@@ -36,6 +33,7 @@
 │      ├─ basic                           // 基础模板
 │      ├─ complex                         // MR2工程 
 │      └─ standard                        // cmake/xmake工程
+├─zig_ch32v208_poc                      // zig 尝试性测试工程
 └─Demo_v0.x                             // 简单完整模板工程
 ```
 
@@ -81,6 +79,7 @@
 - **2026-4-23**: 增加2.4G射频以及射频协议的dome
 - **2026-4-23**: 增加一个加速度碰撞检测和位移估算dome
 - **2026-4-27**: 增加一个2.4G射频自组网协议的dome
+- **2026-5-02**: 增加一个zig 的尝试，以.a形式引入
 ## 联系方式
 
 - 作者: Fireflyluo

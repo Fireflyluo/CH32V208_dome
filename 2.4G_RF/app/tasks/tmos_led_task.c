@@ -11,12 +11,16 @@
 #define LED_DISCONN_CYCLE_TICK 20u
 
 #define LED_CONN_TOGGLE_TICK 2u
+#define LED_WINDOW_END_CYCLE_TICK 12u
+#define LED_TICK_WRAP_TICK 60u
+
 /* 连续若干个LED tick都没有收到新包，则判定链路掉线 */
 #define LED_LINK_RX_HOLD_TICK 8u
 
 static tmosTaskID s_led_task_id = INVALID_TASK_ID;
 static uint8_t s_led_is_on = 0u;
 static uint8_t s_connected = 0u;
+static uint8_t s_gateway_window_ended = 0u;
 static uint8_t s_tick_in_cycle = 0u;
 static uint32_t s_last_rx_cnt = 0u;
 static uint32_t s_last_tx_ack_cnt = 0u;
@@ -33,6 +37,20 @@ static void led_write(uint8_t on)
 
 static void led_apply_pattern(void)
 {
+    if (s_gateway_window_ended != 0u)
+    {
+        uint8_t slot = (uint8_t)(s_tick_in_cycle % LED_WINDOW_END_CYCLE_TICK);
+        if (slot == 0u || slot == 2u || slot == 4u)
+        {
+            led_write(1u);
+        }
+        else
+        {
+            led_write(0u);
+        }
+        return;
+    }
+
     if (s_connected != 0u)
     {
         if ((s_tick_in_cycle % LED_CONN_TOGGLE_TICK) == 0u)
@@ -59,6 +77,7 @@ static void led_update_link_state(void)
     ad_hoc_task_get_status(&st);
     if (st.inited == 0u)
     {
+        s_gateway_window_ended = 0u;
         s_connected = 0u;
         s_no_rx_tick = LED_LINK_RX_HOLD_TICK;
         s_last_rx_cnt = st.rx_cnt;
@@ -66,6 +85,11 @@ static void led_update_link_state(void)
         s_last_submit_ok_cnt = st.data_submit_ok;
         return;
     }
+
+    s_gateway_window_ended = (uint8_t)(
+        st.role_gateway != 0u &&
+        st.sm_gateway_network_started != 0u &&
+        st.sm_gateway_network_locked != 0u);
 
     if (st.rx_cnt != s_last_rx_cnt ||
         st.tx_report_acked != s_last_tx_ack_cnt ||
@@ -103,6 +127,7 @@ void led_task_init(void)
 
     s_led_is_on = 0u;
     s_connected = 0u;
+    s_gateway_window_ended = 0u;
     s_tick_in_cycle = 0u;
     s_last_rx_cnt = 0u;
     s_last_tx_ack_cnt = 0u;
@@ -129,7 +154,7 @@ static tmosEvents led_task_process_event(tmosTaskID task_id, tmosEvents events)
         led_apply_pattern();
 
         s_tick_in_cycle++;
-        if (s_tick_in_cycle >= LED_DISCONN_CYCLE_TICK)
+        if (s_tick_in_cycle >= LED_TICK_WRAP_TICK)
         {
             s_tick_in_cycle = 0u;
         }

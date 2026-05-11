@@ -12,7 +12,7 @@ static int adhoc_link_aros_init_impl(void *ctx_mem)
 
     if (ctx == NULL)
     {
-        return -1;
+        return ADHOC_LINK_EINVAL;
     }
     ctx->init_cnt++;
     if (ctx->inited != 0u)
@@ -47,7 +47,7 @@ static int adhoc_link_aros_start_rx_impl(void *ctx_mem)
     if (ctx->inited == 0u)
     {
         ctx->start_rx_err_cnt++;
-        return -1;
+        return ADHOC_LINK_EINVAL;
     }
     ctx->start_rx_cnt++;
     if (arf_isTxBusy() != 0)
@@ -66,14 +66,14 @@ static int adhoc_link_aros_tx_impl(void *ctx_mem, const uint8_t *buf, uint16_t l
 
     if (ctx == NULL)
     {
-        return -1;
+        return ADHOC_LINK_EINVAL;
     }
     ctx->tx_req_cnt++;
     if (ctx->inited == 0u || buf == NULL || len == 0u || len > ARF_MsgN)
     {
         ctx->tx_fail_cnt++;
-        ctx->last_tx_ret = -1;
-        return -1;
+        ctx->last_tx_ret = ADHOC_LINK_EINVAL;
+        return ADHOC_LINK_EINVAL;
     }
 
     ret = arf_TxTrySend((uint8_t *)buf, (int)len);
@@ -81,15 +81,15 @@ static int adhoc_link_aros_tx_impl(void *ctx_mem, const uint8_t *buf, uint16_t l
     if (ret == (int)len)
     {
         ctx->tx_ok_cnt++;
-        return 0;
+        return ADHOC_LINK_OK;
     }
     if (ret == 0)
     {
         ctx->tx_busy_cnt++;
-        return -2;
+        return ADHOC_LINK_EBUSY;
     }
     ctx->tx_fail_cnt++;
-    return -3;
+    return ADHOC_LINK_EIO;
 }
 
 static int adhoc_link_aros_poll_rx_impl(void *ctx_mem, uint8_t *buf, uint16_t *len, int8_t *rssi)
@@ -99,20 +99,20 @@ static int adhoc_link_aros_poll_rx_impl(void *ctx_mem, uint8_t *buf, uint16_t *l
 
     if (ctx == NULL || buf == NULL || len == NULL)
     {
-        return -1;
+        return ADHOC_LINK_EINVAL;
     }
     ctx->rx_poll_cnt++;
     if (ctx->inited == 0u)
     {
         ctx->rx_err_cnt++;
-        ctx->last_poll_ret = -1;
-        return -1;
+        ctx->last_poll_ret = ADHOC_LINK_EINVAL;
+        return ADHOC_LINK_EINVAL;
     }
     if (*len < ARF_MsgN)
     {
         ctx->rx_err_cnt++;
-        ctx->last_poll_ret = -2;
-        return -2;
+        ctx->last_poll_ret = ADHOC_LINK_EINVAL;
+        return ADHOC_LINK_EINVAL;
     }
 
     rx = arf_isRxFinish();
@@ -120,8 +120,8 @@ static int adhoc_link_aros_poll_rx_impl(void *ctx_mem, uint8_t *buf, uint16_t *l
     {
         *len = 0u;
         ctx->rx_empty_cnt++;
-        ctx->last_poll_ret = 1;
-        return 1;
+        ctx->last_poll_ret = ADHOC_LINK_RX_EMPTY;
+        return ADHOC_LINK_RX_EMPTY;
     }
 
     memcpy(buf, rx, ARF_MsgN);
@@ -133,8 +133,8 @@ static int adhoc_link_aros_poll_rx_impl(void *ctx_mem, uint8_t *buf, uint16_t *l
         *rssi = ctx->last_rssi;
     }
     ctx->rx_ok_cnt++;
-    ctx->last_poll_ret = 0;
-    return 0;
+    ctx->last_poll_ret = ADHOC_LINK_OK;
+    return ADHOC_LINK_OK;
 }
 
 static uint32_t adhoc_link_aros_now_us_impl(void *ctx_mem)

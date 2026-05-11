@@ -63,7 +63,7 @@ typedef struct
     uint8_t gateway_no;
     uint8_t level;
     adhoc_sender_t sender;
-    uint8_t payload[ADHOC_FRAME_PAYLOAD_LEN];
+    uint8_t content[ADHOC_FRAME_CONTENT_LEN];
     int8_t rssi;
     uint32_t ts_us;
 } adhoc_sm_rx_event_t;

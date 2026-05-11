@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #define ADHOC_FRAME_LEN 32u
-#define ADHOC_DATA_USER_LEN 18u
+#define ADHOC_DATA_USER_LEN 17u
 
 typedef enum
 {
@@ -61,7 +61,7 @@ typedef struct
     uint8_t code;
     uint8_t source_id_flag;
     uint32_t source_node_id;
-    uint16_t seq_no;
+    uint32_t lmt_d;
     uint8_t retry_count;
 } adhoc_node_data_tx_report_t;
 
@@ -92,7 +92,7 @@ adhoc_rc_t adhoc_node_reset(void *node);
 adhoc_rc_t adhoc_node_on_rx(void *node, const adhoc_frame_t *rx);
 adhoc_rc_t adhoc_node_poll(void *node, uint32_t now_us);
 adhoc_rc_t adhoc_node_fetch_tx(void *node, adhoc_frame_t *tx);
-adhoc_rc_t adhoc_node_submit_data(void *node, uint8_t source_id_flag, uint16_t seq_no,
+adhoc_rc_t adhoc_node_submit_data(void *node, uint8_t source_id_flag, uint32_t lmt_d,
                                   const uint8_t user[ADHOC_DATA_USER_LEN], uint32_t now_us);
 adhoc_rc_t adhoc_node_fetch_data_tx_report(void *node, adhoc_node_data_tx_report_t *out_report);
 adhoc_rc_t adhoc_node_get_runtime_status(void *node, adhoc_node_runtime_status_t *out_status);
