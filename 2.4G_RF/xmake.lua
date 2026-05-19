@@ -15,6 +15,13 @@ add_rules("mode.debug", "mode.release")
 -- 默认构建模式设置为调试模式
 set_config("mode", "debug")
 
+local default_adhoc_repo_dir = ""
+local external_adhoc_repo_dir = "D:/MCU/0.fireflyluo-Embedded-Libs-main/xmake-repo"
+
+if os.isdir(external_adhoc_repo_dir) then
+    default_adhoc_repo_dir = external_adhoc_repo_dir
+end
+
 -- ============================================================================
 -- 构建选项配置
 -- ============================================================================
@@ -54,6 +61,12 @@ option("adhoc_gateway2_no")
     set_description("Second gateway gateway_no for 2GW test (0..7)")
 option_end()
 
+option("adhoc_repo_dir")
+    set_default(default_adhoc_repo_dir)
+    set_showmenu(true)
+    set_description("Local xrepo repository for Ad-Hoc-lib; empty means use vendored lib/Ad-Hoc-lib")
+option_end()
+
 -- ============================================================================
 -- 工具链路径配置
 -- ============================================================================
@@ -65,7 +78,27 @@ local log_print_cfg = tostring(get_config("log_print") or "true")  -- 获取日�
 local rf_tg_id_cfg = tonumber(get_config("rf_tg_id") or "0") or 0
 local adhoc_gateway2_tg_id_cfg = tonumber(get_config("adhoc_gateway2_tg_id") or "255") or 255
 local adhoc_gateway2_no_cfg = tonumber(get_config("adhoc_gateway2_no") or "1") or 1
+local adhoc_repo_dir_cfg = get_config("adhoc_repo_dir") or default_adhoc_repo_dir
 local toolchain_path = nil
+local use_adhoc_package_repo = false
+local adhoc_package_source_dir = ""
+
+if type(adhoc_repo_dir_cfg) == "string" then
+    adhoc_repo_dir_cfg = adhoc_repo_dir_cfg:gsub("\\", "/")
+end
+
+if adhoc_repo_dir_cfg ~= "" then
+    local adhoc_repo_recipe = path.join(adhoc_repo_dir_cfg, "packages/a/adhoc-lib/xmake.lua")
+    if not os.isfile(adhoc_repo_recipe) then
+        raise("Ad-Hoc-lib xrepo recipe not found: %s", path.translate(adhoc_repo_recipe))
+    end
+    adhoc_package_source_dir = path.directory(adhoc_repo_dir_cfg)
+    adhoc_package_source_dir = path.join(adhoc_package_source_dir, "Lib/Ad-Hoc-lib")
+    if not os.isfile(path.join(adhoc_package_source_dir, "xmake.lua")) then
+        raise("Ad-Hoc-lib source xmake.lua not found: %s", path.translate(path.join(adhoc_package_source_dir, "xmake.lua")))
+    end
+    use_adhoc_package_repo = true
+end
 
 if rf_tg_id_cfg < 0 then
     rf_tg_id_cfg = 0
@@ -87,6 +120,8 @@ if adhoc_gateway2_no_cfg < 0 then
 elseif adhoc_gateway2_no_cfg > 7 then
     adhoc_gateway2_no_cfg = 7
 end
+
+
 
 -- 根据选择的版本确定工具链路径
 if selected_ver == "12" then
@@ -111,6 +146,14 @@ local cross_prefix = toolchain_bin .. "/riscv32-wch-elf-"
 if not os.isfile(cross_prefix .. "gcc.exe") then
     cross_prefix = toolchain_bin .. "/riscv-wch-elf-"
 end
+local adhoc_package_common_flags = {
+    "-march=rv32imacxw",
+    "-mabi=ilp32",
+    "-msmall-data-limit=8",
+    "-msave-restore",
+    "-fmessage-length=0",
+    "-fsigned-char"
+}
 
 -- ============================================================================
 -- 平台和架构配置
@@ -121,11 +164,81 @@ set_plat("cross")
 -- 设置目标架构为RISC-V
 set_arch("riscv")
 
+-- 为当前工程下所有目标统一补充 RISC-V 架构/ABI 标志，
+-- 以便外部 includes() 进来的协议库 target 与主固件保持一致。
+add_cflags("-march=rv32imacxw", "-mabi=ilp32", {force = true})
+add_asflags("-march=rv32imacxw", "-mabi=ilp32", {force = true})
+add_cxxflags("-march=rv32imacxw", "-mabi=ilp32", {force = true})
+add_ldflags("-march=rv32imacxw", "-mabi=ilp32", {force = true})
+add_cflags(
+    "-msmall-data-limit=8",
+    "-msave-restore",
+    "-fmessage-length=0",
+    "-fsigned-char",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-fno-common",
+    {force = true}
+)
+add_asflags(
+    "-msmall-data-limit=8",
+    "-msave-restore",
+    "-fmessage-length=0",
+    "-fsigned-char",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-fno-common",
+    {force = true}
+)
+add_cxxflags(
+    "-msmall-data-limit=8",
+    "-msave-restore",
+    "-fmessage-length=0",
+    "-fsigned-char",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-fno-common",
+    {force = true}
+)
+
+if is_mode("debug") then
+    add_cflags("-g", "-Og", {force = true})
+    add_cxxflags("-g", "-Og", {force = true})
+else
+    add_cflags("-Os", {force = true})
+    add_cxxflags("-Os", {force = true})
+end
+
 -- 保存SDK路径到配置中，供后续使用
 set_config("sdk", toolchain_path)
 
 -- 自动生成compile_commands.json文件，用于VSCode等编辑器的智能提示
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
+
+if use_adhoc_package_repo then
+    add_repositories("firefly-embedded-libs " .. adhoc_repo_dir_cfg)
+    add_requireconfs("adhoc-lib", {
+        configs = {
+            pic = false,
+            cflags = table.concat(adhoc_package_common_flags, " "),
+            cxflags = table.concat(adhoc_package_common_flags, " "),
+            asflags = table.concat(adhoc_package_common_flags, " "),
+            ldflags = "-march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore"
+        }
+    })
+    add_requires("adhoc-lib")
+
+    target("adhoc-port-ch32v208")
+        set_kind("static")
+        set_group("libs")
+        set_default(false)
+
+        add_files(path.join(adhoc_package_source_dir, "port/ch32v208/adhoc_port_ch32.c"))
+
+        add_defines("CH32V20x_D8W")
+        add_includedirs("lib/AROS-RF-LIB/include", "sdk/Peripheral/inc", "sdk/Core", "sdk/Debug", "app/include")
+        add_includedirs(path.join(adhoc_package_source_dir, "port/ch32v208"), {public = true})
+end
 
 -- ============================================================================
 -- 主要构建目标配置
@@ -141,22 +254,16 @@ target("CH32V208GBU_Templete")
     -- 工具链配置
     -- ============================================================================
 
-    -- 配置交叉编译工具链路径
-    set_toolset("cxx", cross_prefix .. "g++.exe")    -- C++编译器
-    set_toolset("as", cross_prefix .. "gcc.exe")     -- 汇编器
-    set_toolset("ld", cross_prefix .. "gcc.exe")     -- 链接器
-    set_toolset("ar", cross_prefix .. "ar.exe")      -- 归档工具
-    set_toolset("ranlib", cross_prefix .. "ranlib.exe")  -- 索引生成工具
+    set_toolset("cxx", cross_prefix .. "g++.exe")
+    set_toolset("as", cross_prefix .. "gcc.exe")
+    set_toolset("ld", cross_prefix .. "gcc.exe")
+    set_toolset("ar", cross_prefix .. "ar.exe")
+    set_toolset("ranlib", cross_prefix .. "ranlib.exe")
     
     -- ============================================================================
-    -- 编译器架构选项
+    -- 工具链配置
     -- ============================================================================
 
-    -- 设置RISC-V架构和ABI选项
-    add_cflags("-march=rv32imacxw", "-mabi=ilp32", {force = true})      -- C编译器标志
-    add_asflags("-march=rv32imacxw", "-mabi=ilp32", {force = true})     -- 汇编器标志
-    add_ldflags("-march=rv32imacxw", "-mabi=ilp32", {force = true})     -- 链接器标志
-    
     -- ============================================================================
     -- 源文件列表
     -- ============================================================================
@@ -255,6 +362,7 @@ target("CH32V208GBU_Templete")
         "bsp/drivers/src/drv_gpio.c",
         "bsp/drivers/src/drv_i2c.c",
         "bsp/drivers/src/drv_tim.c",
+        "bsp/drivers/src/drv_rtc.c",
         "bsp/bus/src/i2c_bus_arbiter.c",
         "bsp/usb_cdc.c",
         
@@ -266,17 +374,22 @@ target("CH32V208GBU_Templete")
         "app/system_ch32v20x.c"
     )
 
-    -- Ad-Hoc协议栈（默认主路径）
-    add_files(
-        "lib/Ad-Hoc-lib/src/adhoc_node.c",
-        "lib/Ad-Hoc-lib/src/adhoc_frame.c",
-        "lib/Ad-Hoc-lib/src/adhoc_crc8.c",
-        "lib/Ad-Hoc-lib/src/adhoc_timing.c",
-        "lib/Ad-Hoc-lib/src/adhoc_sm.c",
-        "lib/Ad-Hoc-lib/src/adhoc_reply_list.c",
-        "lib/Ad-Hoc-lib/src/adhoc_data_plane.c",
-        "lib/Ad-Hoc-lib/port/ch32v208/adhoc_port_ch32.c"
-    )
+    if use_adhoc_package_repo then
+        add_packages("adhoc-lib")
+        add_deps("adhoc-port-ch32v208")
+    else
+        -- Ad-Hoc协议栈（仓库内副本回退路径）
+        add_files(
+            "lib/Ad-Hoc-lib/src/adhoc_node.c",
+            "lib/Ad-Hoc-lib/src/adhoc_frame.c",
+            "lib/Ad-Hoc-lib/src/adhoc_crc8.c",
+            "lib/Ad-Hoc-lib/src/adhoc_timing.c",
+            "lib/Ad-Hoc-lib/src/adhoc_sm.c",
+            "lib/Ad-Hoc-lib/src/adhoc_reply_list.c",
+            "lib/Ad-Hoc-lib/src/adhoc_data_plane.c",
+            "lib/Ad-Hoc-lib/port/ch32v208/adhoc_port_ch32.c"
+        )
+    end
     
     -- ============================================================================
     -- 头文件包含路径
@@ -305,10 +418,13 @@ target("CH32V208GBU_Templete")
         "lib/sc7a20/inc",
         "lib/sc7a20/adapters",
         "lib/impact_displacement/inc",
-        "lib/AROS-RF-LIB/include",
-        "lib/Ad-Hoc-lib/include",
-        "lib/Ad-Hoc-lib/port/ch32v208"
+        "lib/AROS-RF-LIB/include"
     )
+    if use_adhoc_package_repo then
+        add_includedirs(path.join(adhoc_package_source_dir, "port/ch32v208"))
+    else
+        add_includedirs("lib/Ad-Hoc-lib/include", "lib/Ad-Hoc-lib/port/ch32v208")
+    end
     if os.isdir(path.join(os.scriptdir(), "test")) then
         add_includedirs("test")
     end

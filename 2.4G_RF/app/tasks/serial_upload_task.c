@@ -27,10 +27,13 @@
 #include "i2c_bus_arbiter.h"
 #include "log_print.h"
 #include "ad_hoc_task.h"
+#include "drv_rtc.h"
 #include "sensor_task.h"
 #include "usb_cdc.h"
 #include "wchble.h"
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define SERIAL_EVT_INIT   (0x0001u << 0)
 #define SERIAL_EVT_UPLOAD (0x0001u << 1)
@@ -42,6 +45,10 @@
 #define SERIAL_CMD_BUF_SIZE 96u
 #define SERIAL_CMD_RESET_TOKEN "GW2RST"
 #define SERIAL_CMD_RESET_ACK "GW2RST:OK\r\n"
+#define SERIAL_CMD_BDT_SET_TOKEN "BDTSET"
+#define SERIAL_CMD_UNIX_SET_TOKEN "UNIXSET"
+#define SERIAL_CMD_TIME_SET_ERR "TIMESET:ERR\r\n"
+#define SERIAL_CMD_US_MAX 1000000u
 
 static tmosTaskID s_serial_task_id = INVALID_TASK_ID;
 static uint16_t s_stat_div_cnt = 0u;
@@ -51,6 +58,15 @@ static uint16_t s_cmd_len = 0u;
 static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvents events);
 static void serial_poll_usb_command(void);
 static uint8_t serial_match_reset_cmd(const char *buf, uint16_t len);
+static uint8_t serial_try_match_time_cmd(const char *buf,
+                                         uint16_t len,
+                                         uint8_t *is_unix,
+                                         uint32_t *sec,
+                                         uint32_t *sub_us);
+static uint8_t serial_try_parse_after_token(const char *cursor, uint32_t *sec, uint32_t *sub_us);
+static const char *serial_skip_blank(const char *cursor);
+static uint8_t serial_try_parse_u32(const char **cursor, uint32_t *out);
+static uint8_t serial_is_cmd_boundary(char ch);
 
 /**
  * @brief  串口上传任务初始化函数
@@ -177,6 +193,17 @@ static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvent
                       (unsigned long)adhoc_st.link_rx_err_cnt,
                       (int)adhoc_st.link_last_rssi,
                       (unsigned int)adhoc_st.link_last_rx_tc);
+            if (drv_rtc_is_ready() != 0u)
+            {
+                uint64_t bdt_us = drv_rtc_get_bdt_time_us();
+                uint32_t bdt_sec = (uint32_t)(bdt_us / 1000000ull);
+                uint32_t sub_us = (uint32_t)(bdt_us % 1000000ull);
+                LOG_PRINT("rtc stat bdt=%lu.%06lu unix=%lu src=%s\r\n",
+                          (unsigned long)bdt_sec,
+                          (unsigned long)sub_us,
+                          (unsigned long)drv_rtc_bdt_to_unix_seconds(bdt_sec),
+                          (drv_rtc_is_using_lse() != 0u) ? "LSE" : "LSI");
+            }
 
             i2c_bus_get_stats(I2C_NUM_1, &i2c_st);
             LOG_PRINT("uplink i2c q=%u/%u run=%u ok=%lu err=%lu to=%lu rec=%lu aw=%lums ae=%lums mw=%lums me=%lums\r\n",
@@ -262,6 +289,57 @@ static void serial_poll_usb_command(void)
 
     if (serial_match_reset_cmd(s_cmd_buf, s_cmd_len) == 0u)
     {
+        char cmd_local[SERIAL_CMD_BUF_SIZE + 1u];
+        uint8_t is_unix = 0u;
+        uint32_t sec = 0u;
+        uint32_t sub_us = 0u;
+
+        memcpy(cmd_local, s_cmd_buf, s_cmd_len);
+        cmd_local[s_cmd_len] = '\0';
+        if (serial_try_match_time_cmd(cmd_local, s_cmd_len, &is_unix, &sec, &sub_us) != 0u)
+        {
+            uint32_t bdt_sec = sec;
+            char ack[80];
+            int ack_len;
+
+            if (is_unix != 0u)
+            {
+                bdt_sec = drv_rtc_unix_to_bdt_seconds(sec);
+            }
+            if (bdt_sec == 0u && sec != 0u && is_unix != 0u)
+            {
+                static const char err_msg[] = SERIAL_CMD_TIME_SET_ERR;
+                (void)CDC_SendData((uint8_t *)err_msg, (uint16_t)(sizeof(err_msg) - 1u));
+                LOG_PRINT("usb cmd time rejected unix=%lu\r\n", (unsigned long)sec);
+                s_cmd_len = 0u;
+                return;
+            }
+
+            drv_rtc_set_bdt_time_us(bdt_sec, sub_us);
+            ack_len = snprintf(ack,
+                               sizeof(ack),
+                               "TIMESET:OK bdt=%lu.%06lu unix=%lu\r\n",
+                               (unsigned long)bdt_sec,
+                               (unsigned long)(sub_us % SERIAL_CMD_US_MAX),
+                               (unsigned long)drv_rtc_bdt_to_unix_seconds(bdt_sec));
+            if (ack_len > 0)
+            {
+                uint16_t ack_send_len = (uint16_t)ack_len;
+                if (ack_send_len > (uint16_t)(sizeof(ack) - 1u))
+                {
+                    ack_send_len = (uint16_t)(sizeof(ack) - 1u);
+                }
+                (void)CDC_SendData((uint8_t *)ack, ack_send_len);
+            }
+            LOG_PRINT("usb cmd time accepted bdt=%lu.%06lu unix=%lu src=%s\r\n",
+                      (unsigned long)bdt_sec,
+                      (unsigned long)(sub_us % SERIAL_CMD_US_MAX),
+                      (unsigned long)drv_rtc_bdt_to_unix_seconds(bdt_sec),
+                      (is_unix != 0u) ? "UNIXSET" : "BDTSET");
+            s_cmd_len = 0u;
+            return;
+        }
+
         if (s_cmd_len >= (uint16_t)sizeof(s_cmd_buf))
         {
             s_cmd_len = 0u;
@@ -277,4 +355,143 @@ static void serial_poll_usb_command(void)
     s_cmd_len = 0u;
     HAL_Delay(20);
     NVIC_SystemReset();
+}
+
+static uint8_t serial_try_match_time_cmd(const char *buf,
+                                         uint16_t len,
+                                         uint8_t *is_unix,
+                                         uint32_t *sec,
+                                         uint32_t *sub_us)
+{
+    static const char bdt_token[] = SERIAL_CMD_BDT_SET_TOKEN;
+    static const char unix_token[] = SERIAL_CMD_UNIX_SET_TOKEN;
+    uint16_t idx = 0u;
+
+    if (buf == NULL || is_unix == NULL || sec == NULL || sub_us == NULL)
+    {
+        return 0u;
+    }
+
+    while (idx < len)
+    {
+        const char *cursor = &buf[idx];
+        uint8_t unix_mode = 0u;
+        if ((idx > 0u) && (serial_is_cmd_boundary(buf[idx - 1u]) == 0u))
+        {
+            idx++;
+            continue;
+        }
+
+        if ((uint16_t)(len - idx) >= (uint16_t)(sizeof(bdt_token) - 1u) &&
+            memcmp(cursor, bdt_token, sizeof(bdt_token) - 1u) == 0)
+        {
+            cursor += (sizeof(bdt_token) - 1u);
+            unix_mode = 0u;
+        }
+        else if ((uint16_t)(len - idx) >= (uint16_t)(sizeof(unix_token) - 1u) &&
+                 memcmp(cursor, unix_token, sizeof(unix_token) - 1u) == 0)
+        {
+            cursor += (sizeof(unix_token) - 1u);
+            unix_mode = 1u;
+        }
+        else
+        {
+            idx++;
+            continue;
+        }
+
+        if (serial_try_parse_after_token(cursor, sec, sub_us) != 0u)
+        {
+            *is_unix = unix_mode;
+            return 1u;
+        }
+        idx++;
+    }
+
+    return 0u;
+}
+
+static uint8_t serial_try_parse_after_token(const char *cursor, uint32_t *sec, uint32_t *sub_us)
+{
+    uint32_t sec_local = 0u;
+    uint32_t us_local = 0u;
+    const char *p = cursor;
+
+    if (p == NULL || sec == NULL || sub_us == NULL)
+    {
+        return 0u;
+    }
+
+    p = serial_skip_blank(p);
+    if (*p == '=')
+    {
+        p++;
+    }
+    p = serial_skip_blank(p);
+    if (serial_try_parse_u32(&p, &sec_local) == 0u)
+    {
+        return 0u;
+    }
+
+    p = serial_skip_blank(p);
+    if (*p == ',' || *p == '.')
+    {
+        p++;
+        p = serial_skip_blank(p);
+        if (serial_try_parse_u32(&p, &us_local) == 0u)
+        {
+            return 0u;
+        }
+    }
+    p = serial_skip_blank(p);
+    if (*p != '\0' && *p != '\r' && *p != '\n')
+    {
+        return 0u;
+    }
+
+    if (us_local >= SERIAL_CMD_US_MAX)
+    {
+        sec_local += (us_local / SERIAL_CMD_US_MAX);
+        us_local %= SERIAL_CMD_US_MAX;
+    }
+
+    *sec = sec_local;
+    *sub_us = us_local;
+    return 1u;
+}
+
+static const char *serial_skip_blank(const char *cursor)
+{
+    const char *p = cursor;
+    while (*p == ' ' || *p == '\t')
+    {
+        p++;
+    }
+    return p;
+}
+
+static uint8_t serial_try_parse_u32(const char **cursor, uint32_t *out)
+{
+    char *endptr;
+    unsigned long value;
+
+    if (cursor == NULL || *cursor == NULL || out == NULL)
+    {
+        return 0u;
+    }
+
+    value = strtoul(*cursor, &endptr, 10);
+    if (endptr == *cursor)
+    {
+        return 0u;
+    }
+
+    *cursor = endptr;
+    *out = (uint32_t)value;
+    return 1u;
+}
+
+static uint8_t serial_is_cmd_boundary(char ch)
+{
+    return (uint8_t)((ch == '\r') || (ch == '\n') || (ch == ' ') || (ch == '\t'));
 }

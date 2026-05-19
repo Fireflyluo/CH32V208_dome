@@ -1,10 +1,12 @@
 #include "ad_hoc_task.h"
 
 #include "adhoc_api.h"
+#include "adhoc_frame.h"
 #include "adhoc_link_aros.h"
 #include "log_print.h"
 #include "sensor_task.h"
 #include "tmos_task.h"
+#include "drv_rtc.h"
 
 #include <string.h>
 
@@ -34,6 +36,18 @@
 
 #ifndef ADHOC_TASK_DOMAIN_ID
 #define ADHOC_TASK_DOMAIN_ID 1u
+#endif
+
+#ifndef ADHOC_TASK_FIXED_BDT_SECONDS
+#define ADHOC_TASK_FIXED_BDT_SECONDS 0u
+#endif
+
+#ifndef ADHOC_TASK_RTC_SYNC_THRESHOLD_SEC
+#define ADHOC_TASK_RTC_SYNC_THRESHOLD_SEC 2u
+#endif
+
+#ifndef ADHOC_TASK_RTC_SYNC_THRESHOLD_US
+#define ADHOC_TASK_RTC_SYNC_THRESHOLD_US (ADHOC_TASK_RTC_SYNC_THRESHOLD_SEC * 1000000u)
 #endif
 
 #ifndef ADHOC_TASK_GATEWAY_NO
@@ -69,10 +83,14 @@ static uint8_t s_retry_max_cfg = 30u;
 static uint8_t s_prev_sm_state = 0u;
 static uint8_t s_prev_sm_retry_count = 0u;
 static uint32_t s_last_retry_exhausted_us = 0u;
+static uint32_t s_cfg_t5_us = 60000u;
+static uint32_t s_cfg_slot_us = 3750u;
 
 static tmosEvents ad_hoc_task_process_event(tmosTaskID task_id, tmosEvents events);
 static void ad_hoc_task_sync_link_status(void);
 static void ad_hoc_task_sync_runtime_status(uint32_t now_us);
+static void ad_hoc_task_sync_protocol_time_base(uint32_t now_us);
+static void ad_hoc_task_try_sync_bdt_from_a_frame(const uint8_t frame[ADHOC_FRAME_LEN], uint32_t rx_now_us);
 
 static int16_t ad_hoc_clamp_i16(int32_t v)
 {
@@ -152,7 +170,7 @@ static void ad_hoc_task_try_submit_sensor_data(uint32_t now_us)
     }
 
     ad_hoc_build_sensor_payload(&snap, user);
-    lmt_d = (now_us / 1000000u) & 0x00FFFFFFu;
+    lmt_d = adhoc_lmt_d_from_us(now_us);
     s_status.data_submit_try++;
     rc = adhoc_node_submit_data(s_node_mem, AD_HOC_SOURCE_ID_FLAG, lmt_d, user, now_us);
     if (rc == ADHOC_OK)
@@ -210,6 +228,129 @@ static uint32_t ad_hoc_task_now_us(void)
         return s_link_ops->now_us(&s_link_ctx);
     }
     return 0u;
+}
+
+static uint64_t ad_hoc_task_abs_diff_u64(uint64_t a, uint64_t b)
+{
+    return a >= b ? (a - b) : (b - a);
+}
+
+static uint32_t ad_hoc_task_restore_sec_mod25(uint32_t sec_mod25, uint32_t ref_sec)
+{
+    uint32_t candidate;
+    uint32_t best;
+    const uint32_t sec_mod = (1u << ADHOC_LMT_A_SEC_BITS);
+    uint64_t best_delta;
+    uint64_t delta;
+
+    candidate = (ref_sec & ~ADHOC_LMT_A_SEC_MASK) | (sec_mod25 & ADHOC_LMT_A_SEC_MASK);
+    best = candidate;
+    best_delta = ad_hoc_task_abs_diff_u64((uint64_t)candidate, (uint64_t)ref_sec);
+
+    candidate = best + sec_mod;
+    delta = ad_hoc_task_abs_diff_u64((uint64_t)candidate, (uint64_t)ref_sec);
+    if (delta < best_delta)
+    {
+        best = candidate;
+        best_delta = delta;
+    }
+
+    if (best >= sec_mod)
+    {
+        candidate = best - sec_mod;
+        delta = ad_hoc_task_abs_diff_u64((uint64_t)candidate, (uint64_t)ref_sec);
+        if (delta < best_delta)
+        {
+            best = candidate;
+        }
+    }
+
+    return best;
+}
+
+static void ad_hoc_task_sync_protocol_time_base(uint32_t now_us)
+{
+    uint64_t bdt_us;
+    uint32_t bdt_sec;
+    uint32_t bdt_sub_us;
+    uint32_t base_mono_us;
+
+    if (drv_rtc_is_ready() == 0u)
+    {
+        adhoc_time_clear_bdt_base();
+        return;
+    }
+
+    bdt_us = drv_rtc_get_bdt_time_us();
+    bdt_sec = (uint32_t)(bdt_us / 1000000ull);
+    bdt_sub_us = (uint32_t)(bdt_us % 1000000ull);
+    base_mono_us = now_us - bdt_sub_us;
+    adhoc_time_set_bdt_base(base_mono_us, bdt_sec);
+}
+
+static void ad_hoc_task_try_sync_bdt_from_a_frame(const uint8_t frame[ADHOC_FRAME_LEN], uint32_t rx_now_us)
+{
+    adhoc_frame_fields_t fields;
+    uint32_t lmt_a_raw;
+    uint32_t lmt_a_sec_mod25;
+    uint8_t lmt_a_period;
+    uint32_t lmt_a_bdt_sec;
+    uint32_t remote_sub_us;
+    uint32_t base_mono_us;
+    uint64_t remote_bdt_us;
+    uint64_t rtc_bdt_us;
+    uint32_t rtc_bdt_sec_ref = 0u;
+
+    if (frame == 0)
+    {
+        return;
+    }
+    if (!adhoc_frame_parse(frame, &fields))
+    {
+        return;
+    }
+    if (fields.msg_class != ADHOC_MSG_CLASS_A)
+    {
+        return;
+    }
+
+    if (drv_rtc_is_ready() != 0u)
+    {
+        rtc_bdt_sec_ref = drv_rtc_get_bdt_seconds();
+    }
+
+    lmt_a_raw = adhoc_u32_be_read(&fields.content[0]);
+    lmt_a_sec_mod25 = adhoc_lmt_a_sec_get(lmt_a_raw);
+    lmt_a_period = adhoc_lmt_a_period_get(lmt_a_raw);
+    if (rtc_bdt_sec_ref != 0u)
+    {
+        lmt_a_bdt_sec = ad_hoc_task_restore_sec_mod25(lmt_a_sec_mod25, rtc_bdt_sec_ref);
+    }
+    else
+    {
+        lmt_a_bdt_sec = lmt_a_sec_mod25;
+    }
+    remote_sub_us = (uint32_t)lmt_a_period * s_cfg_t5_us;
+    remote_sub_us += (uint32_t)(fields.slot_high4 & 0x0Fu) * s_cfg_slot_us;
+    if (remote_sub_us >= 1000000u)
+    {
+        lmt_a_bdt_sec += remote_sub_us / 1000000u;
+        remote_sub_us %= 1000000u;
+    }
+    base_mono_us = rx_now_us - remote_sub_us;
+    adhoc_time_set_bdt_base(base_mono_us, lmt_a_bdt_sec);
+
+    if (drv_rtc_is_ready() == 0u)
+    {
+        return;
+    }
+
+    rtc_bdt_us = drv_rtc_get_bdt_time_us();
+    remote_bdt_us = ((uint64_t)lmt_a_bdt_sec * 1000000ull) + (uint64_t)remote_sub_us;
+    if (ad_hoc_task_abs_diff_u64(rtc_bdt_us, remote_bdt_us) > (uint64_t)ADHOC_TASK_RTC_SYNC_THRESHOLD_US)
+    {
+        drv_rtc_set_bdt_time_us(lmt_a_bdt_sec, remote_sub_us);
+    }
 }
 
 static void ad_hoc_task_drain_tx(void)
@@ -314,6 +455,7 @@ static void ad_hoc_task_drain_rx(void)
         rx_frame.len = ADHOC_FRAME_LEN;
         rx_frame.rssi = rssi;
         rx_frame.ts_us = ad_hoc_task_now_us();
+        ad_hoc_task_try_sync_bdt_from_a_frame(rx_buf, rx_frame.ts_us);
         if (adhoc_node_on_rx(s_node_mem, &rx_frame) == ADHOC_OK)
         {
             s_status.rx_cnt++;
@@ -529,6 +671,25 @@ static tmosEvents ad_hoc_task_process_event(tmosTaskID task_id, tmosEvents event
         cfg.network_window_us = AD_HOC_NETWORK_WINDOW_US;
         cfg.regroup_interval_us = AD_HOC_REGROUP_INTERVAL_US;
         s_retry_max_cfg = cfg.retry_max;
+        s_cfg_t5_us = cfg.t1_us + cfg.t2_us;
+        if (s_cfg_t5_us == 0u)
+        {
+            s_cfg_t5_us = 60000u;
+        }
+        s_cfg_slot_us = s_cfg_t5_us / 16u;
+        if (s_cfg_slot_us == 0u)
+        {
+            s_cfg_slot_us = 3750u;
+        }
+        adhoc_time_set_lmt_a_t5_us(s_cfg_t5_us);
+
+        if (drv_rtc_is_ready() != 0u)
+        {
+            if (ADHOC_TASK_FIXED_BDT_SECONDS != 0u)
+            {
+                drv_rtc_set_bdt_seconds((uint32_t)ADHOC_TASK_FIXED_BDT_SECONDS);
+            }
+        }
 
         node_mem_required = adhoc_node_required_size();
         if (node_mem_required > (uint32_t)sizeof(s_node_mem))
@@ -557,7 +718,9 @@ static tmosEvents ad_hoc_task_process_event(tmosTaskID task_id, tmosEvents event
         s_status.gateway_no = cfg.gateway_no;
         s_status.domain_id = cfg.domain_id;
         s_status.node_id = cfg.node_id;
-        ad_hoc_task_sync_runtime_status(ad_hoc_task_now_us());
+        now_us = ad_hoc_task_now_us();
+        ad_hoc_task_sync_protocol_time_base(now_us);
+        ad_hoc_task_sync_runtime_status(now_us);
         ad_hoc_task_sync_link_status();
 
         tmos_start_reload_task(s_ad_hoc_task_id, AD_HOC_EVT_POLL, MS1_TO_SYSTEM_TIME(AD_HOC_POLL_MS));
@@ -587,6 +750,7 @@ static tmosEvents ad_hoc_task_process_event(tmosTaskID task_id, tmosEvents event
         }
 
         now_us = ad_hoc_task_now_us();
+        ad_hoc_task_sync_protocol_time_base(now_us);
         ad_hoc_task_try_submit_sensor_data(now_us);
         if (adhoc_node_poll(s_node_mem, now_us) != ADHOC_OK)
         {

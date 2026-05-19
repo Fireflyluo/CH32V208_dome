@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file    main.c
  * @brief   TMOS application entry.
  */
@@ -25,11 +25,11 @@ int main(void)
     WCHBLE_Init();
     HAL_Init();
 
-    sensor_task_init();//传感器任务
-    display_task_init();//显示任务
-    serial_upload_task_init();//串口上传任务
-    ad_hoc_task_init();//自组网主任务（新主路径）
-    led_task_init();//链路状态指示灯任务
+    sensor_task_init();        // 传感器任务
+    display_task_init();       // 显示任务
+    serial_upload_task_init(); // 串口上传任务
+    ad_hoc_task_init();        // 自组网主任务（新主路径）
+    led_task_init();           // 链路状态指示灯任务
 
     while (1)
     {

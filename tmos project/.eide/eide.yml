@@ -43,6 +43,8 @@ targets:
       - sdk/Ld
       - sdk/Startup/startup_ch32v20x_D6.S
       - sdk/Startup/startup_ch32v20x_D8.S
+    settings:
+      debugger: cortex-debug
     toolchain: RISCV_GCC
     toolchainConfigMap:
       RISCV_GCC:

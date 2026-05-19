@@ -49,7 +49,7 @@
 ### 2.4 `adhoc_frame.*` + `adhoc_crc8.*` + `adhoc_timing.*`
 
 - `adhoc_frame`：帧字段编解码 + 时间戳字段辅助函数
-- `adhoc_crc8`：固定参数 CRC8
+- `adhoc_crc8`：固定参数 CRC8（查表法）；在 `RISC-V + GCC` 默认把 `256B` 表放入 `.flash1_rodata`
 - `adhoc_timing`：`T5/T6/n/m` 计算与时隙奇偶检查
 
 ### 2.5 `adhoc_reply_list.*`

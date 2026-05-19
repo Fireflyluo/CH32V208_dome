@@ -15,9 +15,53 @@
 static uint8_t p_us = 0;
 static uint16_t p_ms = 0;
 static volatile uint8_t uart_tx_complete = 1;
+static volatile uint16_t uart_rx_head = 0u;
+static volatile uint16_t uart_rx_tail = 0u;
+static volatile uint32_t uart_rx_dropped = 0u;
+static uint8_t uart_rx_buf[DEBUG_UART_RX_BUF_SIZE];
 
 #define DEBUG_DATA0_ADDRESS ((volatile uint32_t *)0xE0000380)
 #define DEBUG_DATA1_ADDRESS ((volatile uint32_t *)0xE0000384)
+
+static void debug_uart_rx_push(uint8_t byte)
+{
+    uint16_t next = (uint16_t)(uart_rx_head + 1u);
+    if (next >= (uint16_t)DEBUG_UART_RX_BUF_SIZE)
+    {
+        next = 0u;
+    }
+
+    if (next == uart_rx_tail)
+    {
+        uint16_t new_tail = (uint16_t)(uart_rx_tail + 1u);
+        if (new_tail >= (uint16_t)DEBUG_UART_RX_BUF_SIZE)
+        {
+            new_tail = 0u;
+        }
+        uart_rx_tail = new_tail;
+        uart_rx_dropped++;
+    }
+
+    uart_rx_buf[uart_rx_head] = byte;
+    uart_rx_head = next;
+}
+
+#if (DEBUG == DEBUG_UART1 || DEBUG == DEBUG_UART2 || DEBUG == DEBUG_UART3)
+static void debug_uart_poll_rx(void)
+{
+    USART_TypeDef *uart = USART1;
+#if (DEBUG == DEBUG_UART2)
+    uart = USART2;
+#elif (DEBUG == DEBUG_UART3)
+    uart = USART3;
+#endif
+
+    while (USART_GetFlagStatus(uart, USART_FLAG_RXNE) != RESET)
+    {
+        debug_uart_rx_push((uint8_t)USART_ReceiveData(uart));
+    }
+}
+#endif
 
 void USART2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 /*********************************************************************
@@ -105,6 +149,10 @@ void USART_Printf_Init(uint32_t baudrate)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
 #elif (DEBUG == DEBUG_UART2 || DEBUG == DEBUG_UART2_IT)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
@@ -112,6 +160,10 @@ void USART_Printf_Init(uint32_t baudrate)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 #elif (DEBUG == DEBUG_UART3 || DEBUG == DEBUG_UART3_IT)
@@ -123,6 +175,10 @@ void USART_Printf_Init(uint32_t baudrate)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
 #endif
 
     USART_InitStructure.USART_BaudRate = baudrate;
@@ -130,7 +186,10 @@ void USART_Printf_Init(uint32_t baudrate)
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode = USART_Mode_Tx;
+    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
+    uart_rx_head = 0u;
+    uart_rx_tail = 0u;
+    uart_rx_dropped = 0u;
 
 #if (DEBUG == DEBUG_UART1)
     USART_Init(USART1, &USART_InitStructure);
@@ -199,6 +258,70 @@ void SDI_Printf_Enable(void)
     *(DEBUG_DATA0_ADDRESS) = 0;
     Delay_Init();
     Delay_Ms(1);
+}
+
+void Debug_UART_RxFlush(void)
+{
+    uart_rx_head = 0u;
+    uart_rx_tail = 0u;
+}
+
+uint16_t Debug_UART_RxAvailable(void)
+{
+    uint16_t head;
+    uint16_t tail;
+
+#if (DEBUG == DEBUG_UART1 || DEBUG == DEBUG_UART2 || DEBUG == DEBUG_UART3)
+    debug_uart_poll_rx();
+#endif
+
+    head = uart_rx_head;
+    tail = uart_rx_tail;
+    if (head >= tail)
+    {
+        return (uint16_t)(head - tail);
+    }
+    return (uint16_t)(DEBUG_UART_RX_BUF_SIZE - tail + head);
+}
+
+uint16_t Debug_UART_RxRead(uint8_t *out, uint16_t max_len)
+{
+    uint16_t count = 0u;
+
+    if (out == NULL || max_len == 0u)
+    {
+        return 0u;
+    }
+
+#if (DEBUG == DEBUG_UART1 || DEBUG == DEBUG_UART2 || DEBUG == DEBUG_UART3)
+    debug_uart_poll_rx();
+#endif
+
+    while (count < max_len && uart_rx_tail != uart_rx_head)
+    {
+        out[count++] = uart_rx_buf[uart_rx_tail];
+        uart_rx_tail++;
+        if (uart_rx_tail >= (uint16_t)DEBUG_UART_RX_BUF_SIZE)
+        {
+            uart_rx_tail = 0u;
+        }
+    }
+
+    return count;
+}
+
+uint8_t Debug_UART_RxGetByte(uint8_t *out)
+{
+    if (out == NULL)
+    {
+        return 0u;
+    }
+    return (uint8_t)(Debug_UART_RxRead(out, 1u) == 1u ? 1u : 0u);
+}
+
+uint32_t Debug_UART_RxDropped(void)
+{
+    return uart_rx_dropped;
 }
 
 /*********************************************************************
@@ -331,7 +454,7 @@ void USART1_IRQHandler(void)
 {
     if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
-        uint8_t date = USART_ReceiveData(USART1);
+        debug_uart_rx_push((uint8_t)USART_ReceiveData(USART1));
     }
     if (USART_GetITStatus(USART1, USART_IT_TC) != RESET)
     {
@@ -344,8 +467,7 @@ void USART2_IRQHandler(void)
 {
     if (USART_GetITStatus(USART2, USART_IT_RXNE) != RESET)
     {
-//        uint8_t date = USART_ReceiveData(USART2);
-        USART_ClearFlag(USART2, USART_IT_RXNE);
+        debug_uart_rx_push((uint8_t)USART_ReceiveData(USART2));
     }
     if (USART_GetITStatus(USART2, USART_IT_TC) != RESET)
     {
@@ -358,7 +480,7 @@ void USART3_IRQHandler(void)
 {
     if (USART_GetITStatus(USART3, USART_IT_RXNE) != RESET)
     {
-        uint8_t date = USART_ReceiveData(USART3);
+        debug_uart_rx_push((uint8_t)USART_ReceiveData(USART3));
     }
     if (USART_GetITStatus(USART3, USART_IT_TC) != RESET)
     {

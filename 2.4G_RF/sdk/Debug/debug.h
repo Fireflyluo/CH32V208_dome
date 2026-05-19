@@ -41,11 +41,20 @@ extern "C" {
 #define SDI_PRINT SDI_PR_CLOSE
 #endif
 
+#ifndef DEBUG_UART_RX_BUF_SIZE
+#define DEBUG_UART_RX_BUF_SIZE 128u
+#endif
+
 void Delay_Init(void);
 void Delay_Us(uint32_t n);
 void Delay_Ms(uint32_t n);
 void USART_Printf_Init(uint32_t baudrate);
 void SDI_Printf_Enable(void);
+void Debug_UART_RxFlush(void);
+uint16_t Debug_UART_RxAvailable(void);
+uint16_t Debug_UART_RxRead(uint8_t *out, uint16_t max_len);
+uint8_t Debug_UART_RxGetByte(uint8_t *out);
+uint32_t Debug_UART_RxDropped(void);
 
 #if (DEBUG)
 #define PRINT(format, ...) printf(format, ##__VA_ARGS__)

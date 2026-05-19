@@ -118,5 +118,6 @@ for (;;) {
 
 - 端口示例：`lib/Ad-Hoc-lib/port/ch32v208/`
 - 链路适配示例：`app/adapters/adhoc_link_aros.c`
+- Windows 仿真参考：`lib/Ad-Hoc-lib/test/`
 
 建议直接按上述示例结构复制到新工程，再替换底层驱动调用。

@@ -1,4 +1,9 @@
 {
+    "editor.fontFamily": "Maple Mono NF CN, Jetbrains Mono, Menlo, Consolas, monospace",
+    // Enable ligatures
+    "editor.fontLigatures": "'calt'",
+    // Or enable OpenType features
+    "editor.fontLigatures": "'calt', 'cv01', 'ss01', 'zero'",
     "files.encoding": "utf8",
     "files.autoGuessEncoding": false,
     "terminal.integrated.env.windows": {

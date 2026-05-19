@@ -39,6 +39,8 @@
 ### 4.1 Content 通用头
 
 - `Content[0..3]`：`LMT_A`（32bit 秒级时间戳）
+- `LMT_A/LMT_D` 的推荐语义为 BDT 秒（`2006-01-01 00:00:00` 起算）。
+- 协议库通过 `adhoc_time_set_bdt_base(mono_us, bdt_sec)` 将业务绝对时间映射到协议 `now_us`。
 
 ### 4.2 ID 槽位
 
@@ -147,6 +149,7 @@
 - 网关 `T2/T5` 收发节拍与 `30s` 时间窗停发
 - 信标方向锁定、`3*T5` 上级失效回退
 - Top-K 邻居缓存与上级编号绑定
+- 时间戳基线映射接口：`adhoc_time_set_bdt_base/adhoc_time_clear_bdt_base`
 
 保留（后续可演进）：
 

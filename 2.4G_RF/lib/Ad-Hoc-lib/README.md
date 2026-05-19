@@ -1,6 +1,7 @@
 # Ad-Hoc-lib
 
-`Ad-Hoc-lib` 是本工程的自组网协议库，路径固定在 `lib/Ad-Hoc-lib/`。  
+`Ad-Hoc-lib` 是本工程的自组网协议库。  
+默认保留仓库内副本 `lib/Ad-Hoc-lib/` 作为参考/回退路径；当 `xmake` 配置了外部 `adhoc_repo_dir` 时，工程会优先通过本地 `xrepo` 包仓引入协议核心。  
 库与底层 RF 驱动解耦，协议逻辑不放在 `AROS-RF-LIB` 内。
 
 ## 1. 库定位
@@ -16,8 +17,11 @@
 - 最小接入：`docs/USAGE.md`
 - 协议语义：`docs/protocol-design.md`
 - 软件实现：`docs/software-architecture.md`
+- 统一配置：`docs/configuration.md`
+- 软件设计基线：`docs/软件设计文档.md`
 - 平台移植：`docs/porting-guide.md`
 - 文档导航：`docs/README.md`
+- Windows 仿真：`test/README.md`
 
 ## 3. 目录结构
 
@@ -25,6 +29,7 @@
 - `src/`：协议实现
 - `docs/`：协议、实现、移植、使用文档
 - `port/ch32v208/`：CH32V208 平台参考实现
+- `test/`：Windows 多线程仿真与回归场景
 
 ## 4. 当前工程参考
 
@@ -37,3 +42,4 @@
 ```bash
 xmake
 ```
+协议本身（Ad-Hoc）：约 ROM 13.3KB、RAM 14B。
