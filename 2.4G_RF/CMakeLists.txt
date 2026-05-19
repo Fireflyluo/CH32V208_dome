@@ -44,13 +44,13 @@ SET(CMAKE_CXX_COMPILER_WORKS TRUE)
 SET(CMAKE_ASM_COMPILER_WORKS TRUE)
 
 # Use MRS toolchian to compile
-set(TOOLCHAIN_FOLDER "e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC12")
-set(TOOLCHAIN_PREFIX "riscv-wch-elf-")
-set(CMAKE_C_COMPILER "${TOOLCHAIN_FOLDER}/bin/riscv-wch-elf-gcc.exe")
-set(CMAKE_CXX_COMPILER "${TOOLCHAIN_FOLDER}/bin/riscv-wch-elf-g++.exe")
-set(CMAKE_ASM_COMPILER "${TOOLCHAIN_FOLDER}/bin/riscv-wch-elf-gcc.exe")
+set(TOOLCHAIN_FOLDER "e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/Toolchain/RISC-V Embedded GCC15")
+set(TOOLCHAIN_PREFIX "riscv32-wch-elf-")
+set(CMAKE_C_COMPILER "${TOOLCHAIN_FOLDER}/bin/riscv32-wch-elf-gcc.exe")
+set(CMAKE_CXX_COMPILER "${TOOLCHAIN_FOLDER}/bin/riscv32-wch-elf-g++.exe")
+set(CMAKE_ASM_COMPILER "${TOOLCHAIN_FOLDER}/bin/riscv32-wch-elf-gcc.exe")
 set(CMAKE_OBJCOPY "${TOOLCHAIN_FOLDER}/bin/${TOOLCHAIN_PREFIX}objcopy.exe")
-set(CMAKE_OBJDUMP "${TOOLCHAIN_FOLDER}/bin/riscv-wch-elf-objdump.exe")
+set(CMAKE_OBJDUMP "${TOOLCHAIN_FOLDER}/bin/riscv32-wch-elf-objdump.exe")
 set(CMAKE_SIZE "${TOOLCHAIN_FOLDER}/bin/${TOOLCHAIN_PREFIX}size.exe")
 set(CMAKE_AR "${TOOLCHAIN_FOLDER}/bin/${TOOLCHAIN_PREFIX}ar.exe")
 
@@ -68,6 +68,12 @@ add_compile_options(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=..)
 
 set(SRC_FILES 
 "${CMAKE_CURRENT_SOURCE_DIR}/app/tasks/tmos_led_task.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks/i2c_request_task.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks/sensor_task.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks/display_task.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks/serial_upload_task.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks/ad_hoc_task.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/app/adapters/adhoc_link_aros.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/USB-Driver/src/usb_core.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/USB-Driver/src/usb_init.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/USB-Driver/src/usb_int.c"
@@ -102,38 +108,46 @@ set(SRC_FILES
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/Peripheral/src/ch32v20x_usart.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/Peripheral/src/ch32v20x_wwdg.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/LIB/ble_task_scheduler.S"
-"${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/KEY.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/LED.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/MCU.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/RTC.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/SLEEP.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/Debug/debug.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/sdk/Core/core_riscv.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/utils/ringbuffer.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/utils/data_protocol.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/utils/sw_timer.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40_new/adapters/sht40_ch32_adapter.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40_new/src/sht40_core.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40_new/src/sht40_sync.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40_new/src/sht40_async.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20_new/adapters/sc7a20_ch32_adapter.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20_new/src/sc7a20_core.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20_new/src/sc7a20_sync.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20_new/src/sc7a20_async.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40/adapters/sht40_ch32_adapter.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40/src/sht40_core.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40/src/sht40_sync.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40/src/sht40_async.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20/adapters/sc7a20_ch32_adapter.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20/src/sc7a20_core.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20/src/sc7a20_sync.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20/src/sc7a20_async.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/impact_displacement/src/impact_displacement.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/AROS-RF-LIB/src/aros_rf.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/lib/oled/OLED.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/lib/oled/OLED_Data.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/src/adhoc_node.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/src/adhoc_frame.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/src/adhoc_crc8.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/src/adhoc_timing.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/src/adhoc_sm.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/src/adhoc_reply_list.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/src/adhoc_data_plane.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/port/ch32v208/adhoc_port_ch32.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/bsp/board.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/bsp/src/drv_gpio.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/bsp/src/drv_i2c.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/bsp/src/drv_tim.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/bsp/drivers/src/drv_gpio.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/bsp/drivers/src/drv_i2c.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/bsp/drivers/src/drv_tim.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/bsp/drivers/src/drv_rtc.c"
+"${CMAKE_CURRENT_SOURCE_DIR}/bsp/bus/src/i2c_bus_arbiter.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/bsp/usb_cdc.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/ble_profile/devinfoservice.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/ble_profile/gattprofile.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/app/ch32v20x_it.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/app/main.c"
-"${CMAKE_CURRENT_SOURCE_DIR}/app/peripheral.c"
 "${CMAKE_CURRENT_SOURCE_DIR}/app/system_ch32v20x.c"
 )
-set(CMAKE_C_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Debug\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Core\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Peripheral/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/LIB\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/ble_profile/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/bsp\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/bsp/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/CONFIG\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/USB-Driver/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/utils\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40_new\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40_new/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40_new/adapters\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/oled\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20_new\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20_new/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20_new/adapters\" -DCH32V20x_D8W -std=gnu17")
+set(CMAKE_C_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Debug\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Core\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/adapters\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Peripheral/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/HAL/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/LIB\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/app/tasks\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/bsp\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/bsp/drivers/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/bsp/bus/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/CONFIG\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/USBLIB/USB-Driver/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/utils\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sht40/adapters\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/oled\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/sc7a20/adapters\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/impact_displacement/inc\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/AROS-RF-LIB/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/include\" -I\"${CMAKE_CURRENT_SOURCE_DIR}/lib/Ad-Hoc-lib/port/ch32v208\" -DCH32V20x_D8W -DLOG_PRINT_ENABLE=1 -DARF_USE_EXTERNAL_MEM_BUF=1 -DRF_TG_ID=0 -DADHOC_TASK_GATEWAY_PRIMARY_TG_ID=0 -DADHOC_ENABLE=1 -std=gnu17")
 set(CMAKE_CXX_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -std=gnu++11 -fabi-version=0")
 set(CMAKE_ASM_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmax-errors=20 -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -I\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/Startup\" -x assembler-with-cpp")
 
@@ -149,9 +163,10 @@ m
 
 add_custom_command(TARGET "${TARGET_ARTIFACT}" 
 POST_BUILD 
-COMMAND ${CMAKE_OBJCOPY} ARGS -O ihex  "CH32V208GBU_Templete.elf" "CH32V208GBU_Templete.hex"
-COMMAND ${CMAKE_OBJDUMP} ARGS  --all-headers --demangle --disassemble -M xw "CH32V208GBU_Templete.elf" > "CH32V208GBU_Templete.lst"
-COMMAND ${CMAKE_SIZE} ARGS  --format=berkeley "CH32V208GBU_Templete.elf"
+COMMAND ${CMAKE_OBJCOPY} ARGS -O ihex  "${TARGET_ARTIFACT}" "${PROJECT_NAME}.hex"
+COMMAND ${CMAKE_OBJDUMP} ARGS  --all-headers --demangle --disassemble -M xw "${TARGET_ARTIFACT}" > "${PROJECT_NAME}.lst"
+COMMAND ${CMAKE_SIZE} ARGS  --format=berkeley "${TARGET_ARTIFACT}"
+WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
 # Copy compile_commands.json to .vscode for clangd support

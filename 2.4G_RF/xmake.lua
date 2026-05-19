@@ -16,11 +16,7 @@ add_rules("mode.debug", "mode.release")
 set_config("mode", "debug")
 
 local default_adhoc_repo_dir = ""
-local external_adhoc_repo_dir = "D:/MCU/0.fireflyluo-Embedded-Libs-main/xmake-repo"
-
-if os.isdir(external_adhoc_repo_dir) then
-    default_adhoc_repo_dir = external_adhoc_repo_dir
-end
+local external_adhoc_repo_dir = ""
 
 -- ============================================================================
 -- 构建选项配置
