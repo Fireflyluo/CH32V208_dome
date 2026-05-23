@@ -1,0 +1,302 @@
+已连接到 COM3，波特率 115200，编码 utf-8
+等待数据... (自动退出: 40.0s)
+
+* 
+uplink ax=828 ay=31 az=507 mg, t=29.76C rh=28.11%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=29 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=512 rx=804 node_err=0 tx_err=0 rx_err=33
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=0 gw_left=1025ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=5798 skip=151 tx=512/514 busy=2 fail=0 rx=837/6635 empty=5798 err=0 rssi=-43 tc=46602
+uplink i2c q=0/1 run=0 ok=11783 err=1008 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=875 ay=23 az=539 mg, t=29.76C rh=28.11%
+uplink ax=804 ay=7 az=531 mg, t=29.76C rh=28.11%
+uplink ax=820 ay=-7 az=562 mg, t=29.76C rh=28.11%
+uplink ax=843 ay=23 az=515 mg, t=29.76C rh=28.11%
+* 
+uplink ax=828 ay=31 az=539 mg, t=29.79C rh=28.18%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=30 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=529 rx=832 node_err=0 tx_err=0 rx_err=34
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=0 gw_left=25ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=5998 skip=156 tx=529/531 busy=2 fail=0 rx=866/6864 empty=5998 err=0 rssi=-49 tc=48222
+uplink i2c q=0/1 run=0 ok=12185 err=1041 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=804 ay=31 az=554 mg, t=29.79C rh=28.18%
+uplink ax=835 ay=31 az=554 mg, t=29.79C rh=28.18%
+uplink ax=812 ay=46 az=554 mg, t=29.79C rh=28.18%
+uplink ax=835 ay=-23 az=578 mg, t=29.79C rh=28.18%
+* 
+uplink ax=812 ay=7 az=585 mg, t=29.83C rh=28.98%
+uplink stat accel_hz=399 sht_hz=1 sht_ok=31 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=529 rx=862 node_err=0 tx_err=0 rx_err=34
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=6198 skip=156 tx=529/531 busy=2 fail=0 rx=896/7094 empty=6198 err=0 rssi=-50 tc=49757
+uplink i2c q=0/1 run=0 ok=12587 err=1074 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=820 ay=-15 az=523 mg, t=29.83C rh=28.98%
+uplink ax=835 ay=7 az=570 mg, t=29.83C rh=28.98%
+uplink ax=812 ay=23 az=546 mg, t=29.83C rh=28.98%
+uplink ax=820 ay=15 az=507 mg, t=29.83C rh=28.98%
+* 
+uplink ax=812 ay=15 az=593 mg, t=29.78C rh=29.45%
+uplink stat accel_hz=401 sht_hz=1 sht_ok=32 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=529 rx=889 node_err=0 tx_err=0 rx_err=35
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=6398 skip=156 tx=529/531 busy=2 fail=0 rx=924/7322 empty=6398 err=0 rssi=-42 tc=51390
+uplink i2c q=0/1 run=0 ok=12989 err=1108 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=820 ay=23 az=515 mg, t=29.78C rh=29.45%
+uplink ax=820 ay=31 az=539 mg, t=29.78C rh=29.45%
+uplink ax=843 ay=39 az=539 mg, t=29.78C rh=29.45%
+uplink ax=812 ay=7 az=562 mg, t=29.78C rh=29.45%
+* 
+uplink ax=835 ay=15 az=531 mg, t=29.89C rh=29.38%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=33 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=6597 skip=156 tx=533/535 busy=2 fail=0 rx=958/7555 empty=6597 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=13391 err=1143 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=-7 az=562 mg, t=29.89C rh=29.38%
+uplink ax=828 ay=23 az=546 mg, t=29.89C rh=29.38%
+uplink ax=789 ay=15 az=570 mg, t=29.89C rh=29.38%
+uplink ax=820 ay=-7 az=515 mg, t=29.89C rh=29.38%
+* 
+uplink ax=828 ay=7 az=515 mg, t=29.99C rh=29.26%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=34 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=6798 skip=156 tx=533/535 busy=2 fail=0 rx=958/7756 empty=6798 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=13793 err=1176 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=804 ay=-7 az=625 mg, t=29.99C rh=29.26%
+uplink ax=835 ay=46 az=585 mg, t=29.99C rh=29.26%
+uplink ax=835 ay=39 az=476 mg, t=29.99C rh=29.26%
+uplink ax=828 ay=15 az=476 mg, t=29.99C rh=29.26%
+* 
+uplink ax=835 ay=23 az=523 mg, t=30.02C rh=28.99%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=35 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=6998 skip=156 tx=533/535 busy=2 fail=0 rx=958/7956 empty=6998 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=14195 err=1209 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=843 ay=-15 az=539 mg, t=30.02C rh=28.99%
+uplink ax=835 ay=7 az=539 mg, t=30.02C rh=28.99%
+uplink ax=820 ay=-7 az=531 mg, t=30.02C rh=28.99%
+uplink ax=835 ay=-15 az=562 mg, t=30.02C rh=28.99%
+* 
+uplink ax=835 ay=23 az=523 mg, t=30.00C rh=28.52%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=36 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=7198 skip=156 tx=533/535 busy=2 fail=0 rx=958/8156 empty=7198 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=14597 err=1240 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=31 az=531 mg, t=30.00C rh=28.52%
+uplink ax=812 ay=39 az=539 mg, t=30.00C rh=28.52%
+uplink ax=812 ay=7 az=609 mg, t=30.00C rh=28.52%
+uplink ax=843 ay=15 az=531 mg, t=30.00C rh=28.52%
+* 
+uplink ax=812 ay=15 az=539 mg, t=30.06C rh=26.79%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=37 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=7395 skip=156 tx=533/535 busy=2 fail=0 rx=958/8353 empty=7395 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=14995 err=1274 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=835 ay=39 az=539 mg, t=30.06C rh=26.79%
+uplink ax=804 ay=0 az=609 mg, t=30.06C rh=26.79%
+uplink ax=828 ay=0 az=546 mg, t=30.06C rh=26.79%
+uplink ax=828 ay=0 az=531 mg, t=30.06C rh=26.79%
+* 
+uplink ax=851 ay=46 az=515 mg, t=30.06C rh=26.05%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=38 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=7598 skip=156 tx=533/535 busy=2 fail=0 rx=958/8556 empty=7598 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=15401 err=1308 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=15 az=507 mg, t=30.06C rh=26.05%
+uplink ax=820 ay=23 az=531 mg, t=30.06C rh=26.05%
+uplink ax=828 ay=39 az=554 mg, t=30.06C rh=26.05%
+uplink ax=828 ay=7 az=531 mg, t=30.06C rh=26.05%
+* 
+uplink ax=835 ay=39 az=468 mg, t=30.14C rh=25.19%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=39 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=7798 skip=156 tx=533/535 busy=2 fail=0 rx=958/8756 empty=7798 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=15803 err=1340 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=15 az=531 mg, t=30.14C rh=25.19%
+uplink ax=828 ay=23 az=539 mg, t=30.14C rh=25.19%
+uplink ax=820 ay=23 az=539 mg, t=30.14C rh=25.19%
+uplink ax=820 ay=-7 az=539 mg, t=30.14C rh=25.19%
+* 
+uplink ax=835 ay=31 az=531 mg, t=30.17C rh=25.33%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=40 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=7998 skip=156 tx=533/535 busy=2 fail=0 rx=958/8956 empty=7998 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=16205 err=1372 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=23 az=554 mg, t=30.17C rh=25.33%
+uplink ax=820 ay=15 az=539 mg, t=30.17C rh=25.33%
+uplink ax=812 ay=23 az=546 mg, t=30.17C rh=25.33%
+uplink ax=835 ay=39 az=554 mg, t=30.17C rh=25.33%
+* 
+uplink ax=812 ay=23 az=585 mg, t=30.21C rh=24.39%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=41 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=8198 skip=156 tx=533/535 busy=2 fail=0 rx=958/9156 empty=8198 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=16607 err=1405 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=804 ay=7 az=531 mg, t=30.21C rh=24.39%
+uplink ax=820 ay=7 az=570 mg, t=30.21C rh=24.39%
+uplink ax=835 ay=39 az=484 mg, t=30.21C rh=24.39%
+uplink ax=843 ay=31 az=453 mg, t=30.21C rh=24.39%
+* 
+uplink ax=812 ay=31 az=523 mg, t=30.19C rh=23.92%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=42 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=8398 skip=156 tx=533/535 busy=2 fail=0 rx=958/9356 empty=8398 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=17009 err=1437 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=23 az=531 mg, t=30.19C rh=23.92%
+uplink ax=828 ay=0 az=593 mg, t=30.19C rh=23.92%
+uplink ax=820 ay=39 az=539 mg, t=30.19C rh=23.92%
+uplink ax=820 ay=7 az=500 mg, t=30.19C rh=23.92%
+* 
+uplink ax=828 ay=23 az=546 mg, t=30.22C rh=23.46%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=43 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=8598 skip=156 tx=533/535 busy=2 fail=0 rx=958/9556 empty=8598 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=17411 err=1470 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=843 ay=0 az=546 mg, t=30.22C rh=23.46%
+uplink ax=835 ay=31 az=562 mg, t=30.22C rh=23.46%
+uplink ax=835 ay=15 az=539 mg, t=30.22C rh=23.46%
+uplink ax=835 ay=0 az=500 mg, t=30.22C rh=23.46%
+* 
+uplink ax=828 ay=31 az=546 mg, t=30.26C rh=22.72%
+uplink stat accel_hz=399 sht_hz=1 sht_ok=44 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=8798 skip=156 tx=533/535 busy=2 fail=0 rx=958/9756 empty=8798 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=17813 err=1506 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=820 ay=23 az=531 mg, t=30.26C rh=22.72%
+uplink ax=820 ay=15 az=578 mg, t=30.26C rh=22.72%
+uplink ax=843 ay=31 az=539 mg, t=30.26C rh=22.72%
+uplink ax=820 ay=0 az=539 mg, t=30.26C rh=22.72%
+* 
+uplink ax=804 ay=0 az=562 mg, t=30.29C rh=22.33%
+uplink stat accel_hz=401 sht_hz=1 sht_ok=45 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=8998 skip=156 tx=533/535 busy=2 fail=0 rx=958/9956 empty=8998 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=18215 err=1538 to=4 rec=4 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=851 ay=31 az=531 mg, t=30.29C rh=22.33%
+uplink ax=835 ay=-15 az=578 mg, t=30.29C rh=22.33%
+uplink ax=804 ay=0 az=539 mg, t=30.29C rh=22.33%
+uplink ax=820 ay=-23 az=492 mg, t=30.29C rh=22.33%
+* 
+uplink ax=820 ay=39 az=500 mg, t=30.32C rh=22.33%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=46 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=9198 skip=156 tx=533/535 busy=2 fail=0 rx=958/10156 empty=9198 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=18617 err=1574 to=5 rec=5 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=820 ay=39 az=523 mg, t=30.32C rh=22.33%
+uplink ax=835 ay=23 az=492 mg, t=30.32C rh=22.33%
+uplink ax=828 ay=7 az=578 mg, t=30.32C rh=22.33%
+uplink ax=820 ay=0 az=539 mg, t=30.32C rh=22.33%
+* 
+uplink ax=812 ay=-15 az=492 mg, t=30.35C rh=22.59%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=47 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=9398 skip=156 tx=533/535 busy=2 fail=0 rx=958/10356 empty=9398 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=19019 err=1607 to=5 rec=5 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=0 az=531 mg, t=30.35C rh=22.59%
+uplink ax=843 ay=39 az=484 mg, t=30.35C rh=22.59%
+uplink ax=835 ay=15 az=531 mg, t=30.35C rh=22.59%
+uplink ax=812 ay=31 az=492 mg, t=30.35C rh=22.59%
+* 
+uplink ax=859 ay=62 az=546 mg, t=30.42C rh=22.80%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=48 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=9598 skip=156 tx=533/535 busy=2 fail=0 rx=958/10556 empty=9598 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=19421 err=1639 to=5 rec=5 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=835 ay=23 az=484 mg, t=30.42C rh=22.80%
+uplink ax=804 ay=-7 az=585 mg, t=30.42C rh=22.80%
+uplink ax=812 ay=7 az=507 mg, t=30.42C rh=22.80%
+uplink ax=828 ay=39 az=546 mg, t=30.42C rh=22.80%
+* 
+uplink ax=820 ay=23 az=515 mg, t=30.39C rh=24.67%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=49 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=9798 skip=156 tx=533/535 busy=2 fail=0 rx=958/10756 empty=9798 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=19823 err=1673 to=5 rec=5 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=804 ay=7 az=570 mg, t=30.39C rh=24.67%
+uplink ax=835 ay=0 az=562 mg, t=30.39C rh=24.67%
+uplink ax=843 ay=0 az=507 mg, t=30.39C rh=24.67%
+uplink ax=851 ay=23 az=492 mg, t=30.39C rh=24.67%
+* 
+uplink ax=843 ay=23 az=476 mg, t=30.46C rh=25.75%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=50 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=9998 skip=156 tx=533/535 busy=2 fail=0 rx=958/10956 empty=9998 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=20225 err=1706 to=5 rec=5 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=39 az=523 mg, t=30.46C rh=25.75%
+uplink ax=828 ay=0 az=546 mg, t=30.46C rh=25.75%
+uplink ax=828 ay=39 az=554 mg, t=30.46C rh=25.75%
+uplink ax=812 ay=31 az=539 mg, t=30.46C rh=25.75%
+* 
+uplink ax=843 ay=-7 az=539 mg, t=30.48C rh=25.21%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=51 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=10198 skip=156 tx=533/535 busy=2 fail=0 rx=958/11156 empty=10198 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=20627 err=1738 to=5 rec=5 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=7 az=500 mg, t=30.48C rh=25.21%
+uplink ax=812 ay=23 az=578 mg, t=30.48C rh=25.21%
+uplink ax=835 ay=46 az=648 mg, t=30.48C rh=25.21%
+uplink ax=828 ay=0 az=554 mg, t=30.48C rh=25.21%
+* 
+uplink ax=828 ay=7 az=554 mg, t=30.46C rh=26.02%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=52 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=10398 skip=156 tx=533/535 busy=2 fail=0 rx=958/11356 empty=10398 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=21029 err=1772 to=6 rec=6 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=828 ay=15 az=539 mg, t=30.46C rh=26.02%
+uplink ax=835 ay=7 az=539 mg, t=30.46C rh=26.02%
+uplink ax=820 ay=15 az=531 mg, t=30.46C rh=26.02%
+uplink ax=812 ay=0 az=554 mg, t=30.46C rh=26.02%
+* 
+uplink ax=820 ay=0 az=539 mg, t=30.56C rh=25.62%
+uplink stat accel_hz=400 sht_hz=1 sht_ok=53 sht_err=0 ready=1
+adhoc stat role=GW init=1 node=1000002 tx=533 rx=919 node_err=0 tx_err=0 rx_err=39
+adhoc sm st=1 lvl=0 retry=0 rpk=0 rex=0 lrex=0 lrex_age=0ms up_gw=1 up_no=0 up_id=0 up_age=0ms gw_start=1 gw_lock=1 gw_left=0ms net_act=0 net_closed=0 net_left=0ms
+adhoc data sub=0/0 busy=0 skip=0 fail=0 ack=0 rex=0
+adhoc link rxstart=10598 skip=156 tx=533/535 busy=2 fail=0 rx=958/11556 empty=10598 err=0 rssi=-42 tc=52757
+uplink i2c q=0/1 run=0 ok=21431 err=1806 to=6 rec=6 aw=0ms ae=0ms mw=1ms me=50ms
+uplink ax=835 ay=39 az=460 mg, t=30.56C rh=25.62%
+串口错误: ClearCommError failed (PermissionError(13, '设备不识别此命令。', None, 22))
+串口已关闭

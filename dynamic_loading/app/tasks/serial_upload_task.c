@@ -1,0 +1,497 @@
+/**
+ * @file    serial_upload_task.c
+ * @brief   串口上报任务：每秒输出最近一次采集数据
+ * @details 本文件实现了基于TMOS的串口数据上报任务，主要功能包括：
+ *          - 周期性（1Hz）从传感器任务获取最新数据快照
+ *          - 格式化输出加速度计、温度、湿度等传感器数据
+ *          - 输出传感器统计信息（采样频率、成功/失败计数等）
+ *          - 通过USB CDC虚拟串口发送数据（替代传统UART）
+ *          
+ *          数据格式：
+ *          - 加速度数据：ax=xxx ay=xxx az=xxx mg
+ *          - 温度数据：t=±xx.xx°C（支持负温度）
+ *          - 湿度数据：rh=xx.xx%
+ *          - 统计信息：accel_hz=100 sht_hz=1 sht_ok=xxx sht_err=xxx ready=1
+ *          
+ *          任务事件：
+ *          - SERIAL_EVT_INIT: 初始化事件，启动周期性上报
+ *          - SERIAL_EVT_UPLOAD: 数据上报事件，执行实际的数据输出
+ *
+ * @author  WCH (南京沁恒微电子股份有限公司)
+ * @version V1.0.0
+ * @date    2022/06/16
+ */
+#include "serial_upload_task.h"
+
+#include "board.h"
+#include "i2c_bus_arbiter.h"
+#include "log_print.h"
+#include "ad_hoc_task.h"
+#include "drv_rtc.h"
+#include "sensor_task.h"
+#include "usb_cdc.h"
+#include "wchble.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define SERIAL_EVT_INIT   (0x0001u << 0)
+#define SERIAL_EVT_UPLOAD (0x0001u << 1)
+
+/* 上报周期 1s */
+#define SERIAL_UPLOAD_MS 200u
+#define SERIAL_STAT_MS 1000u
+#define SERIAL_STAT_DIV (SERIAL_STAT_MS / SERIAL_UPLOAD_MS)
+#define SERIAL_CMD_BUF_SIZE 96u
+#define SERIAL_CMD_RESET_TOKEN "GW2RST"
+#define SERIAL_CMD_RESET_ACK "GW2RST:OK\r\n"
+#define SERIAL_CMD_BDT_SET_TOKEN "BDTSET"
+#define SERIAL_CMD_UNIX_SET_TOKEN "UNIXSET"
+#define SERIAL_CMD_TIME_SET_ERR "TIMESET:ERR\r\n"
+#define SERIAL_CMD_US_MAX 1000000u
+
+static tmosTaskID s_serial_task_id = INVALID_TASK_ID;
+static uint16_t s_stat_div_cnt = 0u;
+static char s_cmd_buf[SERIAL_CMD_BUF_SIZE];
+static uint16_t s_cmd_len = 0u;
+
+static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvents events);
+static void serial_poll_usb_command(void);
+static uint8_t serial_match_reset_cmd(const char *buf, uint16_t len);
+static uint8_t serial_try_match_time_cmd(const char *buf,
+                                         uint16_t len,
+                                         uint8_t *is_unix,
+                                         uint32_t *sec,
+                                         uint32_t *sub_us);
+static uint8_t serial_try_parse_after_token(const char *cursor, uint32_t *sec, uint32_t *sub_us);
+static const char *serial_skip_blank(const char *cursor);
+static uint8_t serial_try_parse_u32(const char **cursor, uint32_t *out);
+static uint8_t serial_is_cmd_boundary(char ch);
+
+/**
+ * @brief  串口上传任务初始化函数
+ * @details 注册TMOS串口上传任务并触发初始化事件。
+ *          如果任务已存在或注册失败，则直接返回。
+ */
+void serial_upload_task_init(void)
+{
+    if (s_serial_task_id != INVALID_TASK_ID)
+    {
+        return;
+    }
+
+    s_serial_task_id = TMOS_ProcessEventRegister(serial_upload_task_process_event);
+    if (s_serial_task_id == INVALID_TASK_ID)
+    {
+        LOG_PRINT("serial upload task register failed\r\n");
+        return;
+    }
+
+    tmos_set_event(s_serial_task_id, SERIAL_EVT_INIT);
+}
+
+/**
+ * @brief  串口上传任务事件处理函数
+ * @details 处理串口上传任务的各类事件：
+ *          - SERIAL_EVT_INIT: 启动周期性数据上报定时器
+ *          - SERIAL_EVT_UPLOAD: 获取传感器数据并格式化输出
+ * 
+ * @param[in] task_id 当前任务ID
+ * @param[in] events 待处理的事件位图
+ * @return 未处理的事件
+ */
+static tmosEvents serial_upload_task_process_event(tmosTaskID task_id, tmosEvents events)
+{
+    sensor_snapshot_t snap;
+    ad_hoc_task_status_t adhoc_st;
+    i2c_bus_stats_t i2c_st;
+    int32_t t_abs;
+
+    (void)task_id;
+
+    if (events & SERIAL_EVT_INIT)
+    {
+        tmos_start_reload_task(s_serial_task_id, SERIAL_EVT_UPLOAD, MS1_TO_SYSTEM_TIME(SERIAL_UPLOAD_MS));
+        s_stat_div_cnt = 0u;
+        s_cmd_len = 0u;
+        return (events ^ SERIAL_EVT_INIT);
+    }
+
+    if (events & SERIAL_EVT_UPLOAD)
+    {
+        serial_poll_usb_command();
+
+        /* 读取最近一次传感器结果并格式化输出 */
+        sensor_task_get_snapshot(&snap);
+        t_abs = (snap.temp_centi_c >= 0) ? snap.temp_centi_c : -snap.temp_centi_c;
+
+        LOG_PRINT("uplink ax=%ld ay=%ld az=%ld mg, t=%s%ld.%02ldC rh=%ld.%02ld%%\r\n",
+                  (long)snap.accel_mg_x,
+                  (long)snap.accel_mg_y,
+                  (long)snap.accel_mg_z,
+                  (snap.temp_centi_c < 0) ? "-" : "",
+                  (long)(t_abs / 100),
+                  (long)(t_abs % 100),
+                  (long)(snap.rh_centi_pct / 100),
+                  (long)(snap.rh_centi_pct % 100));
+        s_stat_div_cnt++;
+        if (s_stat_div_cnt >= SERIAL_STAT_DIV)
+        {
+            s_stat_div_cnt = 0u;
+            LOG_PRINT("uplink stat accel_hz=%u sht_hz=%u sht_ok=%lu sht_err=%lu ready=%u\r\n",
+                      (unsigned int)snap.accel_hz,
+                      (unsigned int)snap.sht_hz,
+                      (unsigned long)snap.sht_ok_cnt,
+                      (unsigned long)snap.sht_err_cnt,
+                      (unsigned int)snap.ready);
+            ad_hoc_task_get_status(&adhoc_st);
+            LOG_PRINT("adhoc stat role=%s init=%u node=%lu tx=%lu rx=%lu node_err=%lu tx_err=%lu rx_err=%lu\r\n",
+                      adhoc_st.role_gateway != 0u ? "GW" : "BCN",
+                      (unsigned int)adhoc_st.inited,
+                      (unsigned long)adhoc_st.node_id,
+                      (unsigned long)adhoc_st.tx_cnt,
+                      (unsigned long)adhoc_st.rx_cnt,
+                      (unsigned long)adhoc_st.node_err_cnt,
+                      (unsigned long)adhoc_st.tx_err_cnt,
+                      (unsigned long)adhoc_st.rx_err_cnt);
+            LOG_PRINT("adhoc sm st=%u lvl=%u retry=%u rpk=%u rex=%lu lrex=%u lrex_age=%lums up_gw=%u up_no=%u up_id=%lu up_age=%lums gw_start=%u gw_lock=%u gw_left=%lums net_act=%u net_closed=%u net_left=%lums\r\n",
+                      (unsigned int)adhoc_st.sm_state,
+                      (unsigned int)adhoc_st.sm_joined_level,
+                      (unsigned int)adhoc_st.sm_retry_count,
+                      (unsigned int)adhoc_st.sm_retry_peak,
+                      (unsigned long)adhoc_st.sm_retry_exhausted_count,
+                      (unsigned int)adhoc_st.sm_last_retry_exhausted,
+                      (unsigned long)adhoc_st.sm_last_retry_exhausted_age_ms,
+                      (unsigned int)adhoc_st.sm_upstream_gateway_no,
+                      (unsigned int)adhoc_st.sm_upstream_no,
+                      (unsigned long)adhoc_st.sm_upstream_id,
+                      (unsigned long)adhoc_st.sm_upstream_last_seen_age_ms,
+                      (unsigned int)adhoc_st.sm_gateway_network_started,
+                      (unsigned int)adhoc_st.sm_gateway_network_locked,
+                      (unsigned long)adhoc_st.sm_gateway_window_left_ms,
+                      (unsigned int)adhoc_st.sm_network_lock_active,
+                      (unsigned int)adhoc_st.sm_network_lock_closed,
+                      (unsigned long)adhoc_st.sm_network_lock_left_ms);
+            LOG_PRINT("adhoc data sub=%lu/%lu busy=%lu skip=%lu fail=%lu ack=%lu rex=%lu\r\n",
+                      (unsigned long)adhoc_st.data_submit_ok,
+                      (unsigned long)adhoc_st.data_submit_try,
+                      (unsigned long)adhoc_st.data_submit_busy,
+                      (unsigned long)adhoc_st.data_submit_state_skip,
+                      (unsigned long)adhoc_st.data_submit_fail,
+                      (unsigned long)adhoc_st.tx_report_acked,
+                      (unsigned long)adhoc_st.tx_report_retry_exhausted);
+            LOG_PRINT("adhoc link rxstart=%lu skip=%lu tx=%lu/%lu busy=%lu fail=%lu rx=%lu/%lu empty=%lu err=%lu rssi=%d tc=%u\r\n",
+                      (unsigned long)adhoc_st.link_start_rx_cnt,
+                      (unsigned long)adhoc_st.link_start_rx_skip_txbusy_cnt,
+                      (unsigned long)adhoc_st.link_tx_ok_cnt,
+                      (unsigned long)adhoc_st.link_tx_req_cnt,
+                      (unsigned long)adhoc_st.link_tx_busy_cnt,
+                      (unsigned long)adhoc_st.link_tx_fail_cnt,
+                      (unsigned long)adhoc_st.link_rx_ok_cnt,
+                      (unsigned long)adhoc_st.link_rx_poll_cnt,
+                      (unsigned long)adhoc_st.link_rx_empty_cnt,
+                      (unsigned long)adhoc_st.link_rx_err_cnt,
+                      (int)adhoc_st.link_last_rssi,
+                      (unsigned int)adhoc_st.link_last_rx_tc);
+            if (drv_rtc_is_ready() != 0u)
+            {
+                uint64_t bdt_us = drv_rtc_get_bdt_time_us();
+                uint32_t bdt_sec = (uint32_t)(bdt_us / 1000000ull);
+                uint32_t sub_us = (uint32_t)(bdt_us % 1000000ull);
+                LOG_PRINT("rtc stat bdt=%lu.%06lu unix=%lu src=%s\r\n",
+                          (unsigned long)bdt_sec,
+                          (unsigned long)sub_us,
+                          (unsigned long)drv_rtc_bdt_to_unix_seconds(bdt_sec),
+                          (drv_rtc_is_using_lse() != 0u) ? "LSE" : "LSI");
+            }
+
+            i2c_bus_get_stats(I2C_NUM_1, &i2c_st);
+            LOG_PRINT("uplink i2c q=%u/%u run=%u ok=%lu err=%lu to=%lu rec=%lu aw=%lums ae=%lums mw=%lums me=%lums\r\n",
+                      (unsigned int)i2c_st.queue_depth_curr,
+                      (unsigned int)i2c_st.queue_depth_peak,
+                      (unsigned int)i2c_st.running,
+                      (unsigned long)i2c_st.done_ok,
+                      (unsigned long)i2c_st.done_err,
+                      (unsigned long)i2c_st.timeout_cnt,
+                      (unsigned long)i2c_st.recover_cnt,
+                      (unsigned long)i2c_st.avg_wait_ms,
+                      (unsigned long)i2c_st.avg_exec_ms,
+                      (unsigned long)i2c_st.max_wait_ms,
+                      (unsigned long)i2c_st.max_exec_ms);
+        }
+
+        return (events ^ SERIAL_EVT_UPLOAD);
+    }
+
+    return 0;
+}
+
+static uint8_t serial_match_reset_cmd(const char *buf, uint16_t len)
+{
+    static const char token[] = SERIAL_CMD_RESET_TOKEN;
+    const uint16_t token_len = (uint16_t)(sizeof(token) - 1u);
+    uint16_t idx;
+
+    if (len < token_len)
+    {
+        return 0u;
+    }
+
+    for (idx = 0u; idx + token_len <= len; idx++)
+    {
+        uint16_t next = (uint16_t)(idx + token_len);
+        if (memcmp(&buf[idx], token, token_len) != 0)
+        {
+            continue;
+        }
+        if (idx != 0u && buf[idx - 1u] != '\r' && buf[idx - 1u] != '\n')
+        {
+            continue;
+        }
+        if (next < len &&
+            buf[next] != '\r' &&
+            buf[next] != '\n' &&
+            buf[next] != ' ' &&
+            buf[next] != '\t')
+        {
+            continue;
+        }
+        return 1u;
+    }
+
+    return 0u;
+}
+
+static void serial_poll_usb_command(void)
+{
+    uint8_t chunk[CDC_MAX_PACKET_SIZE];
+    uint16_t n;
+
+    for (;;)
+    {
+        n = CDC_ReceiveData(chunk, sizeof(chunk));
+        if (n == 0u)
+        {
+            break;
+        }
+        if ((uint16_t)(s_cmd_len + n) > (uint16_t)sizeof(s_cmd_buf))
+        {
+            s_cmd_len = 0u;
+        }
+        memcpy(&s_cmd_buf[s_cmd_len], chunk, n);
+        s_cmd_len = (uint16_t)(s_cmd_len + n);
+    }
+
+    if (s_cmd_len == 0u)
+    {
+        return;
+    }
+
+    if (serial_match_reset_cmd(s_cmd_buf, s_cmd_len) == 0u)
+    {
+        char cmd_local[SERIAL_CMD_BUF_SIZE + 1u];
+        uint8_t is_unix = 0u;
+        uint32_t sec = 0u;
+        uint32_t sub_us = 0u;
+
+        memcpy(cmd_local, s_cmd_buf, s_cmd_len);
+        cmd_local[s_cmd_len] = '\0';
+        if (serial_try_match_time_cmd(cmd_local, s_cmd_len, &is_unix, &sec, &sub_us) != 0u)
+        {
+            uint32_t bdt_sec = sec;
+            char ack[80];
+            int ack_len;
+
+            if (is_unix != 0u)
+            {
+                bdt_sec = drv_rtc_unix_to_bdt_seconds(sec);
+            }
+            if (bdt_sec == 0u && sec != 0u && is_unix != 0u)
+            {
+                static const char err_msg[] = SERIAL_CMD_TIME_SET_ERR;
+                (void)CDC_SendData((uint8_t *)err_msg, (uint16_t)(sizeof(err_msg) - 1u));
+                LOG_PRINT("usb cmd time rejected unix=%lu\r\n", (unsigned long)sec);
+                s_cmd_len = 0u;
+                return;
+            }
+
+            drv_rtc_set_bdt_time_us(bdt_sec, sub_us);
+            ack_len = snprintf(ack,
+                               sizeof(ack),
+                               "TIMESET:OK bdt=%lu.%06lu unix=%lu\r\n",
+                               (unsigned long)bdt_sec,
+                               (unsigned long)(sub_us % SERIAL_CMD_US_MAX),
+                               (unsigned long)drv_rtc_bdt_to_unix_seconds(bdt_sec));
+            if (ack_len > 0)
+            {
+                uint16_t ack_send_len = (uint16_t)ack_len;
+                if (ack_send_len > (uint16_t)(sizeof(ack) - 1u))
+                {
+                    ack_send_len = (uint16_t)(sizeof(ack) - 1u);
+                }
+                (void)CDC_SendData((uint8_t *)ack, ack_send_len);
+            }
+            LOG_PRINT("usb cmd time accepted bdt=%lu.%06lu unix=%lu src=%s\r\n",
+                      (unsigned long)bdt_sec,
+                      (unsigned long)(sub_us % SERIAL_CMD_US_MAX),
+                      (unsigned long)drv_rtc_bdt_to_unix_seconds(bdt_sec),
+                      (is_unix != 0u) ? "UNIXSET" : "BDTSET");
+            s_cmd_len = 0u;
+            return;
+        }
+
+        if (s_cmd_len >= (uint16_t)sizeof(s_cmd_buf))
+        {
+            s_cmd_len = 0u;
+        }
+        return;
+    }
+
+    {
+        char ack[] = SERIAL_CMD_RESET_ACK;
+        (void)CDC_SendData((uint8_t *)ack, (uint16_t)(sizeof(ack) - 1u));
+    }
+    LOG_PRINT("usb cmd reset accepted\r\n");
+    s_cmd_len = 0u;
+    HAL_Delay(20);
+    NVIC_SystemReset();
+}
+
+static uint8_t serial_try_match_time_cmd(const char *buf,
+                                         uint16_t len,
+                                         uint8_t *is_unix,
+                                         uint32_t *sec,
+                                         uint32_t *sub_us)
+{
+    static const char bdt_token[] = SERIAL_CMD_BDT_SET_TOKEN;
+    static const char unix_token[] = SERIAL_CMD_UNIX_SET_TOKEN;
+    uint16_t idx = 0u;
+
+    if (buf == NULL || is_unix == NULL || sec == NULL || sub_us == NULL)
+    {
+        return 0u;
+    }
+
+    while (idx < len)
+    {
+        const char *cursor = &buf[idx];
+        uint8_t unix_mode = 0u;
+        if ((idx > 0u) && (serial_is_cmd_boundary(buf[idx - 1u]) == 0u))
+        {
+            idx++;
+            continue;
+        }
+
+        if ((uint16_t)(len - idx) >= (uint16_t)(sizeof(bdt_token) - 1u) &&
+            memcmp(cursor, bdt_token, sizeof(bdt_token) - 1u) == 0)
+        {
+            cursor += (sizeof(bdt_token) - 1u);
+            unix_mode = 0u;
+        }
+        else if ((uint16_t)(len - idx) >= (uint16_t)(sizeof(unix_token) - 1u) &&
+                 memcmp(cursor, unix_token, sizeof(unix_token) - 1u) == 0)
+        {
+            cursor += (sizeof(unix_token) - 1u);
+            unix_mode = 1u;
+        }
+        else
+        {
+            idx++;
+            continue;
+        }
+
+        if (serial_try_parse_after_token(cursor, sec, sub_us) != 0u)
+        {
+            *is_unix = unix_mode;
+            return 1u;
+        }
+        idx++;
+    }
+
+    return 0u;
+}
+
+static uint8_t serial_try_parse_after_token(const char *cursor, uint32_t *sec, uint32_t *sub_us)
+{
+    uint32_t sec_local = 0u;
+    uint32_t us_local = 0u;
+    const char *p = cursor;
+
+    if (p == NULL || sec == NULL || sub_us == NULL)
+    {
+        return 0u;
+    }
+
+    p = serial_skip_blank(p);
+    if (*p == '=')
+    {
+        p++;
+    }
+    p = serial_skip_blank(p);
+    if (serial_try_parse_u32(&p, &sec_local) == 0u)
+    {
+        return 0u;
+    }
+
+    p = serial_skip_blank(p);
+    if (*p == ',' || *p == '.')
+    {
+        p++;
+        p = serial_skip_blank(p);
+        if (serial_try_parse_u32(&p, &us_local) == 0u)
+        {
+            return 0u;
+        }
+    }
+    p = serial_skip_blank(p);
+    if (*p != '\0' && *p != '\r' && *p != '\n')
+    {
+        return 0u;
+    }
+
+    if (us_local >= SERIAL_CMD_US_MAX)
+    {
+        sec_local += (us_local / SERIAL_CMD_US_MAX);
+        us_local %= SERIAL_CMD_US_MAX;
+    }
+
+    *sec = sec_local;
+    *sub_us = us_local;
+    return 1u;
+}
+
+static const char *serial_skip_blank(const char *cursor)
+{
+    const char *p = cursor;
+    while (*p == ' ' || *p == '\t')
+    {
+        p++;
+    }
+    return p;
+}
+
+static uint8_t serial_try_parse_u32(const char **cursor, uint32_t *out)
+{
+    char *endptr;
+    unsigned long value;
+
+    if (cursor == NULL || *cursor == NULL || out == NULL)
+    {
+        return 0u;
+    }
+
+    value = strtoul(*cursor, &endptr, 10);
+    if (endptr == *cursor)
+    {
+        return 0u;
+    }
+
+    *cursor = endptr;
+    *out = (uint32_t)value;
+    return 1u;
+}
+
+static uint8_t serial_is_cmd_boundary(char ch)
+{
+    return (uint8_t)((ch == '\r') || (ch == '\n') || (ch == ' ') || (ch == '\t'));
+}

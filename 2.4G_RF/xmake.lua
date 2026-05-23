@@ -16,7 +16,6 @@ add_rules("mode.debug", "mode.release")
 set_config("mode", "debug")
 
 local default_adhoc_repo_dir = ""
-local external_adhoc_repo_dir = ""
 
 -- ============================================================================
 -- 构建选项配置
@@ -45,16 +44,17 @@ option("rf_tg_id")
     set_description("RF tg_id for this firmware image (0..20)")
 option_end()
 
-option("adhoc_gateway2_tg_id")
-    set_default("255")
+option("adhoc_role")
+    set_default("bcn")
     set_showmenu(true)
-    set_description("Second gateway rf_tg_id for 2GW test (0..20, 255=disabled)")
+    set_values("gw", "bcn")
+    set_description("Ad-Hoc role for this firmware image (gw or bcn)")
 option_end()
 
-option("adhoc_gateway2_no")
-    set_default("1")
+option("adhoc_gw_no")
+    set_default("0")
     set_showmenu(true)
-    set_description("Second gateway gateway_no for 2GW test (0..7)")
+    set_description("Gateway number for gw role (0..7)")
 option_end()
 
 option("adhoc_repo_dir")
@@ -72,8 +72,8 @@ local toolchain_root = "e:/APP/MRS2/MounRiver_Studio2/resources/app/resources/wi
 local selected_ver = get_config("wch_gcc_ver") or "15"      -- 获取用户选择的GCC版本
 local log_print_cfg = tostring(get_config("log_print") or "true")  -- 获取日志输出配置
 local rf_tg_id_cfg = tonumber(get_config("rf_tg_id") or "0") or 0
-local adhoc_gateway2_tg_id_cfg = tonumber(get_config("adhoc_gateway2_tg_id") or "255") or 255
-local adhoc_gateway2_no_cfg = tonumber(get_config("adhoc_gateway2_no") or "1") or 1
+local adhoc_role_cfg = tostring(get_config("adhoc_role") or "bcn")
+local adhoc_gw_no_cfg = tonumber(get_config("adhoc_gw_no") or "0") or 0
 local adhoc_repo_dir_cfg = get_config("adhoc_repo_dir") or default_adhoc_repo_dir
 local toolchain_path = nil
 local use_adhoc_package_repo = false
@@ -102,19 +102,15 @@ elseif rf_tg_id_cfg > 20 then
     rf_tg_id_cfg = 20
 end
 
-if adhoc_gateway2_tg_id_cfg < 0 then
-    adhoc_gateway2_tg_id_cfg = 255
-elseif adhoc_gateway2_tg_id_cfg > 255 then
-    adhoc_gateway2_tg_id_cfg = 255
-end
-if adhoc_gateway2_tg_id_cfg > 20 and adhoc_gateway2_tg_id_cfg ~= 255 then
-    adhoc_gateway2_tg_id_cfg = 255
+adhoc_role_cfg = string.lower(adhoc_role_cfg)
+if adhoc_role_cfg ~= "gw" and adhoc_role_cfg ~= "bcn" then
+    adhoc_role_cfg = "bcn"
 end
 
-if adhoc_gateway2_no_cfg < 0 then
-    adhoc_gateway2_no_cfg = 0
-elseif adhoc_gateway2_no_cfg > 7 then
-    adhoc_gateway2_no_cfg = 7
+if adhoc_gw_no_cfg < 0 then
+    adhoc_gw_no_cfg = 0
+elseif adhoc_gw_no_cfg > 7 then
+    adhoc_gw_no_cfg = 7
 end
 
 
@@ -208,7 +204,7 @@ end
 -- 保存SDK路径到配置中，供后续使用
 set_config("sdk", toolchain_path)
 
--- 自动生成compile_commands.json文件，用于VSCode等编辑器的智能提示
+-- 生成compile_commands.json文件，用于VSCode的智能提示
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 
 if use_adhoc_package_repo then
@@ -421,9 +417,6 @@ target("CH32V208GBU_Templete")
     else
         add_includedirs("lib/Ad-Hoc-lib/include", "lib/Ad-Hoc-lib/port/ch32v208")
     end
-    if os.isdir(path.join(os.scriptdir(), "test")) then
-        add_includedirs("test")
-    end
     
     -- 为汇编文件添加启动文件目录
     add_asflags("-I" .. os.scriptdir() .. "/sdk/Startup", {force = true})
@@ -440,11 +433,11 @@ target("CH32V208GBU_Templete")
     else
         add_defines("LOG_PRINT_ENABLE=1")
     end
+    add_defines("CLK_OSC32K=0")
     add_defines("ARF_USE_EXTERNAL_MEM_BUF=1")
     add_defines("RF_TG_ID=" .. tostring(rf_tg_id_cfg))
-    add_defines("ADHOC_TASK_GATEWAY_PRIMARY_TG_ID=0")
-    add_defines("ADHOC_TASK_GATEWAY_SECONDARY_TG_ID=" .. tostring(adhoc_gateway2_tg_id_cfg))
-    add_defines("ADHOC_TASK_GATEWAY_SECONDARY_NO=" .. tostring(adhoc_gateway2_no_cfg))
+    add_defines("ADHOC_TASK_ROLE_GATEWAY=" .. (adhoc_role_cfg == "gw" and "1" or "0"))
+    add_defines("ADHOC_TASK_GATEWAY_NO=" .. tostring(adhoc_gw_no_cfg))
     add_defines("ADHOC_ENABLE=1")
     
     -- ============================================================================
