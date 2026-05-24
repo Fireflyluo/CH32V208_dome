@@ -1,199 +1,312 @@
-# CH32V208 动态模块运行原理与第二阶段 ABI
+# CH32V208 动态模块运行原理
 
-## 1. 当前方案是什么
+## 1. 本方案的准确定位
 
-这套方案不是通用动态链接器，也不是位置无关代码 PIC。
+这套方案不是：
 
-它的本质是固定装载地址的 RAM 模块：
+- 通用动态链接器
+- 任意地址可运行的 PIC
+- 带重定位器的 ELF loader
 
-1. 模块单独编译。
-2. 编译时把模块固定链接到 `RAM_MODULE` 起始地址。
-3. 再把模块 ELF 转成纯二进制 `bin`。
-4. 把 `bin` 生成为 C 数组，跟主固件一起链接进 `FLASH1`。
-5. 运行时由 loader 把某个模块 blob 从 `FLASH1` 拷贝到固定 RAM 槽位。
-6. 执行 `fence.i`。
-7. 再通过函数指针跳到模块入口。
+这套方案实际是：
 
-所以核心不是“代码可以装到任意地方跑”，而是“编译地址和运行地址始终一致”。
+- 固定地址编译
+- 固定地址装载
+- 运行时复制到 RAM
+- 再通过导出表调用
 
-## 2. 当前内存布局
+所以它更准确的名字应该是：
 
-链接脚本 [sdk/HAL/Link.ld](../sdk/HAL/Link.ld) 里把内存分成了三块：
+“固定装载地址的 RAM 模块系统”
 
-- `FLASH0`
-  前 128KB，主固件热点代码和常规启动路径。
-- `FLASH1`
-  非零等待 flash，用来放只读数据和模块 blob。
-- `RAM_MODULE`
-  固定模块槽位，当前地址为 `0x2000E000..0x20010000`，大小 `8KB`。
+## 2. 当前运行路径
 
-同时定义了两个关键段：
+当前模块执行路径如下：
 
-- `.flash1_module`
-  主固件中的模块镜像存放区。
-- `.module_slot`
-  RAM 中真正执行模块代码的槽位。
+1. 模块单独编译
+2. 使用独立链接脚本，固定链接到 `RAM_MODULE`
+3. 生成纯二进制 payload
+4. 加上镜像头和 CRC32
+5. 作为数组链接进主固件的 `FLASH1`
+6. 运行时由 loader 校验镜像
+7. 复制到 `RAM_MODULE`
+8. 执行 `fence.i`
+9. 解析 `module_get_exports()`
+10. 宿主通过 `init/tick/call/deinit` 调用模块
 
-这意味着当前模型是：
+当前相关文件：
 
-- 同一时刻只运行一个模块。
-- 不同模块共享同一块 `RAM_MODULE`。
-- 切换模块时，新模块会覆盖旧模块代码。
+- [sdk/HAL/Link.ld](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/sdk/HAL/Link.ld:1>)
+- [modules/ram_demo/module_link.ld](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/modules/ram_demo/module_link.ld:1>)
+- [app/module_loader.c](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/app/module_loader.c:1>)
+- [scripts/build_modules.py](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/scripts/build_modules.py:1>)
 
-## 3. `fence.i` 的作用
+## 3. 为什么最开始 LED demo 很容易成功
 
-模块代码最开始只是普通数据：
+LED demo 之所以容易成功，是因为它几乎满足“最理想模块”的全部条件：
 
-- 先存放在 `FLASH1`
-- 再被 `memcpy` 到 `RAM_MODULE`
+- 代码很小
+- 不需要复杂数据结构
+- 几乎没有运行库依赖
+- 只有简单的 `tick` 逻辑
+- 只通过宿主回调控制一个输出
 
-RISC-V 在这种“运行时写入指令，再立即执行”的场景下，需要显式执行 `fence.i`，让后续取指看到刚写进去的新代码。
+所以第一阶段 PoC 证明的是：
 
-如果没有这一步，CPU 可能仍然按旧的取指视图执行，属于典型的运行时装载风险点。
+- 固定槽位可行
+- `FLASH1 -> RAM_MODULE` 可行
+- `fence.i` 后跳转执行可行
 
-当前实现见 [app/module_loader.c](../app/module_loader.c)。
+但它并不能自动证明“复杂算法模块也一定没坑”。
 
-## 4. 第一阶段 PoC 为什么容易成功
+## 4. 为什么 `impact_displacement` 比 LED 难很多
 
-第一阶段的 LED 模块非常简单，只有一个极小入口函数。
+`impact_displacement` 这种真实算法模块，会比 LED demo 多出几类问题：
 
-它的特点是：
+### 4.1 体积问题
 
-- 没有全局可写状态
-- 没有 `.data/.bss`
-- 没有外部符号依赖
-- 没有中断和任务注册
-- 输入输出只通过参数和返回值完成
+它不再是几个指令，而是一个真实算法库：
 
-因此它本质上就是一小段纯代码，非常适合验证：
+- 有更多函数
+- 有更多常量
+- 会带来更多代码尺寸
 
-- `FLASH1 -> RAM_MODULE` 拷贝
-- `fence.i`
-- 函数指针跳转
-- 多个模块共用同一槽位切换执行
+这次实测模块 payload 约 `13.2KB`，因此：
 
-## 5. 第一阶段的局限
+- 原来 `8KB` 槽位不够
+- 这次已经把 `RAM_MODULE` 扩到了 `16KB`
 
-第一阶段只能证明“可以动态装载并执行”，但还不能很好承载真实功能模块。
+### 4.2 运行库依赖
 
-主要问题有：
+算法库里会自然出现：
 
-- 模块状态没有合适归属。
-- 模块无法规范地调用宿主服务。
-- 模块接口过薄，后续扩展会很痛。
+- `sqrtf`
+- `sinf`
+- 浮点辅助函数
+- `memset` 之类的工具函数
 
-这也是为什么它适合点灯 PoC，不适合直接承载 `Ad-Hoc-lib` 这类更重的库。
+这会引入：
 
-## 6. 第二阶段 ABI 目标
+- `libm`
+- `libgcc`
+- 小数据区访问
+- 更多内部状态和符号
 
-第二阶段的目标，是把模块从“代码片段”升级成“受控模块”。
+### 4.3 `gp` 问题
 
-统一 ABI 定义在 [app/include/module_abi.h](../app/include/module_abi.h)，核心思想是三件事：
+这是最关键的一点。
 
-- 宿主 API：主程序把允许模块使用的能力通过函数表传进去。
-- 模块上下文：模块运行状态放在宿主分配的 `ctx` 里。
-- 导出表：模块不再直接执行业务，而是先返回一张导出表。
+在 RISC-V 上，模块和宿主可能拥有不同的：
 
-当前导出表模型包含：
+- `__global_pointer$`
 
-- `magic`
-- `abi_version`
-- `name`
-- `ctx_size`
-- `init(ctx, host)`
-- `tick(ctx, host, tick)`
-- `deinit(ctx, host)`
+如果模块内部使用自己的小数据区，而宿主直接用宿主 `gp` 去调用模块，结果通常就是：
 
-主程序侧的调用流程在 [app/tasks/tmos_led_task.c](../app/tasks/tmos_led_task.c)。
+- 读错全局/静态数据
+- 跳飞
+- 直接复位
 
-## 7. 为什么要用 host API 和 ctx
+所以当前 ABI 已经加了：
 
-### 7.1 host API
+- `module_exports_t.global_pointer`
 
-模块不应该直接依赖主程序内部全局符号，否则边界会很脆，后面也不利于保护和复用。
+宿主在调用模块入口前必须：
 
-所以当前做法是：主程序主动把宿主能力以函数表形式传给模块。
+1. 保存宿主 `gp`
+2. 切换到模块 `gp`
+3. 调用模块
+4. 恢复宿主 `gp`
 
-目前 LED 演示里只给了两项：
+当前实现位置：
 
-- `led_write`
-- `log`
+- [modules/include/module_abi.h](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/modules/include/module_abi.h:1>)
+- [app/module_loader.c](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/app/module_loader.c:1>)
+- [app/impact_module_runtime.c](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/app/impact_module_runtime.c:1>)
 
-后面可以继续扩展成：
+## 5. 为什么要有 `fence.i`
 
-- `tick_ms`
-- `malloc/free`
-- `gpio/i2c/spi`
-- `rf_send`
-- `timer_start`
+`fence.i` 是 RISC-V 的指令同步指令。
 
-### 7.2 ctx
+在这里的作用是：
 
-模块运行状态优先放在 `module_ctx_t`，而不是模块自己的全局可写段里。
+- 先把模块字节复制到 RAM
+- 再告诉 CPU：后续从这块 RAM 取指时，要看到刚刚写进去的新代码
 
-这样有几个好处：
+不做这一步，CPU 可能还会按旧的取指状态执行。
 
-- 不需要先实现模块 `.data/.bss` 初始化器。
-- 切换模块时状态边界更清楚。
-- 宿主可以决定何时清零和回收状态。
-- 更适合后续迁移算法模块或协议子模块。
+当前实现位置：
 
-## 8. 当前构建链路
+- [app/module_loader.c](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/app/module_loader.c:36>)
 
-当前推荐的构建路径已经收敛为一条：
+## 6. 为什么模块镜像要做头部和 CRC32
 
-1. 主固件构建前自动运行 [scripts/build_led_modules.py](../scripts/build_led_modules.py)。
-2. 脚本把 `modules/led_*` 下的模块分别编成固定地址 ELF/bin。
-3. 脚本自动生成 [app/led_module_programs.c](../app/led_module_programs.c)。
-4. 主固件把这些 blob 链接进 `.flash1_module`。
-5. 运行时由 [app/module_loader.c](../app/module_loader.c) 装载并由 [app/tasks/tmos_led_task.c](../app/tasks/tmos_led_task.c) 调度。
+当前模块镜像不是裸 payload，而是：
 
-这比第一阶段那条“单独 demo target -> 生成单个 blob”的路径更接近真实使用方式。
+- `module_image_header_t`
+- `payload`
 
-## 9. 下一步怎么迭代
+头部定义在：
 
-推荐顺序是：
+- [modules/include/module_image.h](</d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/modules/include/module_image.h:1>)
 
-1. 先把 ABI 稳定下来。
-2. 再给模块镜像加头部信息。
-3. 再加完整性校验。
-4. 最后才做加密。
-
-模块头部至少建议包含：
+当前校验字段：
 
 - `magic`
 - `version`
+- `header_size`
 - `payload_size`
-- `entry_offset`
-- `crc` 或 `hash`
+- `payload_crc32`
+- `load_offset`
 
-这样 loader 就不只是“复制字节数组”，而是识别“模块镜像”。
+运行时校验顺序：
 
-## 10. 为什么还不适合直接搬整套 `Ad-Hoc-lib`
+1. 检查镜像是否位于 `FLASH1`
+2. 检查 `magic/version`
+3. 检查头大小和 payload 大小
+4. 重新计算 payload CRC32
+5. 校验通过才允许复制到 `RAM_MODULE`
 
-因为一旦进入整库级别，问题会立刻变多：
+它当前提供的是：
 
-- 全局状态
-- `.data/.bss`
-- 宿主依赖
-- 回调和任务生命周期
-- 中断或底层硬件耦合
+- 完整性校验
 
-更合理的顺序是先切小块，例如：
+它当前还不是：
 
-- 一个滤波算法模块
-- 一个帧编解码模块
-- 一个局部状态机模块
+- 带密钥认证
+- 数字签名
+- 加密保护
 
-把最纯的一段先迁进这个动态模块框架，再逐步扩大边界。
+## 7. 为什么要区分 `tick` 和 `call`
 
-## 11. 当前结论
+一开始 ABI 只有：
 
-到第二阶段为止，这条技术路线已经具备下面几个关键性质：
+- `init`
+- `tick`
+- `deinit`
 
-- 多个模块可以静态存放在 `FLASH1`
-- 运行时可装载到同一个固定 `RAM_MODULE`
-- 宿主可通过统一 ABI 调用不同模块
-- 模块切换前后可以显式执行 `init/deinit`
+这对 LED demo 足够，但对真实算法不够自然。
 
-这说明在 CH32V208 这种没有硬件安全根的 MCU 上，“固定地址 RAM 模块 + FLASH1 静态存放 + 后续叠加加密/校验”的方案是可落地的。
+例如 `impact_displacement` 更像下面这种命令式接口：
+
+- `get_default_cfg`
+- `configure`
+- `reset`
+- `begin_event`
+- `set_baseline`
+- `feed_sample`
+- `end_event`
+
+如果强行塞进 `tick`，会带来：
+
+- 宿主和模块语义混乱
+- 参数打包很丑
+- 状态难维护
+
+所以当前 ABI 已经扩成：
+
+- `init`
+- `tick`
+- `call`
+- `deinit`
+
+这样：
+
+- 简单状态机继续用 `tick`
+- 算法库走 `call`
+
+## 8. 当前单槽位模型意味着什么
+
+当前 `RAM_MODULE` 只有一个槽位。
+
+这意味着：
+
+- 同一时刻只能装一个模块
+- 模块之间不能并行常驻
+- 谁先装进去，谁就占住这块 RAM
+
+所以这次为了让 `impact_displacement` 跑通，主程序里先停掉了 LED 动态模块任务。
+
+这不是 bug，而是当前模型的设计边界。
+
+如果后面需要：
+
+- LED 模块
+- 滤波模块
+- 协议模块
+
+按需切换，就要再加一层模块管理器，负责：
+
+- 谁来装载
+- 谁来卸载
+- 什么时候切换
+- 切换前后谁负责清理状态
+
+## 9. 宿主侵入点到底有哪些
+
+当前要把一个真实模块接进来，宿主通常要改这几类点：
+
+### 9.1 构建层
+
+- 从主固件 `add_files()` 里移除该算法源码
+- 改为在 `scripts/build_modules.py` 里单独编译成模块
+
+### 9.2 运行时包装层
+
+- 新增一个 `*_module_runtime.c`
+- 负责装载、缓存导出表、切 `gp`、封装 `call`
+
+### 9.3 业务调用层
+
+- 把原来直接调用算法库的地方
+- 改成调用 `*_module_runtime_*`
+
+### 9.4 资源冲突层
+
+- 如果当前已经有别的动态模块占用单槽位
+- 需要决定是停用、切换，还是做统一管理
+
+## 10. 当前实现已经证明了什么
+
+这次 `impact_displacement` 模块化已经证明了这些点：
+
+- 不是只有“几字节 demo 指令”能装到 RAM
+- 真实算法库也能按这个模型装载
+- 带镜像头和 CRC32 的运行时校验可用
+- 带 `gp` 切换的宿主调用链可用
+- `sensor_task -> runtime wrapper -> RAM module` 这条路径已在板子上实际跑通
+
+## 11. 当前还没有做什么
+
+当前还没做：
+
+- 模块加密
+- 签名认证
+- 通用重定位
+- 多槽位并行
+- 自动模块仲裁
+- 模块热切换回收策略
+
+所以对它的预期应该是：
+
+- 一套稳定的固定地址装载运行机制
+
+而不是：
+
+- 一套完整通用的动态装载操作系统能力
+
+## 12. 后续演进建议
+
+建议按下面顺序继续：
+
+1. 继续把更多纯算法做成 `call` 型模块
+2. 总结一套统一模块管理器
+3. 给镜像头增加更强的认证信息
+4. 再考虑把关键库做加密存储
+5. 最后再碰更复杂的协议子系统
+
+对这个工程来说，最合适的下一批候选是：
+
+- 滤波算法
+- 帧编解码
+- 纯判定逻辑
+- `Ad-Hoc-lib` 里边界清晰的纯处理子模块

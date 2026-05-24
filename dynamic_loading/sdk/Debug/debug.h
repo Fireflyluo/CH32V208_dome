@@ -28,6 +28,8 @@ extern "C" {
 #define DEBUG_UART1_IT 4
 #define DEBUG_UART2_IT 5
 #define DEBUG_UART3_IT 6
+#define DEBUG_UART3_DMA 7
+#define DEBUG_UART2_DMA 8
 /* DEBUG UATR Definition */
 #ifndef DEBUG
 #define DEBUG DEBUG_UART2_IT
@@ -41,8 +43,18 @@ extern "C" {
 #define SDI_PRINT SDI_PR_CLOSE
 #endif
 
-#ifndef DEBUG_UART_RX_BUF_SIZE
-#define DEBUG_UART_RX_BUF_SIZE 128u
+#if (DEBUG == DEBUG_UART3_DMA || DEBUG == DEBUG_UART2_DMA)
+ #ifndef DEBUG_UART_RX_BUF_SIZE
+ #define DEBUG_UART_RX_BUF_SIZE 1024u
+ #endif
+#else
+ #ifndef DEBUG_UART_RX_BUF_SIZE
+ #define DEBUG_UART_RX_BUF_SIZE 512u
+ #endif
+#endif
+
+#ifndef DEBUG_UART_DMA_HALF_SIZE
+#define DEBUG_UART_DMA_HALF_SIZE 256u
 #endif
 
 void Delay_Init(void);
@@ -55,6 +67,7 @@ uint16_t Debug_UART_RxAvailable(void);
 uint16_t Debug_UART_RxRead(uint8_t *out, uint16_t max_len);
 uint8_t Debug_UART_RxGetByte(uint8_t *out);
 uint32_t Debug_UART_RxDropped(void);
+void Debug_UART_SpeedTest(uint32_t duration_sec);
 
 #if (DEBUG)
 #define PRINT(format, ...) printf(format, ##__VA_ARGS__)

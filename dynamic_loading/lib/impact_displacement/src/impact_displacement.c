@@ -8,7 +8,6 @@
 
 #include <math.h>
 #include <stddef.h>
-#include <string.h>
 
 #define IMPACT_DISP_VERSION "0.1.1"     ///< 版本号
 
@@ -28,6 +27,15 @@
  */
 static float impact_disp_norm3(float x, float y, float z) {
   return sqrtf((x * x) + (y * y) + (z * z));
+}
+
+static void impact_disp_zero(void *ptr, uint32_t size) {
+  uint8_t *p = (uint8_t *)ptr;
+  uint32_t i;
+
+  for (i = 0u; i < size; ++i) {
+    p[i] = 0u;
+  }
 }
 
 /**
@@ -126,7 +134,7 @@ void impact_disp_get_default_cfg(impact_disp_cfg_t *cfg) {
     return;  // 如果配置指针为空，直接返回
   }
 
-  memset(cfg, 0, sizeof(*cfg));  // 清零配置结构体
+  impact_disp_zero(cfg, sizeof(*cfg));  // 清零配置结构体
   cfg->sample_rate_hz = 400u;    // 采样率400Hz
   cfg->min_event_ms = 40u;       // 最小事件持续时间40ms
   cfg->max_event_ms = 1000u;     // 最大事件持续时间1000ms
@@ -154,7 +162,7 @@ impact_disp_status_t impact_disp_reset(impact_disp_ctx_t *ctx) {
 
   had_cfg = (ctx->cfg.sample_rate_hz != 0u) ? 1u : 0u;  // 检查是否有配置
   backup_cfg = ctx->cfg;  // 备份当前配置
-  memset(ctx, 0, sizeof(*ctx));  // 清零上下文
+  impact_disp_zero(ctx, sizeof(*ctx));  // 清零上下文
 
   if (had_cfg != 0u) {  // 如果之前有配置，恢复配置
     ctx->cfg = backup_cfg;
@@ -178,7 +186,7 @@ impact_disp_status_t impact_disp_init(impact_disp_ctx_t *ctx,
     return IMPACT_DISP_ERR_ARG;  // 如果上下文为空，返回参数错误
   }
 
-  memset(ctx, 0, sizeof(*ctx));  // 清零上下文
+  impact_disp_zero(ctx, sizeof(*ctx));  // 清零上下文
   if (cfg != NULL) {  // 如果提供了配置，复制配置
     ctx->cfg = *cfg;
   } else {  // 否则使用默认配置
@@ -230,7 +238,7 @@ impact_disp_status_t impact_disp_begin_event(impact_disp_ctx_t *ctx,
   by = ctx->baseline_ay_mg;  // 保存Y轴基准
   bz = ctx->baseline_az_mg;  // 保存Z轴基准
 
-  memset(ctx, 0, sizeof(*ctx));  // 清零上下文
+  impact_disp_zero(ctx, sizeof(*ctx));  // 清零上下文
   ctx->cfg = backup_cfg;  // 恢复配置
   ctx->baseline_set = baseline_set;  // 恢复基准设置状态
   ctx->baseline_ax_mg = bx;  // 恢复X轴基准
@@ -479,7 +487,7 @@ impact_disp_status_t impact_disp_end_event(impact_disp_ctx_t *ctx,
     return IMPACT_DISP_ERR_NOT_READY;
   }
 
-  memset(out, 0, sizeof(*out));  // 清零输出结构体
+  impact_disp_zero(out, sizeof(*out));  // 清零输出结构体
 
   duration_s = (float)(ctx->last_ts_us - ctx->first_ts_us) / 1000000.0f;  // 计算持续时间(秒)
   if (duration_s <= 0.0f) {  // 检查持续时间是否有效

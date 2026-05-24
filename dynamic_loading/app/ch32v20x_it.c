@@ -20,6 +20,7 @@
  */
 #include "ch32v20x_it.h"
 #include "CONFIG.h"
+#include "debug.h"
 #include "drv_i2c.h"
 #include "drv_tim.h"
 
@@ -32,8 +33,10 @@ void BB_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C1_EV_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C1_ER_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+#if (DEBUG != DEBUG_UART2_DMA)
 void DMA1_Channel6_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void DMA1_Channel7_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+#endif
 /*********************************************************************
  * @fn      NMI_Handler
  *
@@ -126,6 +129,7 @@ void I2C1_ER_IRQHandler(void)
     bsp_i2c_irq_handler(I2C_NUM_1);
 }
 
+#if (DEBUG != DEBUG_UART2_DMA)
 /*********************************************************************
  * @fn      DMA1_Channel6_IRQHandler
  *
@@ -155,3 +159,4 @@ void DMA1_Channel7_IRQHandler(void)
 {
     bsp_i2c_dma_rx_irq_handler(I2C_NUM_1);
 }
+#endif /* DEBUG != DEBUG_UART2_DMA */

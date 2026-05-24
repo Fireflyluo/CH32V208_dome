@@ -2,7 +2,7 @@ ENTRY(module_get_exports)
 
 MEMORY
 {
-    RAM_MODULE (rxw) : ORIGIN = 0x2000E000, LENGTH = 8K
+    RAM_MODULE (rxw) : ORIGIN = 0x2000C000, LENGTH = 16K
 }
 
 SECTIONS
@@ -13,15 +13,16 @@ SECTIONS
         KEEP(*(.text.module_get_exports))
         *(.text .text.*)
         *(.rodata .rodata.*)
+        PROVIDE(__global_pointer$ = . + 0x800);
+        *(.sdata .sdata.*)
+        *(.data .data.*)
+        *(.sbss .sbss.*)
+        *(.bss .bss.* COMMON)
         . = ALIGN(4);
     } >RAM_MODULE
 
     /DISCARD/ :
     {
-        *(.data .data.*)
-        *(.bss .bss.*)
-        *(.sdata .sdata.*)
-        *(.sbss .sbss.*)
         *(.eh_frame*)
         *(.comment)
         *(.note*)

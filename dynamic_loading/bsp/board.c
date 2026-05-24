@@ -12,6 +12,7 @@
  */
 
 #include "board.h"
+#include "debug.h"
 
 #include "drv_i2c.h"
 #include "drv_gpio.h"
@@ -69,6 +70,7 @@ void board_init(void)
     i2c_cfg.is_7_bit_address = true;
     i2c_cfg.mode = I2C_MODE_IT;
     (void)bsp_i2c_init(I2C_NUM_1, &i2c_cfg);
+#if (DEBUG != DEBUG_UART2_DMA)
     bsp_i2c_dma_init(I2C_NUM_1, DMA1_Channel6, DMA1_Channel7);
 
     /* DMA 中断：CH6=I2C1_TX, CH7=I2C1_RX */
@@ -79,6 +81,7 @@ void board_init(void)
     NVIC_Init(&nvic_init);
     nvic_init.NVIC_IRQChannel = DMA1_Channel7_IRQn;
     NVIC_Init(&nvic_init);
+#endif /* DEBUG != DEBUG_UART2_DMA */
 
     /* I2C 请求仲裁器 */
     i2c_bus_arbiter_init(I2C_NUM_1);

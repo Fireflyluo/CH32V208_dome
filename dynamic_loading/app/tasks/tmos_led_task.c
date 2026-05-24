@@ -2,6 +2,7 @@
 #include "led_module_programs.h"
 #include "log_print.h"
 #include "module_loader.h"
+#include "module_manager.h"
 #include "tmos_task.h"
 
 #include <string.h>
@@ -17,9 +18,7 @@ static uint8_t s_led_is_on = 0u;
 static uint8_t s_active_program = 0u;
 static uint8_t s_switch_countdown = 0u;
 static uint32_t s_tick_serial = 0u;
-static module_ctx_t s_module_ctx;
-static module_host_api_t s_host_api;
-static const module_exports_t *s_led_program_exports = NULL;
+static module_runtime_t s_led_runtime;
 
 static tmosEvents led_task_process_event(tmosTaskID task_id, tmosEvents events);
 
@@ -29,8 +28,20 @@ static void led_write_local(uint8_t on)
     gpio_write(LED_PIN, s_led_is_on ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
-static void led_host_log(const char *msg)
+static void led_host_set_output(void *user, uint32_t output_id, uint32_t value)
 {
+    (void)user;
+
+    if (output_id == MODULE_HOST_OUTPUT_STATUS_LED)
+    {
+        led_write_local((uint8_t)(value != 0u));
+    }
+}
+
+static void led_host_log_text(void *user, const char *msg)
+{
+    (void)user;
+
     if (msg != NULL)
     {
         LOG_PRINT("led module says: %s\r\n", msg);
@@ -48,19 +59,20 @@ static void led_log_program_change(uint8_t index, const led_module_program_desc_
 
 static void led_unload_current_program(void)
 {
-    if (s_led_program_exports != NULL && s_led_program_exports->deinit != NULL)
-    {
-        s_led_program_exports->deinit(&s_module_ctx, &s_host_api);
-    }
-    s_led_program_exports = NULL;
-    memset(&s_module_ctx, 0, sizeof(s_module_ctx));
+    (void)module_manager_unload(&s_led_runtime);
+}
+
+static void led_log_busy_slot(void)
+{
+    LOG_PRINT("led module: slot busy owner=%s program=%s\r\n",
+              module_manager_active_owner() != NULL ? module_manager_active_owner() : "unknown",
+              module_manager_active_program() != NULL ? module_manager_active_program() : "unknown");
 }
 
 static void led_load_program(uint8_t index)
 {
     const led_module_program_desc_t *program = NULL;
-    const module_exports_t *exports = NULL;
-    module_loader_status_t status;
+    module_manager_status_t status;
 
     if (g_led_module_program_count == 0u)
     {
@@ -74,10 +86,13 @@ static void led_load_program(uint8_t index)
     }
 
     program = &g_led_module_programs[index];
-    led_unload_current_program();
-
-    status = module_loader_copy_from_flash(program->blob, program->size, 0u);
-    if (status != MODULE_LOADER_OK)
+    status = module_manager_load(&s_led_runtime, "led", program->name, program->blob, program->size);
+    if (status == MODULE_MANAGER_BUSY)
+    {
+        led_log_busy_slot();
+        return;
+    }
+    if (status != MODULE_MANAGER_OK)
     {
         LOG_PRINT("led module: load failed idx=%u status=%u\r\n",
                   (unsigned int)index,
@@ -85,40 +100,26 @@ static void led_load_program(uint8_t index)
         return;
     }
 
-    status = module_loader_resolve_exports(&exports);
-    if (status != MODULE_LOADER_OK || exports == NULL)
+    status = module_manager_call_init(&s_led_runtime);
+    if (status != MODULE_MANAGER_OK)
     {
-        LOG_PRINT("led module: exports invalid idx=%u status=%u\r\n",
+        LOG_PRINT("led module: init failed idx=%u status=%u\r\n",
                   (unsigned int)index,
                   (unsigned int)status);
+        (void)module_manager_unload(&s_led_runtime);
         return;
     }
 
-    if (exports->ctx_size > sizeof(s_module_ctx))
-    {
-        LOG_PRINT("led module: ctx too large idx=%u need=%lu have=%lu\r\n",
-                  (unsigned int)index,
-                  (unsigned long)exports->ctx_size,
-                  (unsigned long)sizeof(s_module_ctx));
-        return;
-    }
-
-    memset(&s_module_ctx, 0, sizeof(s_module_ctx));
-    s_led_program_exports = exports;
     s_active_program = index;
     s_switch_countdown = LED_MODULE_SWITCH_TICK;
     s_tick_serial = 0u;
-
-    if (s_led_program_exports->init != NULL)
-    {
-        s_led_program_exports->init(&s_module_ctx, &s_host_api);
-    }
-
     led_log_program_change(index, program);
 }
 
 void led_task_init(void)
 {
+    module_host_api_t host_api;
+
     if (s_led_task_id != INVALID_TASK_ID)
     {
         return;
@@ -126,8 +127,11 @@ void led_task_init(void)
 
     gpio_mode(LED_PIN, PIN_MODE_OUTPUT);
 
-    s_host_api.led_write = led_write_local;
-    s_host_api.log = led_host_log;
+    memset(&host_api, 0, sizeof(host_api));
+    host_api.user = NULL;
+    host_api.set_output = led_host_set_output;
+    host_api.log_text = led_host_log_text;
+    module_runtime_setup(&s_led_runtime, &host_api);
 
     s_led_task_id = TMOS_ProcessEventRegister(led_task_process_event);
     if (s_led_task_id == INVALID_TASK_ID)
@@ -139,14 +143,14 @@ void led_task_init(void)
     s_active_program = 0u;
     s_switch_countdown = 0u;
     s_tick_serial = 0u;
-    memset(&s_module_ctx, 0, sizeof(s_module_ctx));
-    s_led_program_exports = NULL;
 
     tmos_set_event(s_led_task_id, LED_EVT_INIT);
 }
 
 static tmosEvents led_task_process_event(tmosTaskID task_id, tmosEvents events)
 {
+    module_manager_status_t status;
+
     (void)task_id;
 
     if (events & LED_EVT_INIT)
@@ -159,12 +163,13 @@ static tmosEvents led_task_process_event(tmosTaskID task_id, tmosEvents events)
 
     if (events & LED_EVT_TICK)
     {
-        if (s_led_program_exports != NULL && s_led_program_exports->tick != NULL)
+        status = module_manager_call_tick(&s_led_runtime, s_tick_serial);
+        if (status != MODULE_MANAGER_OK)
         {
-            s_led_program_exports->tick(&s_module_ctx, &s_host_api, s_tick_serial);
-        }
-        else
-        {
+            if (status == MODULE_MANAGER_NOT_ACTIVE && module_manager_active_owner() != NULL)
+            {
+                led_log_busy_slot();
+            }
             led_write_local(0u);
         }
 

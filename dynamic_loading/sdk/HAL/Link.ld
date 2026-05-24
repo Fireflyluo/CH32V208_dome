@@ -16,7 +16,7 @@ __flash_origin      = 0x00000000;
 __flash_snv_start   = 0x00077C00; /* 0x08077C00 - reserved for BLE SNV */
 __ram_origin        = 0x20000000;
 __ram_total_size    = 0x00010000; /* 64KB */
-__module_ram_size   = 0x00002000; /* 8KB reserved for one loadable RAM module */
+__module_ram_size   = 0x00004000; /* 16KB reserved for one loadable RAM module */
 __module_ram_origin = __ram_origin + (__ram_total_size - __module_ram_size);
 
 MEMORY

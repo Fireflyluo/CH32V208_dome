@@ -37,6 +37,14 @@ option("log_print")
     set_description("Enable runtime LOG_PRINT outputs")  -- 选项描述
 option_end()
 
+-- UART调试串口DMA乒乓缓冲模式
+option("debug_uart_dma")
+    set_default("false")
+    set_showmenu(true)
+    set_values("true", "false")
+    set_description("Enable USART3 DMA ping-pong mode for debug UART")
+option_end()
+
 -- 射频节点ID配置（0~20）
 option("rf_tg_id")
     set_default("0")
@@ -75,6 +83,7 @@ local rf_tg_id_cfg = tonumber(get_config("rf_tg_id") or "0") or 0
 local adhoc_role_cfg = tostring(get_config("adhoc_role") or "bcn")
 local adhoc_gw_no_cfg = tonumber(get_config("adhoc_gw_no") or "0") or 0
 local adhoc_repo_dir_cfg = get_config("adhoc_repo_dir") or default_adhoc_repo_dir
+	local debug_uart_dma_cfg = tostring(get_config("debug_uart_dma") or "false")
 local toolchain_path = nil
 local use_adhoc_package_repo = false
 local adhoc_package_source_dir = ""
@@ -228,7 +237,7 @@ if use_adhoc_package_repo then
         add_files(path.join(adhoc_package_source_dir, "port/ch32v208/adhoc_port_ch32.c"))
 
         add_defines("CH32V20x_D8W")
-        add_includedirs("lib/AROS-RF-LIB/include", "sdk/Peripheral/inc", "sdk/Core", "sdk/Debug", "app/include")
+        add_includedirs("lib/AROS-RF-LIB/include", "sdk/Peripheral/inc", "sdk/Core", "sdk/Debug", "app/include", "modules/include")
         add_includedirs(path.join(adhoc_package_source_dir, "port/ch32v208"), {public = true})
 end
 
@@ -270,6 +279,9 @@ target("CH32V208GBU_Templete")
         "app/tasks/serial_upload_task.c",
         "app/tasks/ad_hoc_task.c",
         "app/adapters/adhoc_link_aros.c",
+        "app/impact_module_runtime.c",
+        "app/module_manager.c",
+        "app/module_manager_selftest.c",
         
         -- USB驱动库
         "sdk/USBLIB/USB-Driver/src/usb_core.c",
@@ -341,9 +353,6 @@ target("CH32V208GBU_Templete")
         "lib/sc7a20/src/sc7a20_sync.c",
         "lib/sc7a20/src/sc7a20_async.c",
         
-        -- 碰撞位移算法库
-        "lib/impact_displacement/src/impact_displacement.c",
-        
         -- OLED显示屏驱动
         "lib/oled/OLED.c",
         "lib/oled/OLED_Data.c",
@@ -361,8 +370,8 @@ target("CH32V208GBU_Templete")
         -- BLE配置文件
         
         -- 应用主文件
-        "app/module_loader.c",
         "app/led_module_programs.c",
+        "app/impact_module_programs.c",
         "app/module_loader.c",
         "app/ch32v20x_it.c",
         "app/main.c",
@@ -395,6 +404,7 @@ target("CH32V208GBU_Templete")
         "sdk/Debug",
         "sdk/Core",
         "app/include",
+        "modules/include",
         "app/adapters",
         "sdk/Peripheral/inc",
         "sdk/HAL/include",
@@ -472,7 +482,11 @@ target("CH32V208GBU_Templete")
     if is_mode("debug") then
         -- 调试模式：保留调试信息并启用基础优化，避免FLASH0溢出
         add_cflags("-g", "-Og", {force = true})
-        add_defines("DEBUG=5")           -- 启用详细调试级别
+        if debug_uart_dma_cfg == "true" then
+            add_defines("DEBUG=8")           -- USART2 DMA 乒乓缓冲模式
+        else
+            add_defines("DEBUG=5")           -- USART2 中断模式（默认）
+        end
     else
         -- 发布模式：启用优化
         add_cflags("-Os", {force = true})  -- 优化代码大小
@@ -557,7 +571,7 @@ target("CH32V208GBU_Templete")
 
     -- 构建完成后执行后处理脚本（生成hex、bin等格式文件）
     before_build(function (_)
-        os.execv("python", {"scripts/build_led_modules.py"})
+        os.execv("python", {"scripts/build_modules.py"})
     end)
 
     after_build(function (target)

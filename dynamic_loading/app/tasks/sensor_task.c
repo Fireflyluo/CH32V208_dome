@@ -31,6 +31,7 @@
 #include "drv_tim.h"
 #include "i2c_bus_arbiter.h"
 #include "impact_displacement.h"
+#include "impact_module_runtime.h"
 #include "log_print.h"
 #include "sc7a20.h"
 #include "sc7a20_ch32_adapter.h"
@@ -148,7 +149,6 @@ typedef struct
 } impact_ring_ctx_t;
 
 static impact_ring_ctx_t s_impact_ring = {0};
-static impact_disp_ctx_t s_impact_ctx = {0};
 static uint8_t s_impact_algo_ready = 0u;
 static impact_disp_cfg_t s_impact_cfg = {0};
 static sensor_peak_params_t s_peak_params = {
@@ -535,8 +535,17 @@ static void sensor_peak_params_apply(const sensor_peak_params_t *params, uint8_t
 
     if (s_impact_algo_ready != 0u)
     {
-        (void)impact_disp_init(&s_impact_ctx, &s_impact_cfg);
-        impact_ring_init(0u);
+        impact_disp_status_t impact_st = (impact_disp_status_t)impact_module_runtime_configure(&s_impact_cfg);
+
+        if (impact_st != IMPACT_DISP_OK)
+        {
+            s_impact_algo_ready = 0u;
+            LOG_PRINT("impact_module_configure failed: %d\r\n", impact_st);
+        }
+        else
+        {
+            impact_ring_init(0u);
+        }
     }
 
     LOG_PRINT("IMPACT params%s: T1=%lums T2=%lums T3=%lums T4=%lums H=%u(%umg) L=%u(%umg)\r\n",
@@ -649,7 +658,25 @@ static int sensor_try_init_accel(void)
         }
 #endif
 
-        impact_disp_get_default_cfg(&s_impact_cfg);
+        /* 这里开始不再静态链接算法实现，而是确保 impact 模块已从 FLASH1 装入 RAM_MODULE。 */
+        if (!impact_module_runtime_init())
+        {
+            s_accel_ready = 0u;
+            s_impact_algo_ready = 0u;
+            LOG_PRINT("impact module init failed\r\n");
+            return -1;
+        }
+
+        /* 默认配置仍由算法模块给出，宿主只负责按当前采样/触发场景覆写。 */
+        impact_st = (impact_disp_status_t)impact_module_runtime_get_default_cfg(&s_impact_cfg);
+        if (impact_st != IMPACT_DISP_OK)
+        {
+            s_accel_ready = 0u;
+            s_impact_algo_ready = 0u;
+            LOG_PRINT("impact_module_get_default_cfg failed: %d\r\n", impact_st);
+            return -1;
+        }
+
         s_impact_cfg.sample_rate_hz = (uint16_t)((1000u + (ACCEL_SAMPLE_MS / 2u)) / ACCEL_SAMPLE_MS);
         s_impact_cfg.release_threshold_mg = s_trigger_cfg.release_low_mg;
         s_impact_cfg.release_count_min =
@@ -658,12 +685,12 @@ static int sensor_try_init_accel(void)
         s_impact_cfg.max_event_ms = IMPACT_ALGO_MAX_EVENT_MS;
         s_impact_cfg.gravity_ema_tau_ms = IMPACT_GRAVITY_EMA_TAU_MS;
 
-        impact_st = impact_disp_init(&s_impact_ctx, &s_impact_cfg);
+        impact_st = (impact_disp_status_t)impact_module_runtime_configure(&s_impact_cfg);
         if (impact_st != IMPACT_DISP_OK)
         {
             s_accel_ready = 0u;
             s_impact_algo_ready = 0u;
-            LOG_PRINT("impact_disp_init failed: %d\r\n", impact_st);
+            LOG_PRINT("impact_module_configure failed: %d\r\n", impact_st);
             return -1;
         }
 
@@ -1392,6 +1419,7 @@ static void impact_compute_and_report(void)
     float sum_az = 0.0f;
     impact_disp_result_t result;
     impact_disp_status_t status;
+    impact_module_end_response_t response;
 
     LOG_PRINT("IMPACT compute: event_id=%lu samples=%u peak=%umg\r\n",
               (unsigned long)s_impact_ring.event_id,
@@ -1446,17 +1474,18 @@ static void impact_compute_and_report(void)
     LOG_PRINT("IMPACT compute: start_idx=%u count=%u pre=%u\r\n",
               (unsigned)start_idx, (unsigned)event_count, (unsigned)pre);
 
-    status = impact_disp_reset(&s_impact_ctx);
+    /* 触发窗口已经由宿主确定，下面开始把整段事件交给模块顺序处理。 */
+    status = (impact_disp_status_t)impact_module_runtime_reset();
     if (status != IMPACT_DISP_OK)
     {
-        LOG_PRINT("impact_disp_reset failed: %d\r\n", status);
+        LOG_PRINT("impact_module_reset failed: %d\r\n", status);
         return;
     }
 
-    status = impact_disp_begin_event(&s_impact_ctx, s_impact_ring.event_id);
+    status = (impact_disp_status_t)impact_module_runtime_begin_event(s_impact_ring.event_id);
     if (status != IMPACT_DISP_OK)
     {
-        LOG_PRINT("impact_disp_begin_event failed: %d\r\n", status);
+        LOG_PRINT("impact_module_begin_event failed: %d\r\n", status);
         return;
     }
 
@@ -1469,29 +1498,31 @@ static void impact_compute_and_report(void)
         idx = impact_ring_advance(idx, 1u);
     }
 
-    status = impact_disp_set_baseline_mg(&s_impact_ctx,
-                                         sum_ax / (float)pre,
-                                         sum_ay / (float)pre,
-                                         sum_az / (float)pre);
+    status = (impact_disp_status_t)impact_module_runtime_set_baseline(sum_ax / (float)pre,
+                                                                      sum_ay / (float)pre,
+                                                                      sum_az / (float)pre);
     if (status != IMPACT_DISP_OK)
     {
-        LOG_PRINT("impact_disp_set_baseline_mg failed: %d\r\n", status);
+        LOG_PRINT("impact_module_set_baseline failed: %d\r\n", status);
         return;
     }
 
     idx = start_idx;
     for (i = 0u; i < event_count; ++i)
     {
-        status = impact_disp_feed_sample(&s_impact_ctx, &s_impact_ring.samples[idx]);
+        /* 宿主仍管理环形缓冲和样本顺序，模块只消费当前样本。 */
+        status = (impact_disp_status_t)impact_module_runtime_feed_sample(&s_impact_ring.samples[idx]);
         if (status != IMPACT_DISP_OK)
         {
-            LOG_PRINT("impact_disp_feed_sample failed: %d idx=%u\r\n", status, (unsigned)idx);
+            LOG_PRINT("impact_module_feed_sample failed: %d idx=%u\r\n", status, (unsigned)idx);
             return;
         }
         idx = impact_ring_advance(idx, 1u);
     }
 
-    status = impact_disp_end_event(&s_impact_ctx, &result);
+    memset(&response, 0, sizeof(response));
+    status = (impact_disp_status_t)impact_module_runtime_end_event(&response);
+    result = response.result;
 
     if (status == IMPACT_DISP_OK)
     {
@@ -1512,20 +1543,21 @@ static void impact_compute_and_report(void)
             LOG_PRINT("IMPACT reject-hint: release insufficient (T3=%ums, L=%umg, rel_cnt=%u/%u)\r\n",
                       (unsigned)s_trigger_cfg.release_hold_ms,
                       (unsigned)s_trigger_cfg.release_low_mg,
-                      (unsigned)s_impact_ctx.release_count,
-                      (unsigned)s_impact_ctx.cfg.release_count_min);
+                      (unsigned)response.diag.release_count,
+                      (unsigned)response.diag.release_count_min);
         }
         if ((result.quality_flags & IMPACT_DISP_QF_DT_GAP) != 0u)
         {
             LOG_PRINT("IMPACT reject-hint: dt gap (max_dt=%ums, duration=%lums, samples=%lu)\r\n",
-                      (unsigned)s_impact_ctx.cfg.max_dt_ms,
+                      (unsigned)response.diag.max_dt_ms,
                       (unsigned long)result.duration_ms,
                       (unsigned long)result.sample_count);
         }
     }
     else
     {
-        LOG_PRINT("impact_disp_end_event failed: %d (release_hold=%ums)\r\n",
-                  status, (unsigned)s_trigger_cfg.release_hold_ms);
+        LOG_PRINT("impact_module_end_event failed: %d (release_hold=%ums flags=0x%08lX)\r\n",
+                  status, (unsigned)s_trigger_cfg.release_hold_ms,
+                  (unsigned long)response.diag.quality_flags);
     }
 }

@@ -84,6 +84,41 @@ local function parse_memory_from_ldscript(ldscript_path)
     return rom_total, ram_total, flash0_total, flash1_total, ram_app_total, ram_module_total
 end
 
+local function parse_module_summary(summary_path)
+    local summary = {
+        max_name = nil,
+        max_image_size = 0,
+        max_payload_size = 0,
+        module_count = 0,
+    }
+
+    if not summary_path or not os.isfile(summary_path) then
+        return summary
+    end
+
+    local content = io.readfile(summary_path)
+    if not content then
+        return summary
+    end
+
+    for line in content:gmatch("[^\r\n]+") do
+        local key, value = line:match("^([%w%._%-]+)=(.+)$")
+        if key and value then
+            if key == "max_name" then
+                summary.max_name = value
+            elseif key == "max_image_size" then
+                summary.max_image_size = tonumber(value) or 0
+            elseif key == "max_payload_size" then
+                summary.max_payload_size = tonumber(value) or 0
+            elseif key == "module_count" then
+                summary.module_count = tonumber(value) or 0
+            end
+        end
+    end
+
+    return summary
+end
+
 function main(target, toolchain_path, cross_prefix)
     local toolchain_bin = toolchain_path .. "/bin"
     local tool_prefix = cross_prefix
@@ -237,6 +272,8 @@ function main(target, toolchain_path, cross_prefix)
         local total_rw = rw_data + zi_data
         local total_rw_reserved = total_rw + module_slot_size
         local total_rom = code + ro_data + rw_data
+        local module_summary = parse_module_summary(path.join(os.projectdir(), "build", "modules", "module_summary.txt"))
+        local module_runtime_size = module_summary.max_payload_size > 0 and module_summary.max_payload_size or module_slot_size
 
         local function clamp0(v)
             if v < 0 then return 0 end
@@ -277,7 +314,7 @@ function main(target, toolchain_path, cross_prefix)
         
         local ram_percent = (total_rw_reserved / ram_total) * 100
         local ram_app_percent = (ram_app_total > 0) and ((total_rw / ram_app_total) * 100) or 0
-        local ram_module_percent = (ram_module_total > 0) and ((module_slot_size / ram_module_total) * 100) or 0
+        local ram_module_percent = (ram_module_total > 0) and ((module_runtime_size / ram_module_total) * 100) or 0
         local rom_percent = (total_rom / rom_total) * 100
         local flash0_percent = (flash0_total and flash0_total > 0) and (flash0_used / flash0_total) * 100 or 0
         local flash1_percent = (flash1_total and flash1_total > 0) and (flash1_used / flash1_total) * 100 or 0
@@ -315,8 +352,13 @@ function main(target, toolchain_path, cross_prefix)
                ram_percent, total_rw_reserved / 1024, ram_total / 1024)
         cprint("    - RAM_APP:          " .. ram_app_color .. "[" .. draw_bar(ram_app_percent, 20) .. "]${clear} %5.1f%%  %6.1fKB/%6.1fKB",
                ram_app_percent, total_rw / 1024, ram_app_total / 1024)
-        cprint("    - RAM_MODULE slot:  " .. ram_module_color .. "[" .. draw_bar(ram_module_percent, 20) .. "]${clear} %5.1f%%  %6.1fKB/%6.1fKB",
-               ram_module_percent, module_slot_size / 1024, ram_module_total / 1024)
+        cprint("    - RAM_MODULE use:   " .. ram_module_color .. "[" .. draw_bar(ram_module_percent, 20) .. "]${clear} %5.1f%%  %6.1fKB/%6.1fKB",
+               ram_module_percent, module_runtime_size / 1024, ram_module_total / 1024)
+        cprint("    - RAM_MODULE slot:      reserved %6.1fKB static slot", module_slot_size / 1024)
+        if module_summary.max_payload_size > 0 then
+            cprint("    - largest payload:      %6d bytes (%s)", module_summary.max_payload_size, module_summary.max_name or "unknown")
+            cprint("    - largest image:        %6d bytes", module_summary.max_image_size)
+        end
         cprint("    - .data:             %6d bytes", rw_data)
         cprint("    - .bss:              %6d bytes", zi_data)
         cprint("    - .module_slot:      %6d bytes", module_slot_size)

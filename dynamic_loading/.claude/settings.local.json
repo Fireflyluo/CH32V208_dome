@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Desktop/Ad Hoc Network/PY32f403_dome/LIB/OSAL/**)",
+      "Read(//d/Desktop/Ad Hoc Network/PY32f403_dome/LIB/Event OS/**)",
+      "Read(//d/Desktop/ch32/0.ch32v208_dome/**)",
+      "Bash(git -C \"D:\\\\Desktop\\\\ch32\\\\0.ch32v208_dome\" log --oneline -15 --all)",
+      "Bash(python -c ' *)",
+      "Bash(ls \"E:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/OpenOCD/OpenOCD/bin/openocd.exe\" 2>/dev/null; echo \"---\"; cat d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading/tools/wch-interface.cfg 2>/dev/null)",
+      "Read(//e/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/OpenOCD/OpenOCD/bin/**)",
+      "Bash(\"E:/APP/MRS2/MounRiver_Studio2/resources/app/resources/win32/components/WCH/OpenOCD/OpenOCD/bin/openocd.exe\" -s d:/Desktop/ch32/0.ch32v208_dome/dynamic_loading -f tools/wch-interface.cfg -c \"program build/cross/riscv/debug/CH32V208GBU_Templete.elf verify\" -c \"reset run\" -c \"exit\")",
+      "Bash(python scripts/speed_test.py --port COM8 --baud 256000 --duration 18)",
+      "Bash(xmake f *)",
+      "Bash(python scripts/speed_test.py --port COM8 --baud 115200 --duration 18 --no-reset)"
+    ]
+  }
+}

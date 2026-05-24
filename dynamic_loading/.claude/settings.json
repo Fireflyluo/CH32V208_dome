@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python scripts/speed_test.py --port COM8 --baud 9600 --duration 20)",
+      "Bash(xmake build *)",
+      "Bash(python scripts/speed_test.py --port COM8 --baud 115200 --duration 22 --no-reset)",
+      "Bash(wait)",
+      "Bash(python scripts/speed_test.py --port COM8 --baud 256000 --duration 22 --no-reset)"
+    ]
+  }
+}
