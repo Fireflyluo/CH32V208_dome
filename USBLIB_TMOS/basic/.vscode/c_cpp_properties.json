@@ -1,0 +1,63 @@
+{
+  "configurations": [
+    {
+      "name": "CH32V208GBU_Templete",
+      "compilerArgs": [
+        "-march=rv32imacxw",
+        "-mabi=ilp32"
+      ],
+      "cStandard": "gnu17",
+      "cppStandard": "gnu++11",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/sdk/Debug",
+        "${workspaceFolder}/sdk/Core",
+        "${workspaceFolder}/APP/include",
+        "${workspaceFolder}/sdk/Peripheral/inc",
+        "${workspaceFolder}/sdk/HAL/include",
+        "${workspaceFolder}/sdk/LIB",
+        "${workspaceFolder}/Profile/include",
+        "${workspaceFolder}/task/inc",
+        "${workspaceFolder}/bsp/Include",
+        "${workspaceFolder}/bsp/UART",
+        "${workspaceFolder}/sdk/USBLIB/CONFIG",
+        "${workspaceFolder}/sdk/USBLIB/USB-Driver/inc",
+        "${workspaceFolder}/public",
+        "${workspaceFolder}/drivers/sensor/sht40",
+        "${workspaceFolder}/drivers/oled",
+        "${workspaceFolder}/drivers/sensor/sc7a20htr",
+        "${workspaceFolder}/drivers/sensor/sc7a20htr/inc",
+        "${workspaceFolder}/drivers/sensor/sc7a20htr/platform"
+      ],
+      "defines": [
+        "CH32V20x_D8W"
+      ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}",
+          "${workspaceFolder}/**",
+          "${workspaceFolder}/sdk/Debug",
+          "${workspaceFolder}/sdk/Core",
+          "${workspaceFolder}/APP/include",
+          "${workspaceFolder}/sdk/Peripheral/inc",
+          "${workspaceFolder}/sdk/HAL/include",
+          "${workspaceFolder}/sdk/LIB",
+          "${workspaceFolder}/Profile/include",
+          "${workspaceFolder}/task/inc",
+          "${workspaceFolder}/bsp/Include",
+          "${workspaceFolder}/bsp/UART",
+          "${workspaceFolder}/sdk/USBLIB/CONFIG",
+          "${workspaceFolder}/sdk/USBLIB/USB-Driver/inc",
+          "${workspaceFolder}/public",
+          "${workspaceFolder}/drivers/sensor/sht40",
+          "${workspaceFolder}/drivers/oled",
+          "${workspaceFolder}/drivers/sensor/sc7a20htr",
+          "${workspaceFolder}/drivers/sensor/sc7a20htr/inc",
+          "${workspaceFolder}/drivers/sensor/sc7a20htr/platform"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      }
+    }
+  ],
+  "version": 4
+}

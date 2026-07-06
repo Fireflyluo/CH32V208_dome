@@ -33,10 +33,14 @@ void BB_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C1_EV_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void I2C1_ER_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void USB_LP_CAN1_RX0_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void USBWakeUp_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 #if (DEBUG != DEBUG_UART2_DMA)
 void DMA1_Channel6_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void DMA1_Channel7_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 #endif
+
+extern void USBD_IRQHandler(uint8_t busid);
 /*********************************************************************
  * @fn      NMI_Handler
  *
@@ -127,6 +131,16 @@ void I2C1_EV_IRQHandler(void)
 void I2C1_ER_IRQHandler(void)
 {
     bsp_i2c_irq_handler(I2C_NUM_1);
+}
+
+void USB_LP_CAN1_RX0_IRQHandler(void)
+{
+    USBD_IRQHandler(0);
+}
+
+void USBWakeUp_IRQHandler(void)
+{
+    EXTI_ClearITPendingBit(EXTI_Line18);
 }
 
 #if (DEBUG != DEBUG_UART2_DMA)

@@ -283,21 +283,10 @@ target("CH32V208GBU_Templete")
         "app/module_manager.c",
         "app/module_manager_selftest.c",
         
-        -- USB驱动库
-        "sdk/USBLIB/USB-Driver/src/usb_core.c",
-        "sdk/USBLIB/USB-Driver/src/usb_init.c",
-        "sdk/USBLIB/USB-Driver/src/usb_int.c",
-        "sdk/USBLIB/USB-Driver/src/usb_mem.c",
-        "sdk/USBLIB/USB-Driver/src/usb_regs.c",
-        "sdk/USBLIB/USB-Driver/src/usb_sil.c",
-        
-        -- USB配置文件
-        "sdk/USBLIB/CONFIG/hw_config.c",
-        "sdk/USBLIB/CONFIG/usb_desc.c",
-        "sdk/USBLIB/CONFIG/usb_endp.c",
-        "sdk/USBLIB/CONFIG/usb_istr.c",
-        "sdk/USBLIB/CONFIG/usb_prop.c",
-        "sdk/USBLIB/CONFIG/usb_pwr.c",
+        -- CherryUSB CDC ACM
+        "lib/cherryusb/core/usbd_core.c",
+        "lib/cherryusb/class/cdc/usbd_cdc_acm.c",
+        "lib/cherryusb/port/fsdev/usb_dc_fsdev.c",
         
         -- 启动文件
         "sdk/Startup/startup_ch32v20x_D8W.S",
@@ -412,8 +401,11 @@ target("CH32V208GBU_Templete")
         "bsp",
         "bsp/drivers/inc",
         "bsp/bus/inc",
-        "sdk/USBLIB/CONFIG",
-        "sdk/USBLIB/USB-Driver/inc",
+        "lib/cherryusb",
+        "lib/cherryusb/common",
+        "lib/cherryusb/core",
+        "lib/cherryusb/class/cdc",
+        "lib/cherryusb/port/fsdev",
         "utils",
         "lib/sht40",
         "lib/sht40/inc",

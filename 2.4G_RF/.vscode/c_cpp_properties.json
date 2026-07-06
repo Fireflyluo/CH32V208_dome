@@ -1,0 +1,88 @@
+{
+  "configurations": [
+    {
+      "name": "CH32V208GBU_Templete",
+      "compilerArgs": [
+        "-march=rv32imacxw",
+        "-mabi=ilp32"
+      ],
+      "cStandard": "gnu17",
+      "cppStandard": "gnu++11",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/../app/include",
+        "${workspaceFolder}/../app/tasks",
+        "${workspaceFolder}/ble_profile/include",
+        "${workspaceFolder}/../bsp",
+        "${workspaceFolder}/../bsp/bus/inc",
+        "${workspaceFolder}/../bsp/drivers/inc",
+        "${workspaceFolder}/../lib",
+        "${workspaceFolder}/../lib/oled",
+        "${workspaceFolder}/../lib/sc7a20/adapters",
+        "${workspaceFolder}/../lib/sc7a20/inc",
+        "${workspaceFolder}/../lib/sht40/adapters",
+        "${workspaceFolder}/../lib/sht40/inc",
+        "${workspaceFolder}/../sdk/Core",
+        "${workspaceFolder}/../sdk/Debug",
+        "${workspaceFolder}/../sdk/HAL/include",
+        "${workspaceFolder}/../sdk/Ld",
+        "${workspaceFolder}/../sdk/LIB",
+        "${workspaceFolder}/../sdk/Peripheral/inc",
+        "${workspaceFolder}/../sdk/USBLIB/CONFIG",
+        "${workspaceFolder}/../sdk/USBLIB/USB-Driver/inc",
+        "${workspaceFolder}/../utils",
+        "${workspaceFolder}/test",
+        "${workspaceFolder}/../lib/AROS-RF-LIB/include",
+        "${workspaceFolder}/../lib/impact_displacement/inc",
+        "${workspaceFolder}/../app/**",
+        "${workspaceFolder}/../bsp/**",
+        "${workspaceFolder}/../lib/**",
+        "${workspaceFolder}/../sdk/**",
+        "${workspaceFolder}/../utils/**"
+      ],
+      "defines": [
+        "CH32V20x_D8W",
+        "ARF_USE_EXTERNAL_MEM_BUF=1"
+      ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}",
+          "${workspaceFolder}/**",
+          "${workspaceFolder}/../app/include",
+          "${workspaceFolder}/../app/tasks",
+          "${workspaceFolder}/ble_profile/include",
+          "${workspaceFolder}/../bsp",
+          "${workspaceFolder}/../bsp/bus/inc",
+          "${workspaceFolder}/../bsp/drivers/inc",
+          "${workspaceFolder}/../lib",
+          "${workspaceFolder}/../lib/oled",
+          "${workspaceFolder}/../lib/sc7a20/adapters",
+          "${workspaceFolder}/../lib/sc7a20/inc",
+          "${workspaceFolder}/../lib/sht40/adapters",
+          "${workspaceFolder}/../lib/sht40/inc",
+          "${workspaceFolder}/../sdk/Core",
+          "${workspaceFolder}/../sdk/Debug",
+          "${workspaceFolder}/../sdk/HAL/include",
+          "${workspaceFolder}/../sdk/Ld",
+          "${workspaceFolder}/../sdk/LIB",
+          "${workspaceFolder}/../sdk/Peripheral/inc",
+          "${workspaceFolder}/../sdk/USBLIB/CONFIG",
+          "${workspaceFolder}/../sdk/USBLIB/USB-Driver/inc",
+          "${workspaceFolder}/../utils",
+          "${workspaceFolder}/test",
+          "${workspaceFolder}/../lib/AROS-RF-LIB/include",
+          "${workspaceFolder}/../lib/impact_displacement/inc",
+          "${workspaceFolder}/../app/**",
+          "${workspaceFolder}/../bsp/**",
+          "${workspaceFolder}/../lib/**",
+          "${workspaceFolder}/../sdk/**",
+          "${workspaceFolder}/../utils/**",
+          "${workspaceFolder}/../app",
+          "${workspaceFolder}/../sdk"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      }
+    }
+  ],
+  "version": 4
+}

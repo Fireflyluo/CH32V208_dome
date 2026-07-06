@@ -20,9 +20,6 @@
 #include "drv_rtc.h"
 #include "i2c_bus_arbiter.h"
 #include "usb_cdc.h"
-#include "hw_config.h"
-#include "usb_core.h"
-#include "usb_init.h"
 
 #define LED_PIN GET_PIN(C, 9)
 
@@ -87,9 +84,6 @@ void board_init(void)
     i2c_bus_arbiter_init(I2C_NUM_1);
 
     /* USB CDC */
-    Set_USBConfig();
-    USB_Init();
-    USB_Interrupts_Config();
     CDC_VirtualUartInit();
 
     gpio_init();

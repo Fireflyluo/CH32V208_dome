@@ -37,10 +37,6 @@
 			{
 				"name": "utils",
 				"location": "../utils"
-			},
-			{
-				"name": "test",
-				"location": "../test"
 			}
 		],
 		"removedResources": [
